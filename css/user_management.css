@@ -1,0 +1,181 @@
+/* =========================================
+   1. SHARED UTILITIES
+   ========================================= */
+.page-header { margin-bottom: 25px; }
+.page-header h1 { font-size: 24px; color: #000; margin-bottom: 5px; font-weight: 800; }
+.page-header p { color: #555; font-size: 14px; }
+
+.white-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+.user-layout {
+    display: grid;
+    /* Split: Left Form(1fr) | Right Stack(1.5fr) */
+    grid-template-columns: 1fr 1.5fr; 
+    gap: 20px;
+    align-items: start;
+}
+
+.panel-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.panel-header-row h3, .user-list-panel h3 { 
+    margin: 0; font-size: 15px; font-weight: 700; color: #222; 
+}
+.user-list-panel h3 { margin-bottom: 15px; }
+
+
+/* =========================================
+   2. LEFT PANEL: ADD USER FORM
+   ========================================= */
+.left-form-panel {
+    min-height: 500px;
+}
+
+.btn-green-add {
+    background: #4CAF50; color: white; border: none;
+    padding: 8px 20px; border-radius: 4px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 5px;
+}
+
+.user-form { display: flex; flex-direction: column; gap: 15px; }
+
+.form-group label {
+    display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px;
+}
+
+.form-input, .form-select {
+    width: 100%; padding: 10px 12px; border: 1px solid #ddd;
+    border-radius: 4px; font-size: 13px; color: #555; background: white;
+}
+
+/* Radio Group (Updated to match Troubleshooting Style) */
+.radio-group { 
+    display: flex; 
+    gap: 20px; 
+}
+
+.radio-label {
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+    font-size: 13px; 
+    color: #333; 
+    cursor: pointer;
+}
+
+/* Customizing the Radio Button Color */
+.radio-label input[type="radio"] {
+    accent-color: #555; /* Makes the dot gray/dark */
+    width: 16px; 
+    height: 16px; 
+    margin: 0;
+    cursor: pointer;
+}
+
+
+/* =========================================
+   3. RIGHT COLUMN WRAPPER
+   ========================================= */
+.right-column-wrapper {
+    display: flex; flex-direction: column; gap: 20px;
+}
+
+
+/* --- User List Panel --- */
+.search-filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
+.search-input {
+    flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;
+}
+.filter-btn {
+    background: white; border: 1px solid #ddd; padding: 0 15px; border-radius: 4px;
+    font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; color: #555;
+}
+
+/* User Table */
+.table-container { overflow-x: auto; margin-bottom: 15px; }
+.user-table { width: 100%; border-collapse: collapse; }
+
+.user-table th {
+    background: #1B4D3E; color: white;
+    padding: 12px 15px; text-align: left; font-size: 12px;
+}
+
+.user-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px; color: #333;
+}
+
+.active-row { background-color: #e8f5e9; } /* Highlight Row */
+
+.badge {
+    padding: 4px 12px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; color: white; display: inline-block;
+}
+.badge.active { background-color: #4CAF50; }
+.badge.deactivated { background-color: #9E9E9E; } 
+
+/* Pagination */
+.pagination {
+    display: flex; justify-content: flex-end; gap: 5px; 
+    font-size: 12px; color: #666; align-items: center;
+}
+.page-num {
+    padding: 4px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;
+}
+.page-num.active {
+    background: #f0f0f0; font-weight: bold; border-color: #ccc; color: #000;
+}
+.page-nav { cursor: pointer; padding: 0 5px; }
+
+
+/* --- User Info Panel --- */
+.action-buttons { display: flex; gap: 10px; }
+
+.btn-edit {
+    background: #4CAF50; color: white; border: none;
+    padding: 8px 20px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 5px;
+}
+.btn-deactivate {
+    background: white; border: 1px solid #ddd; color: #333;
+    padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 5px;
+}
+
+.info-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+
+.info-item label {
+    display: block; font-size: 12px; font-weight: 700; color: #333; margin-bottom: 5px;
+}
+
+.info-value {
+    background: #fcfcfc; border: 1px solid #eee; padding: 10px;
+    border-radius: 4px; font-size: 13px; color: #555;
+}
+
+.info-value.status-bg {
+    background: #e8f5e9; color: #1B4D3E; font-weight: 600; border: none;
+}
+
+.full-width { grid-column: span 2; }
+
+
+/* =========================================
+   4. RESPONSIVENESS
+   ========================================= */
+@media (max-width: 900px) {
+    .user-layout {
+        grid-template-columns: 1fr; /* Stack vertically */
+    }
+}

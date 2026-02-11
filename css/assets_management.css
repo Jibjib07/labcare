@@ -1,0 +1,235 @@
+/* =========================================
+   1. SHARED UTILITIES
+   ========================================= */
+.page-header { margin-bottom: 25px; }
+
+/* Updated Breadcrumb to match H1 size */
+.breadcrumb { 
+    font-size: 24px; /* Increased from 20px to 24px */
+    margin-bottom: 5px; 
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Spacing between the arrow and text */
+}
+
+.gray-text { 
+    color: #888; 
+    font-weight: 500; /* Standard weight for the path */
+}
+
+.bold-text { 
+    color: #000; 
+    font-weight: 800; /* Extra bold for current page "Assets Management" */
+}
+
+.page-header p { 
+    color: #555; 
+    font-size: 14px; 
+    margin-top: 5px;
+}
+
+.white-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+/* Breadcrumb Link Styling */
+.gray-link {
+    color: #888;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.gray-link:hover {
+    color: #4CAF50; /* turns green on hover */
+    text-decoration: underline;
+}
+
+.gray-text {
+    color: #888;
+    margin: 0 5px; /* Spacing around the arrow */
+}
+/* =========================================
+   2. MAIN LAYOUT
+   ========================================= */
+.assets-layout {
+    display: grid;
+    /* Split: List(35%) | Details(65%) */
+    grid-template-columns: 1fr 1.8fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* =========================================
+   3. LEFT PANEL: LIST VIEW
+   ========================================= */
+.top-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.back-btn {
+    width: 35px; height: 35px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #555;
+    text-decoration: none;
+    background: white;
+}
+
+.toggle-switch {
+    background: #f0f0f0;
+    border-radius: 6px;
+    padding: 4px;
+    display: flex;
+    flex: 1;
+}
+
+.toggle-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.toggle-btn.active {
+    background: #4CAF50;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.list-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.list-header-row h3 { font-size: 14px; margin: 0; color: #555; }
+.list-header-row strong { color: #000; }
+
+.btn-green-add {
+    background: #4CAF50; color: white; border: none;
+    padding: 6px 15px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+}
+
+/* Filter Row */
+.filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
+.search-input {
+    flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;
+}
+.filter-btn {
+    background: white; border: 1px solid #ddd; padding: 0 15px; border-radius: 4px;
+    font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px;
+}
+
+/* Asset List Items */
+.assets-list { display: flex; flex-direction: column; gap: 5px; }
+
+.asset-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 15px;
+    border: 1px solid transparent;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+.asset-item:hover { background: #f9f9f9; }
+
+.asset-item.active {
+    background: #e8f5e9; /* Light Green */
+    border-radius: 4px;
+    border-bottom: none;
+}
+
+.asset-name { font-weight: 700; font-size: 13px; color: #333; }
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 12px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; color: white;
+}
+.working { background: #4CAF50; }
+.repair { background: #FFC107; }
+.pending { background: #9C27B0; } /* Purple from image */
+
+/* Pagination */
+.pagination {
+    display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;
+    font-size: 12px; color: #666;
+}
+.active-page { font-weight: bold; background: #eee; padding: 2px 6px; border-radius: 3px; }
+
+
+/* =========================================
+   4. RIGHT PANEL: DETAILS VIEW
+   ========================================= */
+.details-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 25px;
+}
+.details-header h3 { font-size: 16px; font-weight: 700; margin: 0; }
+
+.details-actions { display: flex; gap: 10px; }
+.btn-edit {
+    background: #4CAF50; color: white; border: none;
+    padding: 8px 20px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;
+}
+.btn-condemn {
+    background: white; border: 1px solid #ddd; color: #333;
+    padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px;
+}
+
+/* Tabs */
+.details-tabs {
+    display: flex; gap: 10px; margin-bottom: 25px;
+    border-bottom: 1px solid #eee; padding-bottom: 15px;
+    overflow-x: auto;
+}
+
+.tab-btn {
+    background: #f5f5f5; border: 1px solid #ddd;
+    padding: 8px 15px; border-radius: 4px;
+    font-size: 12px; color: #555; cursor: pointer; white-space: nowrap;
+}
+
+.tab-btn.active {
+    background: #4CAF50; color: white; border-color: #4CAF50;
+    font-weight: 600;
+}
+
+/* Specifications Grid (Form Style) */
+.specs-grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 Columns */
+    gap: 20px;
+    border: 1px solid #eee;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.spec-group label {
+    display: block; font-size: 12px; font-weight: 700; color: #333; margin-bottom: 5px;
+}
+
+.spec-value {
+    background: #fcfcfc;
+    border: 1px solid #eee;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #555;
+    min-height: 40px; /* Consistent height */
+    display: flex; align-items: center;
+}

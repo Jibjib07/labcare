@@ -1,0 +1,158 @@
+/* =========================================
+   1. SHARED UTILITIES
+   ========================================= */
+.page-header { margin-bottom: 25px; }
+.page-header h1 { font-size: 24px; color: #000; margin-bottom: 5px; font-weight: 800; }
+.page-header p { color: #555; font-size: 14px; }
+
+.white-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    height: 100%;
+}
+
+.report-layout {
+    display: grid;
+    /* Split: Filter(35%) | Preview(65%) */
+    grid-template-columns: 1fr 1.8fr; 
+    gap: 20px;
+    align-items: start;
+}
+
+.panel-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+.panel-header-row h3 { margin: 0; font-size: 15px; font-weight: 700; color: #222; }
+
+.btn-green {
+    background: #4CAF50; color: white; border: none;
+    padding: 8px 15px; border-radius: 4px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 5px;
+}
+.btn-green:hover { background: #43a047; }
+
+
+/* =========================================
+   2. LEFT PANEL: FILTER FORM
+   ========================================= */
+.filter-form { display: flex; flex-direction: column; gap: 20px; }
+
+.form-group label {
+    display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px;
+}
+
+.form-select, .form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #555;
+    background-color: white;
+}
+
+/* Date Input Wrapper specific styling if needed */
+.date-input-wrapper input {
+    color: #555;
+}
+
+
+/* =========================================
+   3. RIGHT PANEL: PREVIEW
+   ========================================= */
+
+/* Chart Section */
+.chart-section {
+    text-align: center; margin-bottom: 30px;
+}
+.chart-section h4 { font-size: 13px; font-weight: 700; margin-bottom: 20px; color: #333; }
+
+.chart-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px; /* Space between chart and legend */
+}
+
+/* Donut Chart CSS */
+.donut-chart {
+    width: 180px; height: 180px; border-radius: 50%;
+    /* Gradient matches image: Green(large), Yellow(medium), Red(small) */
+    background: conic-gradient(
+        #4CAF50 0% 70%, 
+        #B71C1C 70% 80%,
+        #FFC107 80% 100%
+    );
+    position: relative;
+}
+.donut-chart::after {
+    content: ""; position: absolute; width: 110px; height: 110px;
+    background: white; border-radius: 50%; top: 35px; left: 35px;
+}
+
+/* Legend */
+.chart-legend {
+    display: flex; flex-direction: column; gap: 10px;
+}
+.legend-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; border: 1px solid #eee;
+    padding: 8px 12px; border-radius: 6px; width: 160px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.legend-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #444; }
+.legend-value { font-size: 12px; font-weight: 700; color: #222; }
+
+.dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.dot.green { background: #4CAF50; }
+.dot.yellow { background: #FFC107; }
+.dot.red { background: #B71C1C; }
+
+
+/* Summary Table */
+.summary-section h3 { font-size: 13px; font-weight: 700; margin-bottom: 15px; color: #222; }
+
+.table-wrapper {
+    background: #fcfcfc; border: 1px solid #eee; border-radius: 8px; padding: 15px;
+}
+
+.summary-table { width: 100%; border-collapse: collapse; }
+
+.summary-table th {
+    background: #1B4D3E; /* Dark Green Header */
+    color: white;
+    padding: 12px 15px; text-align: left; font-size: 12px;
+}
+
+.summary-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px; color: #333;
+    background: white;
+}
+
+.summary-table tr:last-child td { border-bottom: none; }
+
+.total-row td {
+    font-weight: 700; color: #000;
+}
+
+
+/* =========================================
+   4. RESPONSIVENESS
+   ========================================= */
+@media (max-width: 900px) {
+    .report-layout {
+        grid-template-columns: 1fr; /* Stack vertically */
+    }
+    
+    .chart-wrapper {
+        flex-direction: column; gap: 20px;
+    }
+}

@@ -1,0 +1,163 @@
+/* =========================================
+   1. SHARED UTILITIES
+   ========================================= */
+.page-header { margin-bottom: 25px; }
+.page-header h1 { font-size: 24px; color: #000; margin-bottom: 5px; font-weight: 800; }
+.page-header p { color: #555; font-size: 14px; }
+
+/* Panels */
+.white-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    height: 100%;
+}
+
+.history-layout {
+    display: grid;
+    /* Split: List(40%) | Timeline(60%) */
+    grid-template-columns: 1fr 1.5fr; 
+    gap: 20px;
+    align-items: start;
+}
+
+/* Header Row inside Panels */
+.panel-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.panel-header-row h3 { margin: 0; font-size: 15px; font-weight: 700; color: #222; }
+
+/* Buttons */
+.btn-export {
+    background: #4CAF50; color: white; border: none;
+    padding: 8px 15px; border-radius: 4px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 5px;
+}
+.btn-condemn {
+    background: #B71C1C; color: white; border: none;
+    padding: 8px 15px; border-radius: 4px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 5px;
+}
+
+/* Search Input */
+.search-container { margin-bottom: 15px; }
+.search-input {
+    width: 100%; padding: 10px; border: 1px solid #ddd;
+    border-radius: 4px; font-size: 13px;
+}
+
+
+/* =========================================
+   2. LEFT PANEL: HISTORY LISTS
+   ========================================= */
+.history-tabs {
+    display: flex; gap: 10px; margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    background: #f5f5f5; border: 1px solid #ddd;
+    padding: 8px 5px; border-radius: 15px; /* Rounded pill shape */
+    font-size: 12px; font-weight: 600; color: #555;
+    cursor: pointer; transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: #4CAF50; color: white; border-color: #4CAF50;
+}
+
+/* History Table */
+.table-container { overflow-x: auto; }
+.history-table { width: 100%; border-collapse: collapse; }
+
+.history-table th {
+    background: #1B4D3E; color: white;
+    padding: 12px 10px; text-align: left; font-size: 12px;
+}
+
+.history-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px; color: #333;
+}
+
+.active-row {
+    background-color: #e8f5e9 !important; /* Light Green Highlight */
+    font-weight: 600;
+}
+
+
+/* =========================================
+   3. RIGHT PANEL: TIMELINE
+   ========================================= */
+.timeline-table { width: 100%; border-collapse: collapse; }
+
+.timeline-table th {
+    background: #1B4D3E; color: white;
+    padding: 12px 15px; text-align: left; font-size: 12px;
+}
+
+.timeline-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px; color: #444;
+    vertical-align: top;
+}
+
+/* Affected List Styling */
+.affected-list {
+    list-style: none; padding: 0; margin: 0;
+}
+.affected-list li::before {
+    content: "•"; color: #333; display: inline-block; width: 1em; margin-left: -1em;
+}
+.affected-list li { padding-left: 10px; }
+
+/* Status Badges */
+.badge {
+    padding: 5px 12px; border-radius: 15px;
+    font-size: 11px; font-weight: 700; color: white;
+    display: inline-block;
+}
+.badge.purple { background-color: #9C27B0; }
+.badge.green { background-color: #4CAF50; }
+.badge.yellow { background-color: #FFC107; }
+
+/* Action Button in Table */
+.status-cell {
+    display: flex; align-items: center; gap: 10px;
+}
+.btn-action {
+    background: white; border: 1px solid #ddd;
+    width: 30px; height: 30px; border-radius: 4px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: #1B4D3E;
+}
+.btn-action:hover { background: #f5f5f5; }
+
+
+/* =========================================
+   4. PAGINATION & RESPONSIVENESS
+   ========================================= */
+.pagination {
+    display: flex; justify-content: flex-end; gap: 5px; margin-top: 20px;
+    font-size: 12px; color: #666; align-items: center;
+}
+.page-num {
+    padding: 4px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;
+}
+.page-num.active {
+    background: #f0f0f0; font-weight: bold; border-color: #ccc; color: #000;
+}
+.page-nav { cursor: pointer; padding: 0 5px; }
+
+/* Mobile (Tablet/Phone) */
+@media (max-width: 900px) {
+    .history-layout {
+        grid-template-columns: 1fr; /* Stack vertically */
+    }
+}
