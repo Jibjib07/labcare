@@ -1,5 +1,11 @@
-<?php include "includes/db.php"; ?>
+<?php
+include 'includes/db.php';
+
+// Catch the room from the URL
+$current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
+?>
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -41,13 +47,31 @@
                     </div>
 
                     <div class="section-header-row">
-                        <h3>Room 104 - <strong>Computer Units</strong></h3>
-                        <button class="btn-green-add" onclick="openModal('addComputerModal')"><i class="fas fa-plus-circle"></i> Add</button>
+                        <h3>Room <?php echo $current_room; ?> - <strong>Computer Units</strong></h3>
+
+                        <div class="header-actions">
+                            <button class="btn-transfer">
+                                <i class="fas fa-exchange-alt"></i> Transfer
+                            </button>
+                            <button class="btn-green-add" onclick="openModal('addComputerModal')">
+                                <i class="fas fa-plus-circle"></i> Add
+                            </button>
+                        </div>
                     </div>
 
                     <div class="search-filter-row">
-                        <input type="text" class="search-input" placeholder="Type a number of unit or search...">
-                        <button class="filter-btn">Filter <i class="fas fa-filter"></i></button>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Type a number of unit or search..." onkeyup="searchAssets()">
+
+                        <div class="filter-dropdown-container">
+                            <button class="filter-btn" onclick="toggleFilterMenu()">Filter <i class="fas fa-filter"></i></button>
+                            <ul class="filter-menu" id="filterMenu">
+                                <li onclick="filterAssets('All')">All</li>
+                                <li onclick="filterAssets('Working')">Working</li>
+                                <li onclick="filterAssets('For Repair')">For Repair</li>
+                                <li onclick="filterAssets('For Condemn')">For Condemn</li>
+                                <li onclick="filterAssets('No Property ID')">No Property ID</li>
+                            </ul>
+                        </div>
                     </div>
 
                     <div class="asset-list">
@@ -57,7 +81,7 @@
                         </div>
                         <div class="asset-item">
                             <span class="item-name">PC-02</span>
-                            <span class="badge orange">For Repair</span>
+                            <span class="badge red">For Condemn</span>
                         </div>
                         <div class="asset-item">
                             <span class="item-name">PC-03</span>
@@ -73,15 +97,23 @@
                         </div>
                         <div class="asset-item">
                             <span class="item-name">PC-06</span>
-                            <span class="badge orange">For Repair</span>
+                            <span class="badge yellow">For Repair</span>
                         </div>
                         <div class="asset-item">
+                            <span class="item-name">PC-07</span>
+                            <span class="badge yellow">For Repair</span>
+                        </div>
+                        <div class="asset-item">
+                            <span class="item-name">PC-08</span>
+                            <span class="badge yellow">For Repair</span>
+                        </div>
+                        <div class="asset-item gray-row">
                             <span class="item-name">PC-09</span>
-                            <span class="badge purple">Pending</span>
+                            <span class="badge purple">No Property ID</span>
                         </div>
-                        <div class="asset-item">
+                        <div class="asset-item gray-row">
                             <span class="item-name">PC-10</span>
-                            <span class="badge purple">Pending</span>
+                            <span class="badge purple">No Property ID</span>
                         </div>
                     </div>
 
@@ -100,6 +132,7 @@
                         <h3>PC-01 Details</h3>
                         <div class="action-buttons">
                             <button class="btn-edit"><i class="fas fa-pen"></i> Edit</button>
+                            <button class="btn-resolve"><i class="fas fa-history"></i> Resolve</button>
                             <button class="btn-condemn"><i class="fas fa-trash-alt"></i> Condemn</button>
                         </div>
                     </div>
@@ -147,7 +180,7 @@
                                 </div>
                             </div>
                             <div class="detail-grid-row">
-                                <div class="detail-group"><label>Unit Number</label>
+                                <div class="detail-group"><label>Set Tag</label>
                                     <div class="detail-box">01</div>
                                 </div>
                                 <div class="detail-group"><label>Storage Type</label>
