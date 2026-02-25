@@ -134,3 +134,111 @@ window.onclick = function(event) {
         modal.style.display = 'none';
     }
 }
+
+/**
+ * ------------------------------------------------------------------
+ * 4. FILTER MENU LOGIC
+ * ------------------------------------------------------------------
+ */
+
+// Toggle the visibility of the dropdown
+function toggleFilterMenu() {
+    document.getElementById("filterMenu").classList.toggle("show");
+}
+
+// Filter the asset list items based on the badge text
+function filterAssets(status) {
+    const items = document.querySelectorAll('.asset-item');
+    
+    items.forEach(item => {
+        const badge = item.querySelector('.badge');
+        if (!badge) return;
+        
+        const badgeText = badge.textContent.trim();
+        
+        // Show if "All" is selected or if the badge text matches exactly
+        if (status === 'All' || badgeText === status) {
+            item.style.display = 'flex'; // Use flex to retain your original styling
+        } else {
+            item.style.display = 'none'; // Hide non-matching items
+        }
+    });
+
+    // Close the dropdown menu after selecting an option
+    document.getElementById("filterMenu").classList.remove("show");
+}
+
+// Global Window Click: Close modals and dropdowns if clicking outside
+window.onclick = function(event) {
+    // 1. Close Modal Logic (Handles BOTH modals now)
+    const addModal = document.getElementById('addComputerModal');
+    const condemnModal = document.getElementById('condemnModal');
+    
+    if (event.target === addModal) {
+        addModal.style.display = 'none';
+    }
+    if (event.target === condemnModal) {
+        condemnModal.style.display = 'none';
+    }
+
+    // 2. Close Filter Dropdown Logic
+    if (!event.target.matches('.filter-btn') && !event.target.closest('.filter-btn')) {
+        const filterMenu = document.getElementById("filterMenu");
+        if (filterMenu && filterMenu.classList.contains('show')) {
+            filterMenu.classList.remove('show');
+        }
+    }
+}
+
+/**
+ * ------------------------------------------------------------------
+ * 5. SEARCH LOGIC
+ * Filters the asset list based purely on the unit name (e.g., PC-01)
+ * ------------------------------------------------------------------
+ */
+function searchAssets() {
+    // 1. Get the search query and make it lowercase for case-insensitive matching
+    const input = document.getElementById("searchInput");
+    const filter = input.value.toLowerCase();
+    
+    // 2. Grab all the asset items in the list
+    const items = document.querySelectorAll('.asset-list .asset-item');
+    
+    // 3. Loop through each item to check its name
+    items.forEach(item => {
+        const itemNameElement = item.querySelector('.item-name');
+        
+        if (itemNameElement) {
+            const textValue = itemNameElement.textContent || itemNameElement.innerText;
+            
+            // 4. If the name includes the search text, show it. Otherwise, hide it.
+            if (textValue.toLowerCase().includes(filter)) {
+                item.style.display = 'flex'; // Keep your flex styling intact
+            } else {
+                item.style.display = 'none';
+            }
+        }
+    });
+}
+
+// Global Window Click: Close modals and dropdowns if clicking outside
+window.onclick = function(event) {
+    // Array of all modal IDs
+    const modals = ['addComputerModal', 'condemnModal', 'transferModal'];
+    
+    // Close Modals
+    modals.forEach(id => {
+        const modal = document.getElementById(id);
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Close Filter Dropdown Logic
+    if (!event.target.matches('.filter-btn') && !event.target.closest('.filter-btn')) {
+        const filterMenu = document.getElementById("filterMenu");
+        if (filterMenu && filterMenu.classList.contains('show')) {
+            filterMenu.classList.remove('show');
+        }
+    }
+}

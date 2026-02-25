@@ -1,5 +1,11 @@
-<?php include "includes/db.php"; ?>
+<?php
+include 'includes/db.php';
+
+// Catch the room from the URL
+$current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
+?>
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -41,13 +47,31 @@
                     </div>
 
                     <div class="section-header-row">
-                        <h3>Room 104 - <strong>Computer Units</strong></h3>
-                        <button class="btn-green-add" onclick="openModal('addComputerModal')"><i class="fas fa-plus-circle"></i> Add</button>
+                        <h3>Room <?php echo $current_room; ?> - <strong>Computer Units</strong></h3>
+
+                        <div class="header-actions">
+                            <button class="btn-transfer" onclick="openModal('transferModal')">
+                                <i class="fas fa-exchange-alt"></i> Transfer
+                            </button>
+                            <button class="btn-green-add" onclick="openModal('addComputerModal')">
+                                <i class="fas fa-plus-circle"></i> Add
+                            </button>
+                        </div>
                     </div>
 
                     <div class="search-filter-row">
-                        <input type="text" class="search-input" placeholder="Type a number of unit or search...">
-                        <button class="filter-btn">Filter <i class="fas fa-filter"></i></button>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Type a number of unit or search..." onkeyup="searchAssets()">
+
+                        <div class="filter-dropdown-container">
+                            <button class="filter-btn" onclick="toggleFilterMenu()">Filter <i class="fas fa-filter"></i></button>
+                            <ul class="filter-menu" id="filterMenu">
+                                <li onclick="filterAssets('All')">All</li>
+                                <li onclick="filterAssets('Working')">Working</li>
+                                <li onclick="filterAssets('For Repair')">For Repair</li>
+                                <li onclick="filterAssets('For Condemn')">For Condemn</li>
+                                <li onclick="filterAssets('No Property ID')">No Property ID</li>
+                            </ul>
+                        </div>
                     </div>
 
                     <div class="asset-list">
@@ -57,7 +81,7 @@
                         </div>
                         <div class="asset-item">
                             <span class="item-name">PC-02</span>
-                            <span class="badge orange">For Repair</span>
+                            <span class="badge red">For Condemn</span>
                         </div>
                         <div class="asset-item">
                             <span class="item-name">PC-03</span>
@@ -73,15 +97,23 @@
                         </div>
                         <div class="asset-item">
                             <span class="item-name">PC-06</span>
-                            <span class="badge orange">For Repair</span>
+                            <span class="badge yellow">For Repair</span>
                         </div>
                         <div class="asset-item">
+                            <span class="item-name">PC-07</span>
+                            <span class="badge yellow">For Repair</span>
+                        </div>
+                        <div class="asset-item">
+                            <span class="item-name">PC-08</span>
+                            <span class="badge yellow">For Repair</span>
+                        </div>
+                        <div class="asset-item gray-row">
                             <span class="item-name">PC-09</span>
-                            <span class="badge purple">Pending</span>
+                            <span class="badge purple">No Property ID</span>
                         </div>
-                        <div class="asset-item">
+                        <div class="asset-item gray-row">
                             <span class="item-name">PC-10</span>
-                            <span class="badge purple">Pending</span>
+                            <span class="badge purple">No Property ID</span>
                         </div>
                     </div>
 
@@ -100,7 +132,9 @@
                         <h3>PC-01 Details</h3>
                         <div class="action-buttons">
                             <button class="btn-edit"><i class="fas fa-pen"></i> Edit</button>
-                            <button class="btn-condemn"><i class="fas fa-trash-alt"></i> Condemn</button>
+                            <button class="btn-resolve"><i class="fas fa-history"></i> Resolve</button>
+                            <button class="btn-condemn" onclick="openModal('condemnModal')">
+                                <i class="fas fa-trash-alt"></i> Condemn</button>
                         </div>
                     </div>
 
@@ -147,7 +181,7 @@
                                 </div>
                             </div>
                             <div class="detail-grid-row">
-                                <div class="detail-group"><label>Unit Number</label>
+                                <div class="detail-group"><label>Set Tag</label>
                                     <div class="detail-box">01</div>
                                 </div>
                                 <div class="detail-group"><label>Storage Type</label>
@@ -621,6 +655,205 @@
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeModal('addComputerModal')">Cancel</button>
                 <button class="btn-create"><i class="fas fa-plus-circle"></i> Create</button>
+            </div>
+        </div>
+    </div>
+    <div id="condemnModal" class="modal-overlay">
+        <div class="modal-container condemn-modal">
+            <div class="modal-header">
+                <h3>Condemned this Unit?</h3>
+            </div>
+
+            <div class="modal-body">
+                <p class="condemn-warning">
+                    Are you sure you want to condemn <strong>[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
+                </p>
+
+                <div class="condemn-grid">
+                    <div class="condemn-info">
+                        <div class="form-group">
+                            <label>Set Tag:</label>
+                            <input type="text" class="modal-input readonly-input" value="PC-01" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Set ID:</label>
+                            <input type="text" class="modal-input readonly-input" value="1025478521" readonly>
+                        </div>
+                    </div>
+
+                    <div class="condemn-action">
+                        <div class="form-group">
+                            <label>Action Taken:</label>
+                            <div class="checkbox-grid">
+                                <label class="check-container"><input type="checkbox"> <span>Hardware Failure (Non-repairable)</span></label>
+                                <label class="check-container"><input type="checkbox"> <span>Significant Physical Damage</span></label>
+                                <label class="check-container"><input type="checkbox"> <span>System Obsolescence (End of Life)</span></label>
+                                <label class="check-container"><input type="checkbox"> <span>Other (Please specify...)</span></label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Remarks:</label>
+                            <textarea class="modal-textarea" placeholder="Provide specific details for the audit log..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('condemnModal')">Cancel</button>
+                <button class="btn-confirm-condemn"><i class="fas fa-trash-alt"></i> Condemn</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="transferModal" class="modal-overlay">
+        <div class="modal-container transfer-modal">
+            <div class="modal-header">
+                <h3>Transfer Asset to Active Labs</h3>
+            </div>
+
+            <div class="modal-body">
+                <div class="transfer-grid">
+
+                    <div class="transfer-list-card">
+                        <h4>Computer Unit List</h4>
+                        <input type="text" class="modal-input search-sm" placeholder="search mo nalang....">
+                        <div class="select-all-row">
+                            <label class="check-container select-all-text"><input type="checkbox"> <span>Select All</span></label>
+                        </div>
+                        <div class="transfer-table-container">
+                            <table class="transfer-table">
+                                <thead>
+                                    <tr>
+                                        <th>Set Tag</th>
+                                        <th>Set ID</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>PC-01</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>PC-02</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>PC-03</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>PC-04</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>PC-05</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>PC-06</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="transfer-list-card">
+                        <h4>Facility Asset List</h4>
+                        <input type="text" class="modal-input search-sm" placeholder="search mo nalang....">
+                        <div class="select-all-row">
+                            <label class="check-container select-all-text"><input type="checkbox"> <span>Select All</span></label>
+                        </div>
+                        <div class="transfer-table-container">
+                            <table class="transfer-table">
+                                <thead>
+                                    <tr>
+                                        <th>Set Tag</th>
+                                        <th>Property ID</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>FA-01</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>FA-02</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>FA-03</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>FA-04</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>FA-05</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label class="check-container"><input type="checkbox"> <span>FA-06</span></label></td>
+                                        <td>12548298</td>
+                                        <td><span class="badge green">Working</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="transfer-form-col">
+                        <div class="form-group">
+                            <label>Source Room:</label>
+                            <input type="text" class="modal-input readonly-input" value="Room 104" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Target Lab:</label>
+                            <div class="select-wrapper">
+                                <select class="modal-input custom-select">
+                                    <option>Lab Room</option>
+                                    <option>Room 105</option>
+                                    <option>Room 106</option>
+                                </select>
+                                <i class="fas fa-filter select-icon"></i>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Action Taken:</label>
+                            <div class="checkbox-grid">
+                                <label class="check-container"><input type="checkbox"> <span>Replacement for Broken Unit</span></label>
+                                <label class="check-container"><input type="checkbox"> <span>Hardware Upgrade / Swap</span></label>
+                                <label class="check-container"><input type="checkbox"> <span>Lab Capacity Expansion</span></label>
+                                <label class="check-container"><input type="checkbox"> <span>Other (Please specify...)</span></label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Remarks:</label>
+                            <textarea class="modal-textarea" placeholder="Provide specific details for this status update..."></textarea>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('transferModal')">Cancel</button>
+                <button class="btn-confirm-transfer"><i class="fas fa-check-circle"></i> Confirm</button>
             </div>
         </div>
     </div>
