@@ -168,19 +168,20 @@ function filterAssets(status) {
     document.getElementById("filterMenu").classList.remove("show");
 }
 
-/**
- * GLOBAL WINDOW CLICK (UPDATED)
- * Closes modal OR filter menu if user clicks outside of them
- */
+// Global Window Click: Close modals and dropdowns if clicking outside
 window.onclick = function(event) {
-    // 1. Close Modal Logic
-    const modal = document.getElementById('addComputerModal');
-    if (event.target === modal) {
-        modal.style.display = 'none';
+    // 1. Close Modal Logic (Handles BOTH modals now)
+    const addModal = document.getElementById('addComputerModal');
+    const condemnModal = document.getElementById('condemnModal');
+    
+    if (event.target === addModal) {
+        addModal.style.display = 'none';
+    }
+    if (event.target === condemnModal) {
+        condemnModal.style.display = 'none';
     }
 
     // 2. Close Filter Dropdown Logic
-    // If the click is NOT on the filter button or inside it
     if (!event.target.matches('.filter-btn') && !event.target.closest('.filter-btn')) {
         const filterMenu = document.getElementById("filterMenu");
         if (filterMenu && filterMenu.classList.contains('show')) {
@@ -218,4 +219,26 @@ function searchAssets() {
             }
         }
     });
+}
+
+// Global Window Click: Close modals and dropdowns if clicking outside
+window.onclick = function(event) {
+    // Array of all modal IDs
+    const modals = ['addComputerModal', 'condemnModal', 'transferModal'];
+    
+    // Close Modals
+    modals.forEach(id => {
+        const modal = document.getElementById(id);
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Close Filter Dropdown Logic
+    if (!event.target.matches('.filter-btn') && !event.target.closest('.filter-btn')) {
+        const filterMenu = document.getElementById("filterMenu");
+        if (filterMenu && filterMenu.classList.contains('show')) {
+            filterMenu.classList.remove('show');
+        }
+    }
 }
