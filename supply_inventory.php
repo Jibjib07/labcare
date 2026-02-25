@@ -148,7 +148,7 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Activity</th>
-                                    <th>Admin/Staff</th>
+                                    <th>User</th>
                                     <th>Remarks</th>
                                 </tr>
                             </thead>
