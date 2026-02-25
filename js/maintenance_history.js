@@ -3,19 +3,20 @@
  * Handles the pill-shaped buttons: Maintenance Logs | System Archives | Asset Retirement
  */
 function switchHistoryTab(tabName, btnElement) {
-    // 1. Get all toggle buttons in the left panel
-    const buttons = document.querySelectorAll('.toggle-container .toggle-link');
-    
-    // 2. Remove 'active' class from all
-    buttons.forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // 3. Add 'active' class to clicked button
-    if (btnElement) {
-        btnElement.classList.add('active');
-    }
+  // 1. Visual Toggle (Matches your current CSS classes)
+  const buttons = document.querySelectorAll(".toggle-link");
+  buttons.forEach((btn) => btn.classList.remove("active"));
+  btnElement.classList.add("active");
 
-    // 4. Console log for data fetching hook
-    console.log("Switched to tab: " + tabName);
+  // 2. Content Toggle (The new logic)
+  // Hide all sections
+  document.querySelectorAll(".tab-content").forEach((tab) => {
+    tab.style.display = "none";
+  });
+
+  // Show the one you clicked
+  const target = document.getElementById(tabName + "-tab");
+  if (target) {
+    target.style.display = "block";
+  }
 }
