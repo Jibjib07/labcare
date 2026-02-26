@@ -275,16 +275,6 @@ body {
   color: #888;
 }
 
-.pagination-row {
-  display: flex;
-  justify-content: flex-end;
-  gap: 5px;
-  margin-top: 15px;
-  font-size: 12px;
-  color: #555;
-  align-items: center;
-}
-
 .page-num {
   padding: 4px 10px;
   border: 1px solid #ddd;
@@ -435,6 +425,7 @@ body {
   margin-top: 5px;
   font-size: 13px;
   color: #333;
+  height: 32px;
 }
 
 .status-pill {
@@ -447,6 +438,11 @@ body {
 .status-pill.green {
   background: #dffbe2;
   color: #2e7d32;
+}
+
+.status-pill.orange {
+  background: #fff4e5;
+  color: #e65100;
 }
 
 .sub-detail-row {
@@ -593,23 +589,6 @@ body {
   display: flex;
   gap: 10px;
   margin-top: 5px;
-}
-.status-btn {
-  padding: 6px 15px;
-  border: 1px solid #ddd;
-  background: #f9f9f9;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  color: #555;
-  flex: 1; /* Equal width */
-  max-width: 100px;
-}
-.status-btn.active {
-  background: #4caf50;
-  color: white;
-  border-color: #4caf50;
 }
 
 /* Sub-input Row (e.g. "Available Ports: [ 8 ]") */
@@ -768,7 +747,7 @@ body {
 }
 
 .status-btn {
-  padding: 6px 15px;
+  padding: 5px 15px;
   border: 1px solid #ddd;
   background: #f9f9f9;
   border-radius: 4px;
@@ -776,9 +755,9 @@ body {
   font-weight: 600;
   cursor: pointer;
   color: #555;
-  flex: 1; /* Makes buttons equal width */
-  max-width: 100px;
+  flex: 1;
   transition: all 0.2s;
+  min-width: 90px;
 }
 
 .status-btn:hover {
@@ -1089,4 +1068,77 @@ body {
 /* Checkbox accent defaults (excluding the red condemn ones) */
 .transfer-form-col .check-container input[type="checkbox"] {
   accent-color: #4caf50;
+}
+
+/* =========================================
+   EDIT MODE STYLES
+   ========================================= */
+
+/* Hide edit inputs by default */
+.edit-mode {
+  display: none;
+}
+
+/* Style for the text inputs when editing */
+.edit-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #4caf50; /* Green border to indicate it's editable */
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  background-color: #fff;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: box-shadow 0.2s;
+}
+
+.edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+/* Style for fields that cannot be edited (Room Number, Set Tag) */
+.readonly-field {
+  background-color: #f5f5f5;
+  color: #888;
+  border: 1px solid #e0e0e0;
+  cursor: not-allowed;
+}
+
+/* Specific style for the Save button state */
+.btn-save-active {
+  background-color: #4caf50 !important; /* Keep it green as per your design */
+  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+}
+
+.edit-mode.status-toggle-group {
+  display: none; /* Controlled by JS */
+  margin-top: 0; /* Aligns nicely with the 'Status:' text */
+}
+
+.small-edit-box {
+  width: 60px !important;
+  text-align: center;
+  padding: 6px !important;
+}
+
+/* --- CANCEL BUTTON FOR EDIT MODE --- */
+.btn-cancel-edit {
+  background: white;
+  border: 1px solid #ddd;
+  color: #333;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.btn-cancel-edit:hover {
+  background: #f5f5f5;
 }

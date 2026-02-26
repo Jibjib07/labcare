@@ -242,3 +242,125 @@ window.onclick = function(event) {
         }
     }
 }
+
+/**
+ * ------------------------------------------------------------------
+ * 7. UNIVERSAL EDIT MODE TOGGLE 
+ * ------------------------------------------------------------------
+ */
+let isEditMode = false;
+
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    
+    const btn = document.getElementById('editToggleButton');
+    const btnResolve = document.getElementById('btnResolve');
+    const btnCondemn = document.getElementById('btnCondemn');
+    const btnCancel = document.getElementById('btnCancelEdit');
+
+    const viewModes = document.querySelectorAll('.specs-content-box .view-mode');
+    const editModes = document.querySelectorAll('.specs-content-box .edit-mode');
+
+    if (isEditMode) {
+        // --- SWITCH TO EDIT MODE ---
+        btn.innerHTML = '<i class="fas fa-save"></i> <span id="editText">Save</span>';
+        btn.classList.add('btn-save-active');
+        
+        // Hide Resolve/Condemn, Show Cancel
+        if (btnResolve) btnResolve.style.display = 'none';
+        if (btnCondemn) btnCondemn.style.display = 'none';
+        if (btnCancel) btnCancel.style.display = 'flex';
+        
+        viewModes.forEach(el => el.style.display = 'none');
+        editModes.forEach(el => {
+            el.style.display = el.classList.contains('status-toggle-group') ? 'flex' : 'block';
+        });
+        
+    } else {
+        // --- SAVE AND SWITCH TO VIEW MODE ---
+        btn.innerHTML = '<i class="fas fa-pen"></i> <span id="editText">Edit</span>';
+        btn.classList.remove('btn-save-active');
+        
+        // Show Resolve/Condemn, Hide Cancel
+        if (btnResolve) btnResolve.style.display = 'flex';
+        if (btnCondemn) btnCondemn.style.display = 'flex';
+        if (btnCancel) btnCancel.style.display = 'none';
+        
+        // Save Data Sync
+        document.querySelectorAll('.detail-group').forEach(group => {
+            // 1. Status Toggles
+            const toggleGroup = group.querySelector('.status-toggle-group.edit-mode');
+            const viewPill = group.querySelector('.status-pill.view-mode');
+            if (toggleGroup && viewPill) {
+                const activeBtn = toggleGroup.querySelector('.status-btn.active');
+                if (activeBtn) {
+                    const statusText = activeBtn.innerText;
+                    viewPill.innerText = statusText;
+                    viewPill.className = 'status-pill view-mode'; 
+                    if (statusText === 'Working') viewPill.classList.add('green');
+                    else if (statusText === 'For Repair') viewPill.classList.add('orange');
+                    else viewPill.classList.add('red');
+                }
+            }
+
+            // 2. Text Inputs
+            const inputField = group.querySelector('.edit-input.edit-mode');
+            const viewBox = group.querySelector('.detail-box.view-mode');
+            if (inputField && viewBox) {
+                if (inputField.parentElement.innerText.includes("Years")) {
+                    viewBox.innerText = inputField.value + " Years";
+                } else {
+                    viewBox.innerText = inputField.value;
+                }
+            }
+        });
+
+        viewModes.forEach(el => el.style.display = 'block');
+        editModes.forEach(el => el.style.display = 'none');
+    }
+}
+
+// Cancels the edit without saving changes
+function cancelEditMode() {
+    isEditMode = false;
+    
+    const btn = document.getElementById('editToggleButton');
+    const btnResolve = document.getElementById('btnResolve');
+    const btnCondemn = document.getElementById('btnCondemn');
+    const btnCancel = document.getElementById('btnCancelEdit');
+
+    const viewModes = document.querySelectorAll('.specs-content-box .view-mode');
+    const editModes = document.querySelectorAll('.specs-content-box .edit-mode');
+
+    // Revert Buttons
+    btn.innerHTML = '<i class="fas fa-pen"></i> <span id="editText">Edit</span>';
+    btn.classList.remove('btn-save-active');
+    if (btnResolve) btnResolve.style.display = 'flex';
+    if (btnCondemn) btnCondemn.style.display = 'flex';
+    if (btnCancel) btnCancel.style.display = 'none';
+
+    // Discard input changes by resetting inputs to the original view text
+    document.querySelectorAll('.detail-group').forEach(group => {
+        const inputField = group.querySelector('.edit-input.edit-mode');
+        const viewBox = group.querySelector('.detail-box.view-mode');
+        
+        if (inputField && viewBox) {
+            let originalText = viewBox.innerText.replace(' Years', '').trim();
+            inputField.value = originalText;
+        }
+
+        const toggleGroup = group.querySelector('.status-toggle-group.edit-mode');
+        const viewPill = group.querySelector('.status-pill.view-mode');
+        
+        if (toggleGroup && viewPill) {
+            const btns = toggleGroup.querySelectorAll('.status-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            const originalBtn = Array.from(btns).find(b => b.innerText === viewPill.innerText);
+            if (originalBtn) originalBtn.classList.add('active');
+        }
+    });
+
+    // Hide inputs, show text
+    viewModes.forEach(el => el.style.display = 'block');
+    editModes.forEach(el => el.style.display = 'none');
+}
