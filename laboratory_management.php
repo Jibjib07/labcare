@@ -175,14 +175,6 @@ $labs = [
                             </div>
                         <?php endforeach; ?>
                     </div>
-                    <div class="pagination">
-                        <span class="page-nav">
-                            < Previous</span>
-                                <span class="page-num active">1</span>
-                                <span class="page-num">2</span>
-                                <span class="page-num">3</span>
-                                <span class="page-nav">Next ></span>
-                    </div>
                 </div>
 
                 <div class="right-column">

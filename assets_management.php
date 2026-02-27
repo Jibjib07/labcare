@@ -116,25 +116,22 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
                             <span class="badge purple">No Property ID</span>
                         </div>
                     </div>
-
-                    <div class="pagination-row">
-                        <span class="page-nav">
-                            < Previous</span>
-                                <span class="page-num active">1</span>
-                                <span class="page-num">2</span>
-                                <span class="page-num">3</span>
-                                <span class="page-nav">Next ></span>
-                    </div>
                 </div>
 
                 <div class="panel white-panel right-panel">
                     <div class="section-header-row">
                         <h3>PC-01 Details</h3>
                         <div class="action-buttons">
-                            <button class="btn-edit"><i class="fas fa-pen"></i> Edit</button>
-                            <button class="btn-resolve"><i class="fas fa-history"></i> Resolve</button>
-                            <button class="btn-condemn" onclick="openModal('condemnModal')">
-                                <i class="fas fa-trash-alt"></i> Condemn</button>
+                            <button class="btn-edit" id="editToggleButton" onclick="toggleEditMode()">
+                                <i class="fas fa-pen"></i> <span id="editText">Edit</span>
+                            </button>
+
+                            <button class="btn-resolve" id="btnResolve"><i class="fas fa-history"></i> Resolve</button>
+                            <button class="btn-condemn" id="btnCondemn" onclick="openModal('condemnModal')">
+                                <i class="fas fa-trash-alt"></i> Condemn
+                            </button>
+
+                            <button class="btn-cancel-edit" id="btnCancelEdit" onclick="cancelEditMode()" style="display: none;">Cancel</button>
                         </div>
                     </div>
 
@@ -149,49 +146,74 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
 
                         <div id="tab-identity" class="tab-content">
                             <div class="detail-grid-row">
-                                <div class="detail-group"><label>Property ID</label>
-                                    <div class="detail-box">1025478521</div>
+                                <div class="detail-group">
+                                    <label>Property ID</label>
+                                    <div class="detail-box view-mode">1025478521</div>
+                                    <input type="text" class="edit-mode edit-input" value="1025478521">
                                 </div>
-                                <div class="detail-group"><label>Processor (CPU)</label>
-                                    <div class="detail-box">Intel Core i5-12400</div>
+                                <div class="detail-group">
+                                    <label>Processor (CPU)</label>
+                                    <div class="detail-box view-mode">Intel Core i5-12400</div>
+                                    <input type="text" class="edit-mode edit-input" value="Intel Core i5-12400">
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
-                                <div class="detail-group"><label>Brand</label>
-                                    <div class="detail-box">Asus</div>
+                                <div class="detail-group">
+                                    <label>Brand</label>
+                                    <div class="detail-box view-mode">Asus</div>
+                                    <input type="text" class="edit-mode edit-input" value="Asus">
                                 </div>
-                                <div class="detail-group"><label>Operating System</label>
-                                    <div class="detail-box">Windows 11 Pro</div>
+                                <div class="detail-group">
+                                    <label>Operating System</label>
+                                    <div class="detail-box view-mode">Windows 11 Pro</div>
+                                    <input type="text" class="edit-mode edit-input" value="Windows 11 Pro">
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
-                                <div class="detail-group"><label>Purchase Date</label>
-                                    <div class="detail-box">11/20/2025</div>
+                                <div class="detail-group">
+                                    <label>Purchase Date</label>
+                                    <div class="detail-box view-mode">11/20/2025</div>
+                                    <input type="date" class="edit-mode edit-input" value="2025-11-20">
                                 </div>
-                                <div class="detail-group"><label>Graphics Card (GPU)</label>
-                                    <div class="detail-box">Integrated Intel UHD Graphics 730</div>
+                                <div class="detail-group">
+                                    <label>Graphics Card (GPU)</label>
+                                    <div class="detail-box view-mode">Integrated Intel UHD Graphics 730</div>
+                                    <input type="text" class="edit-mode edit-input" value="Integrated Intel UHD Graphics 730">
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
-                                <div class="detail-group"><label>Room Number</label>
-                                    <div class="detail-box">104</div>
+                                <div class="detail-group">
+                                    <label>Room Number</label>
+                                    <div class="detail-box readonly-field">104</div>
                                 </div>
-                                <div class="detail-group"><label>RAM (Installed Memory)</label>
-                                    <div class="detail-box">16 GB</div>
+                                <div class="detail-group">
+                                    <label>RAM (Installed Memory)</label>
+                                    <div class="detail-box view-mode">16 GB</div>
+                                    <input type="text" class="edit-mode edit-input" value="16 GB">
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
-                                <div class="detail-group"><label>Set Tag</label>
-                                    <div class="detail-box">01</div>
+                                <div class="detail-group">
+                                    <label>Set Tag</label>
+                                    <div class="detail-box readonly-field">01</div>
                                 </div>
-                                <div class="detail-group"><label>Storage Type</label>
-                                    <div class="detail-box">SSD (M.2 NVMe)</div>
+                                <div class="detail-group">
+                                    <label>Storage Type</label>
+                                    <div class="detail-box view-mode">SSD (M.2 NVMe)</div>
+                                    <input type="text" class="edit-mode edit-input" value="SSD (M.2 NVMe)">
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
                                 <div class="detail-group"></div>
-                                <div class="detail-group"><label>Storage Capacity</label>
-                                    <div class="detail-box">512 GB</div>
+                                <div class="detail-group">
+                                    <label>Storage Capacity</label>
+                                    <div class="detail-box view-mode">512 GB</div>
+                                    <input type="text" class="edit-mode edit-input" value="512 GB">
                                 </div>
                             </div>
                         </div>
@@ -200,59 +222,104 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>USB Ports</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
-                                    <div class="sub-detail-row"><span>Available Ports:</span>
-                                        <div class="detail-box small-box">8</div>
+                                    <div class="sub-detail-row">
+                                        <span>Available Ports:</span>
+                                        <div class="detail-box small-box view-mode">8</div>
+                                        <input type="number" class="edit-mode edit-input small-edit-box" value="8" min="0" max="20">
                                     </div>
                                 </div>
                                 <div class="detail-group">
                                     <label>Wi-Fi Card</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>Microphone Jack</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="detail-group">
                                     <label>HDMI Port</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>Headphone Jack</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="detail-group">
                                     <label>Display Port</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>In-line Jack</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="detail-group">
                                     <label>Ethernet Port</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -262,32 +329,51 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>Computer Age</label>
-                                    <div class="sub-detail-row"><span>Total:</span>
-                                        <div class="detail-box small-box">7 Years</div>
+                                    <div class="sub-detail-row">
+                                        <span>Total:</span>
+                                        <div class="detail-box small-box view-mode">7 Years</div>
+                                        <div class="edit-mode" style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="number" class="edit-input small-edit-box" value="7">
+                                            <span style="font-size: 12px; color: #666;">Years</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="detail-group">
                                     <label>Disk Health (SMART Status)</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>Number of Repairs</label>
-                                    <div class="sub-detail-row"><span>Total:</span>
-                                        <div class="detail-box small-box">8</div>
+                                    <div class="sub-detail-row">
+                                        <span>Total:</span>
+                                        <div class="detail-box small-box view-mode">8</div>
+                                        <input type="number" class="edit-input small-edit-box edit-mode" value="8">
                                     </div>
                                 </div>
                                 <div class="detail-group">
                                     <label>Power Supply Health</label>
-                                    <div class="status-row"><span>Status:</span>
-                                        <div class="status-pill green">Working</div>
+                                    <div class="status-row">
+                                        <span>Status:</span>
+                                        <div class="status-pill green view-mode">Working</div>
+                                        <div class="status-toggle-group edit-mode">
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="activity-section">
+
+                            <div class="activity-section view-mode">
                                 <div class="activity-header">
                                     <h4>Recent Activity</h4>
                                     <a href="#" class="view-history-link">View Full Maintenance History</a>
@@ -328,49 +414,107 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
                         </div>
 
                         <div id="tab-peripherals" class="tab-content" style="display: none;">
+
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>Monitor</label>
                                     <div class="peripheral-info">
-                                        <div class="p-row"><span>Property ID:</span> 1025482128</div>
-                                        <div class="p-row"><span>Brand:</span> Acer</div>
-                                        <div class="status-row"><span>Status:</span>
-                                            <div class="status-pill green">Working</div>
+                                        <div class="p-row">
+                                            <span>Property ID:</span>
+                                            <span class="view-mode">1025482128</span>
+                                            <input type="text" class="edit-mode edit-input" value="1025482128">
+                                        </div>
+                                        <div class="p-row">
+                                            <span>Brand:</span>
+                                            <span class="view-mode">Acer</span>
+                                            <input type="text" class="edit-mode edit-input" value="Acer">
+                                        </div>
+                                        <div class="status-row">
+                                            <span>Status:</span>
+                                            <div class="status-pill green view-mode">Working</div>
+                                            <div class="status-toggle-group edit-mode">
+                                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
                                 <div class="detail-group">
                                     <label>Mouse</label>
                                     <div class="peripheral-info">
-                                        <div class="p-row"><span>Brand:</span> Acer</div>
-                                        <div class="status-row"><span>Status:</span>
-                                            <div class="status-pill green">Working</div>
+                                        <div class="p-row">
+                                            <span>Property ID:</span>
+                                            <span class="view-mode">1025482129</span>
+                                            <input type="text" class="edit-mode edit-input" value="1025482129">
+                                        </div>
+                                        <div class="p-row">
+                                            <span>Brand:</span>
+                                            <span class="view-mode">Acer</span>
+                                            <input type="text" class="edit-mode edit-input" value="Acer">
+                                        </div>
+                                        <div class="status-row">
+                                            <span>Status:</span>
+                                            <div class="status-pill green view-mode">Working</div>
+                                            <div class="status-toggle-group edit-mode">
+                                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>Keyboard</label>
                                     <div class="peripheral-info">
-                                        <div class="p-row"><span>Brand:</span> Acer</div>
-                                        <div class="status-row"><span>Status:</span>
-                                            <div class="status-pill green">Working</div>
+                                        <div class="p-row">
+                                            <span>Property ID:</span>
+                                            <span class="view-mode">1025482130</span>
+                                            <input type="text" class="edit-mode edit-input" value="1025482130">
+                                        </div>
+                                        <div class="p-row">
+                                            <span>Brand:</span>
+                                            <span class="view-mode">Acer</span>
+                                            <input type="text" class="edit-mode edit-input" value="Acer">
+                                        </div>
+                                        <div class="status-row">
+                                            <span>Status:</span>
+                                            <div class="status-pill green view-mode">Working</div>
+                                            <div class="status-toggle-group edit-mode">
+                                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
                                 <div class="detail-group">
                                     <label>AVR (Automatic Voltage Regulator)</label>
                                     <div class="peripheral-info">
-                                        <div class="p-row"><span>Brand:</span> Acer</div>
-                                        <div class="status-row"><span>Status:</span>
-                                            <div class="status-pill green">Working</div>
+                                        <div class="p-row">
+                                            <span>Property ID:</span>
+                                            <span class="view-mode">1025482131</span>
+                                            <input type="text" class="edit-mode edit-input" value="1025482131">
+                                        </div>
+                                        <div class="p-row">
+                                            <span>Brand:</span>
+                                            <span class="view-mode">Acer</span>
+                                            <input type="text" class="edit-mode edit-input" value="Acer">
+                                        </div>
+                                        <div class="status-row">
+                                            <span>Status:</span>
+                                            <div class="status-pill green view-mode">Working</div>
+                                            <div class="status-toggle-group edit-mode">
+                                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -717,7 +861,7 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
 
                     <div class="transfer-list-card">
                         <h4>Computer Unit List</h4>
-                        <input type="text" class="modal-input search-sm" placeholder="search mo nalang....">
+                        <input type="text" class="modal-input search-sm" placeholder="Search">
                         <div class="select-all-row">
                             <label class="check-container select-all-text"><input type="checkbox"> <span>Select All</span></label>
                         </div>
@@ -768,7 +912,7 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
 
                     <div class="transfer-list-card">
                         <h4>Facility Asset List</h4>
-                        <input type="text" class="modal-input search-sm" placeholder="search mo nalang....">
+                        <input type="text" class="modal-input search-sm" placeholder="Search">
                         <div class="select-all-row">
                             <label class="check-container select-all-text"><input type="checkbox"> <span>Select All</span></label>
                         </div>
