@@ -9,7 +9,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     </button>
     <div class="logo-container mobile">
         <div class="logo-icon">
-            <img src="assets/logo.png" alt="LabCare Logo">
+            <img src="labcare/assets/logo.png" alt="LabCare Logo">
         </div>
         <h2 class="logo-text">abCare</h2>
     </div>
@@ -18,14 +18,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
 <div class="sidebar" id="sidebar">
-    
+
     <button id="mobile-menu-close" class="mobile-close-btn">
         <i class="fas fa-times"></i>
     </button>
 
     <div class="logo-container desktop">
         <div class="logo-icon">
-            <img src="assets/logo.png" alt="LabCare Logo">
+            <img src="../assets/logo.png" alt="LabCare Logo">
         </div>
         <h2 class="logo-text">abCare</h2>
     </div>
@@ -33,7 +33,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <nav>
         <ul>
             <li>
-                <a href="index.php" class="<?= $current_page == 'index.php' ? 'active' : '' ?>">
+                <a href="dashboard.php" class="<?= $current_page == 'dashboard.php' ? 'active' : '' ?>">
                     <i class="fas fa-th-large"></i> <span>Dashboard</span>
                 </a>
             </li>

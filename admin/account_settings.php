@@ -1,15 +1,17 @@
 <?php include 'includes/db.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Account Settings - LabCare</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
-    
+
     <link rel="stylesheet" href="css/account_settings.css?v=<?php echo time(); ?>">
 </head>
+
 <body>
     <?php include 'includes/sidebar.php'; ?>
 
@@ -20,13 +22,13 @@
         </div>
 
         <div class="account-grid">
-            
+
             <div class="left-stack">
-                
+
                 <div class="panel white-panel">
                     <h3>Profile Details</h3>
                     <div class="divider"></div>
-                    
+
                     <form>
                         <div class="form-group">
                             <label>Full Name</label>
@@ -50,7 +52,7 @@
 
                     <div class="security-content">
                         <p class="security-text">To update your password, we will send a secure reset link to your registered email address.</p>
-                        
+
                         <button class="btn-purple-reset">
                             <i class="fas fa-lock"></i> Send Password Reset Link
                         </button>
@@ -61,7 +63,7 @@
 
             <div class="panel white-panel info-panel">
                 <h3>System Information</h3>
-                
+
                 <div class="info-block">
                     <h4>CVSU Mission</h4>
                     <p>Cavite State University shall provide <strong>excellent, equitable, and relevant educational opportunities</strong> in the arts, sciences, and technology through <strong>quality instruction</strong> and <strong>responsive research</strong> and <strong>development activities</strong>. It shall <strong>produce professional, skilled, and morally upright individuals</strong> for global competitiveness.</p>
@@ -85,4 +87,5 @@
         </div>
     </div>
 </body>
+
 </html>

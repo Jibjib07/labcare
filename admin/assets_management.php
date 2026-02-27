@@ -331,11 +331,11 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
                                     <label>Computer Age</label>
                                     <div class="sub-detail-row">
                                         <span>Total:</span>
-                                        <div class="detail-box small-box view-mode">7 Years</div>
+                                        <div class="detail-box small-box view-mode">7</div>
                                         <div class="edit-mode" style="display: flex; align-items: center; gap: 5px;">
-                                            <input type="number" class="edit-input small-edit-box" value="7">
-                                            <span style="font-size: 12px; color: #666;">Years</span>
+                                            <input type="number" class="edit-input small-edit-box edit-mode" value="7">
                                         </div>
+                                        <span style="font-size: 12px; color: #666;">Year/s</span>
                                     </div>
                                 </div>
                                 <div class="detail-group">
