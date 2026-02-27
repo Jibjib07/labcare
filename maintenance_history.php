@@ -28,7 +28,6 @@
 
                     <div class="section-header-row">
                         <h3>History Lists</h3>
-                        <button class="btn-green-export"><i class="fas fa-file-export"></i> Export Data</button>
                     </div>
 
                     <div class="search-filter-row">
@@ -37,83 +36,219 @@
 
                     <div class="toggle-container">
                         <button class="toggle-link active" onclick="switchHistoryTab('maintenance', this)">Maintenance Logs</button>
-                        <button class="toggle-link" onclick="switchHistoryTab('archives', this)">System Archives</button>
+                        <button class="toggle-link" onclick="switchHistoryTab('archives', this)">Lab Archives</button>
                         <button class="toggle-link" onclick="switchHistoryTab('retirement', this)">Asset Retirement</button>
                     </div>
 
-                    <div class="table-container">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>Property ID</th>
-                                    <th>Latest Maintenance Date</th>
-                                    <th>Room Number</th>
-                                    <th>Device ID</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="active-row">
-                                    <td>1215828</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-01</td>
-                                </tr>
-                                <tr>
-                                    <td>5824785</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>D-01</td>
-                                </tr>
-                                <tr>
-                                    <td>7851286</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-03</td>
-                                </tr>
-                                <tr>
-                                    <td>8547617</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-04</td>
-                                </tr>
-                                <tr>
-                                    <td>8574125</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-05</td>
-                                </tr>
-                                <tr>
-                                    <td>9872456</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-06</td>
-                                </tr>
-                                <tr>
-                                    <td>5782147</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-07</td>
-                                </tr>
-                                <tr>
-                                    <td>8571257</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-08</td>
-                                </tr>
-                                <tr>
-                                    <td>0125785</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-09</td>
-                                </tr>
-                                <tr>
-                                    <td>0025482</td>
-                                    <td>11/20/2025</td>
-                                    <td>104</td>
-                                    <td>PC-010</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="maintenance-tab" class="tab-content">
+                        <div class="table-container">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Property ID</th>
+                                        <th>Latest Maintenance Date</th>
+                                        <th>Room Number</th>
+                                        <th>Device ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="active-row">
+                                        <td>1215828</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-01</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5824785</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>D-01</td>
+                                    </tr>
+                                    <tr>
+                                        <td>7851286</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-03</td>
+                                    </tr>
+                                    <tr>
+                                        <td>8547617</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-04</td>
+                                    </tr>
+                                    <tr>
+                                        <td>8574125</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-05</td>
+                                    </tr>
+                                    <tr>
+                                        <td>9872456</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-06</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5782147</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-07</td>
+                                    </tr>
+                                    <tr>
+                                        <td>8571257</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-08</td>
+                                    </tr>
+                                    <tr>
+                                        <td>0125785</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-09</td>
+                                    </tr>
+                                    <tr>
+                                        <td>0025482</td>
+                                        <td>11/20/2025</td>
+                                        <td>104</td>
+                                        <td>PC-010</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="archives-tab" class="tab-content" style="display: none;">
+                        <div class="table-container">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Room Number</th>
+                                        <th>Room Name</th>
+                                        <th>Archive Date</th>
+                                        <th>Total Units</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="active-row">
+                                        <td>107</td>
+                                        <td>ComLab 1</td>
+                                        <td>11/20/2025</td>
+                                        <td>50</td>
+                                        <td><span class="badge grey">Archived</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>108</td>
+                                        <td>ComLab 2</td>
+                                        <td>11/20/2025</td>
+                                        <td>25</td>
+                                        <td><span class="badge grey">Archived</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>109</td>
+                                        <td>ComLab 3</td>
+                                        <td>11/20/2025</td>
+                                        <td>40</td>
+                                        <td><span class="badge grey">Archived</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>110</td>
+                                        <td>ComLab 4</td>
+                                        <td>11/20/2025</td>
+                                        <td>30</td>
+                                        <td><span class="badge grey">Archived</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="retirement-tab" class="tab-content" style="display: none;">
+                        <div class="table-container">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Property ID</th>
+                                        <th>Device ID</th>
+                                        <th>Retirement Date</th>
+                                        <th>Origin Lab</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="active-row">
+                                        <td>121548284</td>
+                                        <td>PC-01</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 104</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>PC-01</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 105</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>FA-01</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 104</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>FA-02</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 105</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>PC-02</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 105</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>PC-03</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 104</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>FA-02</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 105</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>PC-03</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 105</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>FA-03</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 104</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>121548284</td>
+                                        <td>PC-04</td>
+                                        <td>11/20/2025</td>
+                                        <td>Room 105</td>
+                                        <td><span class="badge red">Condemned</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <div class="pagination-row">
