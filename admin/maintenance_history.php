@@ -38,7 +38,7 @@
 
                     <div class="search-filter-row" style="display: flex; gap: 10px; position: relative;">
                         <input type="text" class="search-input" id="main-search-input" placeholder="Search a set tag...." style="flex: 2;">
-
+                        
                         <button class="btn-filter-date" onclick="toggleDateFilter()" style="flex: 1; background: white; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; color: #666; cursor: pointer; padding: 0 10px;">
                             Date Range <i class="fas fa-filter" style="margin-left: 5px;"></i>
                         </button>
@@ -65,12 +65,7 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr>
-                                        <th>Room Number</th>
-                                        <th>Set Tag</th>
-                                        <th>Set ID</th>
-                                        <th>Latest Maintenance Date</th>
-                                    </tr>
+                                    <tr><th>Room Number</th><th>Set Tag</th><th>Set ID</th><th>Latest Maintenance Date</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php
@@ -165,13 +160,7 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr>
-                                        <th>Set ID</th>
-                                        <th>Set Tag</th>
-                                        <th>Retirement Date</th>
-                                        <th>Origin Lab</th>
-                                        <th>Status</th>
-                                    </tr>
+                                    <tr><th>Set ID</th><th>Set Tag</th><th>Retirement Date</th><th>Origin Lab</th><th>Status</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php
@@ -235,7 +224,7 @@
                 </div>
 
                 <div class="panel white-panel right-panel">
-
+    
                     <div id="view-full-timeline" class="history-view">
                         <div class="section-header-row">
                             <h3><span class="selected-tag-label"></span> Maintenance Timeline</h3>
@@ -245,12 +234,8 @@
                             <table class="timeline-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Reported by</th>
-                                        <th>Affected</th>
-                                        <th>Action Taken</th>
-                                        <th>Remarks</th>
-                                        <th>Status</th>
+                                        <th>Date</th><th>Reported by</th><th>Affected</th>
+                                        <th>Action Taken</th><th>Remarks</th><th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="data-body">
@@ -272,10 +257,7 @@
                             <table class="timeline-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Reported by</th>
-                                        <th>Remarks</th>
-                                        <th>Status</th>
+                                        <th>Date</th><th>Reported by</th><th>Remarks</th><th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="data-body">
@@ -315,51 +297,50 @@
     </div>
 
     <div id="condemn-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <h2 class="modal-title">Condemn this Unit?</h2>
-            <p class="modal-desc">
-                Are you sure you want to condemn <strong id="modal-tag-display">[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
-            </p>
+    <div class="modal-content">
+        <h2 class="modal-title">Condemn this Unit?</h2>
+        <p class="modal-desc">
+            Are you sure you want to condemn <strong id="modal-tag-display">[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
+        </p>
 
-            <form id="condemn-form">
-                <div class="modal-split">
-                    <div class="modal-left">
-                        <div class="form-group">
-                            <label>Set Tag:</label>
-                            <input type="text" id="modal-set-tag" readonly class="readonly-input">
-                        </div>
-                        <div class="form-group">
-                            <label>Set ID:</label>
-                            <input type="text" id="modal-set-id" readonly class="readonly-input">
-                        </div>
+        <form id="condemn-form">
+            <div class="modal-split">
+                <div class="modal-left">
+                    <div class="form-group">
+                        <label>Set Tag:</label>
+                        <input type="text" id="modal-set-tag" readonly class="readonly-input">
                     </div>
-
-                    <div class="modal-right">
-                        <label>Action Taken:</label>
-                        <div class="checkbox-grid">
-                            <label><input type="checkbox" name="action_taken" value="Hardware Failure"> Hardware Failure (Non-repairable)</label>
-                            <label><input type="checkbox" name="action_taken" value="Physical Damage"> Significant Physical Damage</label>
-                            <label><input type="checkbox" name="action_taken" value="System Obsolescence"> System Obsolescence (End of Life)</label>
-                            <label><input type="checkbox" name="action_taken" value="Other"> Other (Please specify...)</label>
-                        </div>
-
-                        <div class="form-group remarks-group">
-                            <label>Remarks:</label>
-                            <textarea id="modal-remarks" placeholder="Provide specific details for the audit log..."></textarea>
-                        </div>
+                    <div class="form-group">
+                        <label>Set ID:</label>
+                        <input type="text" id="modal-set-id" readonly class="readonly-input">
                     </div>
                 </div>
 
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeCondemnModal()">Cancel</button>
-                    <button type="button" class="btn-red-condemn" onclick="submitCondemn()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                <div class="modal-right">
+                    <label>Action Taken:</label>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" name="action_taken" value="Hardware Failure"> Hardware Failure (Non-repairable)</label>
+                        <label><input type="checkbox" name="action_taken" value="Physical Damage"> Significant Physical Damage</label>
+                        <label><input type="checkbox" name="action_taken" value="System Obsolescence"> System Obsolescence (End of Life)</label>
+                        <label><input type="checkbox" name="action_taken" value="Other"> Other (Please specify...)</label>
+                    </div>
+                    
+                    <div class="form-group remarks-group">
+                        <label>Remarks:</label>
+                        <textarea id="modal-remarks" placeholder="Provide specific details for the audit log..."></textarea>
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeCondemnModal()">Cancel</button>
+                <button type="button" class="btn-red-condemn" onclick="submitCondemn()"><i class="fas fa-trash-alt"></i> Condemn</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/maintenance_history.js?v=<?php echo time(); ?>"></script>
 </body>
-
 </html>
