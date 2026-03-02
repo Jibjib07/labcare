@@ -1,7 +1,6 @@
 <?php
 include 'includes/db.php';
 
-// Catch the room from the URL
 $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
 ?>
 <!DOCTYPE html>

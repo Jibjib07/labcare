@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>History Management - LabCare</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/maintenance_history.css?v=<?php echo time(); ?>">
 </head>
@@ -25,93 +24,105 @@
             <div class="split-layout">
 
                 <div class="panel white-panel left-panel">
-
                     <div class="section-header-row">
-                        <h3>History Lists</h3>
-                    </div>
-
-                    <div class="search-filter-row">
-                        <input type="text" class="search-input" placeholder="Type a serial number....">
+                        <h3>Maintenance Logs</h3>
                     </div>
 
                     <div class="toggle-container">
-                        <button class="toggle-link active" onclick="switchHistoryTab('maintenance', this)">Maintenance Logs</button>
-                        <button class="toggle-link" onclick="switchHistoryTab('archives', this)">Lab Archives</button>
-                        <button class="toggle-link" onclick="switchHistoryTab('retirement', this)">Asset Retirement</button>
+                        <button class="toggle-link active" onclick="switchHistoryTab('unit', this)">Unit Logs</button>
+                        <button class="toggle-link" onclick="switchHistoryTab('asset', this)">Asset Logs</button>
+                        <button class="toggle-link" onclick="switchHistoryTab('archives', this)">Archives</button>
+                        <button class="toggle-link" onclick="switchHistoryTab('retired-units', this)">Retired Units</button>
+                        <button class="toggle-link" onclick="switchHistoryTab('retired-assets', this)">Retired Assets</button>
                     </div>
 
-                    <div id="maintenance-tab" class="tab-content">
+                    <div class="search-filter-row" style="display: flex; gap: 10px; position: relative;">
+                        <input type="text" class="search-input" id="main-search-input" placeholder="Search a set tag...." style="flex: 2;">
+
+                        <button class="btn-filter-date" onclick="toggleDateFilter()" style="flex: 1; background: white; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; color: #666; cursor: pointer; padding: 0 10px;">
+                            Date Range <i class="fas fa-filter" style="margin-left: 5px;"></i>
+                        </button>
+
+                        <div id="date-filter-popover" class="filter-popover" style="display: none;">
+                            <div class="date-inputs">
+                                <div class="input-group">
+                                    <label>From Date:</label>
+                                    <input type="date" id="filter-start-date" class="date-picker">
+                                </div>
+                                <div class="input-group">
+                                    <label>To Date:</label>
+                                    <input type="date" id="filter-end-date" class="date-picker">
+                                </div>
+                            </div>
+                            <div class="popover-actions">
+                                <button class="btn-cancel" style="padding: 6px 12px; font-size: 12px;" onclick="clearDateFilter()">Clear</button>
+                                <button class="btn-green-export" style="padding: 6px 12px; font-size: 12px;" onclick="applyFilters()">Apply Filter</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="unit-tab" class="tab-content">
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
                                     <tr>
-                                        <th>Property ID</th>
-                                        <th>Latest Maintenance Date</th>
                                         <th>Room Number</th>
-                                        <th>Device ID</th>
+                                        <th>Set Tag</th>
+                                        <th>Set ID</th>
+                                        <th>Latest Maintenance Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr class="active-row">
-                                        <td>1215828</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-01</td>
-                                    </tr>
+                                    <?php
+                                    // 1. QUERY FOR UNIT LOGS
+                                    $query_units = "SELECT set_ID, set_tag, latest_maintainance FROM units ORDER BY latest_maintainance DESC";
+                                    $result_units = $conn->query($query_units);
+
+                                    if ($result_units && $result_units->num_rows > 0) {
+                                        while ($row = $result_units->fetch_assoc()) {
+                                            echo "<tr class='selectable-row' data-unit-id='" . htmlspecialchars($row['set_ID']) . "' data-tag='" . htmlspecialchars($row['set_tag']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_maintainance']) . "</td>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='4' style='text-align:center;'>No unit logs available.</td></tr>";
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="asset-tab" class="tab-content" style="display: none;">
+                        <div class="table-container">
+                            <table class="history-table">
+                                <thead>
                                     <tr>
-                                        <td>5824785</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>D-01</td>
+                                        <th>Room Number</th>
+                                        <th>Set Tag</th>
+                                        <th>Property ID</th>
+                                        <th>Latest Maintenance Date</th>
                                     </tr>
-                                    <tr>
-                                        <td>7851286</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-03</td>
-                                    </tr>
-                                    <tr>
-                                        <td>8547617</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-04</td>
-                                    </tr>
-                                    <tr>
-                                        <td>8574125</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-05</td>
-                                    </tr>
-                                    <tr>
-                                        <td>9872456</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-06</td>
-                                    </tr>
-                                    <tr>
-                                        <td>5782147</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-07</td>
-                                    </tr>
-                                    <tr>
-                                        <td>8571257</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-08</td>
-                                    </tr>
-                                    <tr>
-                                        <td>0125785</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-09</td>
-                                    </tr>
-                                    <tr>
-                                        <td>0025482</td>
-                                        <td>11/20/2025</td>
-                                        <td>104</td>
-                                        <td>PC-010</td>
-                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    // 2. QUERY FOR ASSET LOGS
+                                    $query_assets = "SELECT lab_room, asset_tag, asset_property, latest_maintenance FROM assets ORDER BY latest_maintenance DESC";
+                                    $result_assets = $conn->query($query_assets);
+
+                                    if ($result_assets && $result_assets->num_rows > 0) {
+                                        while ($row = $result_assets->fetch_assoc()) {
+                                            echo "<tr class='selectable-row' data-asset-id='" . htmlspecialchars($row['asset_property']) . "' data-tag='" . htmlspecialchars($row['asset_tag']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['asset_property']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_maintenance']) . "</td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='4' style='text-align:center;'>No asset logs available.</td></tr>";
+                                    }
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
@@ -130,222 +141,228 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr class="active-row">
-                                        <td>107</td>
-                                        <td>ComLab 1</td>
-                                        <td>11/20/2025</td>
-                                        <td>50</td>
-                                        <td><span class="badge grey">Archived</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>108</td>
-                                        <td>ComLab 2</td>
-                                        <td>11/20/2025</td>
-                                        <td>25</td>
-                                        <td><span class="badge grey">Archived</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>109</td>
-                                        <td>ComLab 3</td>
-                                        <td>11/20/2025</td>
-                                        <td>40</td>
-                                        <td><span class="badge grey">Archived</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>110</td>
-                                        <td>ComLab 4</td>
-                                        <td>11/20/2025</td>
-                                        <td>30</td>
-                                        <td><span class="badge grey">Archived</span></td>
-                                    </tr>
+                                    <?php
+                                    // 3. QUERY FOR ARCHIVES
+                                    $query_archives = "SELECT room_number, room_name, archive_date, total_units, status FROM room_archives ORDER BY archive_date DESC";
+                                    $result_archives = $conn->query($query_archives);
+
+                                    if ($result_archives && $result_archives->num_rows > 0) {
+                                        while ($row = $result_archives->fetch_assoc()) {
+                                            // Notice we only pass the room_num now, because AJAX handles fetching the reason/admin!
+                                            echo "<tr class='selectable-row' data-type='archive' data-room-num='" . htmlspecialchars($row['room_number']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['room_number']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['room_name']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['archive_date']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['total_units']) . "</td>";
+                                            echo "<td><span class='status-pill'>" . htmlspecialchars($row['status']) . "</span></td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='5' style='text-align:center;'>No archived rooms.</td></tr>";
+                                    }
+                                    ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <div id="retirement-tab" class="tab-content" style="display: none;">
+                    <div id="retired-units-tab" class="tab-content" style="display: none;">
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
                                     <tr>
-                                        <th>Property ID</th>
-                                        <th>Device ID</th>
+                                        <th>Set ID</th>
+                                        <th>Set Tag</th>
                                         <th>Retirement Date</th>
                                         <th>Origin Lab</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr class="active-row">
-                                        <td>121548284</td>
-                                        <td>PC-01</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 104</td>
-                                        <td><span class="badge red">Condemned</span></td>
-                                    </tr>
+                                    <?php
+                                    // 4. QUERY FOR RETIRED UNITS
+                                    $query_ret_units = "SELECT unit_id, set_tag, retirement_date, origin_lab, status FROM retired_units ORDER BY retirement_date DESC";
+                                    $result_ret_units = $conn->query($query_ret_units);
+
+                                    if ($result_ret_units && $result_ret_units->num_rows > 0) {
+                                        while ($row = $result_ret_units->fetch_assoc()) {
+                                            echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['set_tag']) . "' data-id='" . htmlspecialchars($row['unit_id']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['unit_id']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['retirement_date']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['origin_lab']) . "</td>";
+                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['status']) . "</span></td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='5' style='text-align:center;'>No retired units found.</td></tr>";
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="retired-assets-tab" class="tab-content" style="display: none;">
+                        <div class="table-container">
+                            <table class="history-table">
+                                <thead>
                                     <tr>
-                                        <td>121548284</td>
-                                        <td>PC-01</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 105</td>
-                                        <td><span class="badge red">Condemned</span></td>
+                                        <th>Property ID</th>
+                                        <th>Set Tag</th>
+                                        <th>Retirement Date</th>
+                                        <th>Origin Lab</th>
+                                        <th>Status</th>
                                     </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    // 5. QUERY FOR RETIRED ASSETS
+                                    $query_ret_assets = "SELECT property_id, set_tag, retirement_date, origin_lab, status FROM retired_assets ORDER BY retirement_date DESC";
+                                    $result_ret_assets = $conn->query($query_ret_assets);
+
+                                    if ($result_ret_assets && $result_ret_assets->num_rows > 0) {
+                                        while ($row = $result_ret_assets->fetch_assoc()) {
+                                            echo "<tr class='selectable-row' data-type='retired-asset' data-tag='" . htmlspecialchars($row['set_tag']) . "' data-prop-id='" . htmlspecialchars($row['property_id']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['property_id']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['retirement_date']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['origin_lab']) . "</td>";
+                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['status']) . "</span></td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='5' style='text-align:center;'>No retired assets found.</td></tr>";
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel white-panel right-panel">
+
+                    <div id="view-full-timeline" class="history-view">
+                        <div class="section-header-row">
+                            <h3><span class="selected-tag-label"></span> Maintenance Timeline</h3>
+                            <button class="btn-red-condemn" onclick="openCondemnModal()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="timeline-table">
+                                <thead>
                                     <tr>
-                                        <td>121548284</td>
-                                        <td>FA-01</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 104</td>
-                                        <td><span class="badge red">Condemned</span></td>
+                                        <th>Date</th>
+                                        <th>Reported by</th>
+                                        <th>Affected</th>
+                                        <th>Action Taken</th>
+                                        <th>Remarks</th>
+                                        <th>Status</th>
                                     </tr>
-                                    <tr>
-                                        <td>121548284</td>
-                                        <td>FA-02</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 105</td>
-                                        <td><span class="badge red">Condemned</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>121548284</td>
-                                        <td>PC-02</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 105</td>
-                                        <td><span class="badge red">Condemned</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>121548284</td>
-                                        <td>PC-03</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 104</td>
-                                        <td><span class="badge red">Condemned</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>121548284</td>
-                                        <td>FA-02</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 105</td>
-                                        <td><span class="badge red">Condemned</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>121548284</td>
-                                        <td>PC-03</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 105</td>
-                                        <td><span class="badge red">Condemned</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>121548284</td>
-                                        <td>FA-03</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 104</td>
-                                        <td><span class="badge red">Condemned</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>121548284</td>
-                                        <td>PC-04</td>
-                                        <td>11/20/2025</td>
-                                        <td>Room 105</td>
-                                        <td><span class="badge red">Condemned</span></td>
+                                </thead>
+                                <tbody class="data-body">
+                                    <tr class="placeholder-row">
+                                        <td colspan="6" style="text-align: center; padding: 40px; color: #757575;">
+                                            <em>Click an item on the left to view its maintenance timeline.</em>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <div class="pagination-row">
-                        <span class="page-nav">
-                            < Previous</span>
-                                <span class="page-num active">1</span>
-                                <span class="page-num">2</span>
-                                <span class="page-num">3</span>
-                                <span class="page-nav">Next ></span>
-                    </div>
-                </div>
-
-                <div class="panel white-panel right-panel">
-
-                    <div class="section-header-row">
-                        <h3>Computer Unit Maintenance Timeline</h3>
-                        <button class="btn-red-condemn"><i class="fas fa-trash-alt"></i> Condemn</button>
-                    </div>
-
-                    <div class="search-filter-row">
-                        <input type="text" class="search-input" placeholder="Type a date...">
-                    </div>
-
-                    <div class="table-container">
-                        <table class="timeline-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Reported by</th>
-                                    <th>Affected</th>
-                                    <th>Remarks</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>11/19/2025</td>
-                                    <td>Jojo Pineda</td>
-                                    <td>
-                                        <ul class="table-list">
-                                            <li>Monitor</li>
-                                            <li>System Unit</li>
-                                        </ul>
-                                    </td>
-                                    <td>System Grounded, Monitor Dead Pixels</td>
-                                    <td>
-                                        <div class="status-action-row">
-                                            <span class="badge purple">Pending</span>
-                                            <button class="icon-btn"><i class="fas fa-hand-pointer"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>11/18/2025</td>
-                                    <td>Juan Dela Cruz</td>
-                                    <td>Monitor</td>
-                                    <td>Monitor Fixed</td>
-                                    <td><span class="badge green">Resolved</span></td>
-                                </tr>
-                                <tr>
-                                    <td>11/17/2025</td>
-                                    <td>Jojo Pineda</td>
-                                    <td>Monitor</td>
-                                    <td>Mouse not working</td>
-                                    <td><span class="badge orange">For Repair</span></td>
-                                </tr>
-                                <tr>
-                                    <td>11/16/2025</td>
-                                    <td>Juan Dela Cruz</td>
-                                    <td>Keyboard</td>
-                                    <td>Missing keys</td>
-                                    <td><span class="badge green">Resolved</span></td>
-                                </tr>
-                                <tr>
-                                    <td>11/15/2025</td>
-                                    <td>Juan Dela Cruz</td>
-                                    <td>AVR</td>
-                                    <td>Grounded</td>
-                                    <td><span class="badge green">Resolved</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="view-retired-timeline" class="history-view" style="display: none;">
+                        <div class="section-header-row">
+                            <h3><span class="selected-tag-label"></span> Retirement History</h3>
+                        </div>
+                        <div class="table-container">
+                            <table class="timeline-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Reported by</th>
+                                        <th>Remarks</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="data-body">
+                                    <tr class="placeholder-row">
+                                        <td colspan="4" style="text-align: center; padding: 40px; color: #757575;">
+                                            <em>Click an item on the left to view its retirement history.</em>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div class="pagination-row">
-                        <span class="page-nav">
-                            < Previous</span>
-                                <span class="page-num active">1</span>
-                                <span class="page-num">2</span>
-                                <span class="page-num">3</span>
-                                <span class="page-nav">Next ></span>
+                    <div id="view-archives-details" class="history-view" style="display: none;">
+                        <div class="section-header-row">
+                            <h3><span id="archive-room-id"></span> Full Details</h3>
+                            <div class="action-buttons">
+                                <button class="btn-restore" onclick="handleRestore()"><i class="fas fa-circle-plus"></i> Restore</button>
+                            </div>
+                        </div>
+                        <div class="detail-group">
+                            <label>Archive Reason:</label>
+                            <div class="detail-box" id="archive-reason-text" style="color: #757575; font-style: italic;">
+                                Click a room on the left to view archive details.
+                            </div>
+                        </div>
+                        <div class="detail-group">
+                            <label>Archived By:</label>
+                            <div class="detail-box mini" id="archived-by-name" style="color: #757575;">-</div>
+                        </div>
                     </div>
+
                 </div>
 
             </div>
         </div>
+    </div>
 
+    <div id="condemn-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 class="modal-title">Condemn this Unit?</h2>
+            <p class="modal-desc">
+                Are you sure you want to condemn <strong id="modal-tag-display">[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
+            </p>
+
+            <form id="condemn-form">
+                <div class="modal-split">
+                    <div class="modal-left">
+                        <div class="form-group">
+                            <label>Set Tag:</label>
+                            <input type="text" id="modal-set-tag" readonly class="readonly-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Set ID:</label>
+                            <input type="text" id="modal-set-id" readonly class="readonly-input">
+                        </div>
+                    </div>
+
+                    <div class="modal-right">
+                        <label>Action Taken:</label>
+                        <div class="checkbox-grid">
+                            <label><input type="checkbox" name="action_taken" value="Hardware Failure"> Hardware Failure (Non-repairable)</label>
+                            <label><input type="checkbox" name="action_taken" value="Physical Damage"> Significant Physical Damage</label>
+                            <label><input type="checkbox" name="action_taken" value="System Obsolescence"> System Obsolescence (End of Life)</label>
+                            <label><input type="checkbox" name="action_taken" value="Other"> Other (Please specify...)</label>
+                        </div>
+
+                        <div class="form-group remarks-group">
+                            <label>Remarks:</label>
+                            <textarea id="modal-remarks" placeholder="Provide specific details for the audit log..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeCondemnModal()">Cancel</button>
+                    <button type="button" class="btn-red-condemn" onclick="submitCondemn()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
