@@ -163,7 +163,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                         </button>
                     </div>
 
-                    <input type="text" class="search-bar" placeholder="Search computer lab room...">
+                    <div class="search-wrapper">
+                        <input type="text"
+                            id="labSearchInput"
+                            class="search-bar"
+                            placeholder="Search computer lab room..."
+                            oninput="searchLaboratories()">
+                    </div>
 
                     <div class="room-list-container">
                         <?php
@@ -205,8 +211,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                                             <i class="fas fa-pen"></i>
                                         </button>
 
-                                        <button class="action-btn view-btn"
-                                            onclick="event.stopPropagation(); window.location.href='assets_management.php?room=<?= urlencode($row['lab_room']) ?>'">
+                                        <button type="button" class="action-btn view-btn"
+                                            onclick="event.stopPropagation(); window.location.href='assets_management.php?lab_id=<?php echo htmlspecialchars($row['lab_id']); ?>'">
                                             <i class="fas fa-hand-pointer"></i>
                                         </button>
 
@@ -265,13 +271,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                     </div>
                     <div class="panel white-panel schedule-panel">
                         <div class="panel-header">
-                            <h3 id="schedule-title">Loading Schedule...</h3>
-                            <button class="btn-green-solid" onclick="document.getElementById('scheduleInput').click()">
-                                <i class="fas fa-image"></i> Upload
-                            </button>
+                            <h3 id="schedule-title">Select a Room</h3>
+                            <button class="btn-green-solid" onclick="document.getElementById('scheduleInput').click()">Upload</button>
                             <input type="file" id="scheduleInput" accept="image/*" style="display: none;">
                         </div>
-                        <div class="schedule-placeholder" id="schedule-display"></div>
+
+                        <div id="schedule-display">
+                            <p>Please select a room.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -440,6 +447,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 <button class="btn-cancel" onclick="closeModal('archiveLabModal')">Cancel</button>
                 <button class="btn-archive"><i class="fas fa-box-archive"></i> Archive</button>
             </div>
+        </div>
+    </div>
+
+    <div id="scheduleModal" class="modal-overlay" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <img id="modalImg" src="" alt="Full Schedule">
         </div>
     </div>
 

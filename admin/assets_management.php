@@ -1,7 +1,27 @@
 <?php
 include '../includes/db.php';
 
-$current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
+$current_lab_id = isset($_GET['lab_id']) ? intval($_GET['lab_id']) : 0;
+$current_room = 'Unknown Room';
+
+if ($current_lab_id > 0) {
+    $stmt = $conn->prepare("SELECT lab_room FROM laboratories WHERE lab_id = ?");
+    $stmt->bind_param("i", $current_lab_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        $current_room = htmlspecialchars($row['lab_room']);
+    }
+    $stmt->close();
+} else {
+    $fallback_query = "SELECT lab_id, lab_room FROM laboratories ORDER BY lab_room ASC LIMIT 1";
+    $fallback_result = $conn->query($fallback_query);
+    if ($fallback_result && $row = $fallback_result->fetch_assoc()) {
+        $current_lab_id = $row['lab_id'];
+        $current_room = htmlspecialchars($row['lab_room']);
+    }
+}
 ?>
 <!DOCTYPE html>
 
@@ -49,10 +69,11 @@ $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
                         <h3>Room <?php echo $current_room; ?> - <strong>Computer Units</strong></h3>
 
                         <div class="header-actions">
-                            <button class="btn-transfer" onclick="openModal('transferModal')">
+                            <button class="btn-transfer" onclick="openModal('transferModal', <?= $current_lab_id ?>)">
                                 <i class="fas fa-exchange-alt"></i> Transfer
                             </button>
-                            <button class="btn-green-add" onclick="openModal('addComputerModal')">
+
+                            <button class="btn-green-add" onclick="openModal('addComputerModal', <?= $current_lab_id ?>)">
                                 <i class="fas fa-plus-circle"></i> Add
                             </button>
                         </div>
