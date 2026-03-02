@@ -174,10 +174,6 @@
   border-color: #ffebee;
 }
 
-.action-btn:hover {
-  background-color: #f5f5f5;
-}
-
 /* Pagination */
 .pagination {
   display: flex;
@@ -300,12 +296,6 @@
 /* Schedule Section */
 .schedule-panel {
   min-height: 300px;
-}
-.schedule-placeholder {
-  width: 100%;
-  height: 300px;
-  background-color: #dcdcdc; /* Gray placeholder */
-  border-radius: 4px;
 }
 
 /* =========================================
@@ -685,37 +675,80 @@
   background: #ef6c00;
 }
 
-/* --- Schedule Placeholder & Image Preview --- */
-.schedule-placeholder {
-  width: 100%;
-  height: 300px;
-  background-color: #f9f9f9;
-  border: 2px dashed #ddd; /* Visual indicator for an upload area */
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden; /* Ensures image doesn't bleed out of rounded corners */
-  position: relative;
-  transition: border-color 0.3s;
+/* The fixed-size window */
+#schedule-display {
+    width: 100%;
+    height: 300px !important;    /* Fixed height as requested */
+    overflow: hidden !important;  /* Strictly NO scrollbars */
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    display: flex !important;     /* Flex allows perfect centering */
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    position: relative;
 }
 
-.schedule-placeholder:hover {
-  border-color: #4caf50; /* Highlight when hovering */
+/* The Image: The "Fit-to-Window" logic */
+.schedule-img-fit {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain; /* Shrinks the image to fit without stretching or cutting */
+    display: block;
+    transition: opacity 0.3s ease;
 }
 
-/* Image styling for the preview */
-.schedule-placeholder img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* Shows the whole image without cropping */
-  display: block;
+/* Loading/Status overlay style */
+#upload-status {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(140, 82, 255, 0.9);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    z-index: 10;
 }
 
-/* Text shown when no image is uploaded */
-.placeholder-text {
-  color: #888;
-  font-size: 14px;
-  font-style: italic;
-  pointer-events: none; /* Allows clicks to go through to the input trigger */
+
+/* Modal Content (The Image) */
+.modal-content {
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    height: 90%;
+}
+
+.modal-content img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 5px;
+    box-shadow: 0 5px 30px rgba(0,0,0,0.5);
+    cursor: default;
+}
+
+/* Close Button */
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #fff;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.close-modal:hover { color: #8c52ff; }
+
+/* Pointer for the dashboard image to show it's clickable */
+.schedule-img-fit {
+    cursor: zoom-in;
 }

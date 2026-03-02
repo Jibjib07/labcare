@@ -5,21 +5,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
     $lab_name = $_POST['lab_name'];
     $lab_room = $_POST['lab_room'];
 
-    // Prevent SQL injection
     $lab_name = $conn->real_escape_string($lab_name);
     $lab_room = $conn->real_escape_string($lab_room);
 
-    // Insert into database (lab_status will automatically be 'Active' based on our setup)
     $insert_query = "INSERT INTO laboratories (lab_name, lab_room) VALUES ('$lab_name', '$lab_room')";
 
     if ($conn->query($insert_query)) {
-        // Refresh the page to show the new lab
         header("Location: laboratory_management.php?success=lab_added");
         exit();
     } else {
         $error_msg = "Error adding laboratory: " . $conn->error;
     }
-} ?>
+}
+// --- EDIT LABORATORY LOGIC ---
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
+    $original_room = $conn->real_escape_string($_POST['original_room_number']);
+    $new_name = $conn->real_escape_string($_POST['edit_room_name']);
+    $new_room = $conn->real_escape_string($_POST['edit_room_number']);
+
+    $update_query = "UPDATE laboratories SET lab_name = '$new_name', lab_room = '$new_room' WHERE lab_room = '$original_room'";
+
+    if ($conn->query($update_query)) {
+
+        if ($original_room !== $new_room) {
+            $conn->query("UPDATE units SET lab_room = '$new_room' WHERE lab_room = '$original_room'");
+            $conn->query("UPDATE assets SET lab_room = '$new_room' WHERE lab_room = '$original_room'");
+        }
+
+        header("Location: laboratory_management.php?success=lab_updated");
+        exit();
+    } else {
+        $error_msg = "Error updating laboratory: " . $conn->error;
+    }
+}
+?>
 
 
 <!DOCTYPE html>
@@ -33,6 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
 
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/laboratory_management.css?v=<?php echo time(); ?>">
+
 </head>
 
 <body>
@@ -105,8 +125,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
                         </div>
 
                         <button class="action-btn edit-btn"
-                            data-name="<?= $lab['name'] ?>"
-                            data-room="<?= $lab['room'] ?>"
+                            data-id="<?= htmlspecialchars($row['lab_id']) ?>" data-name="<?= htmlspecialchars($row['lab_name']) ?>"
+                            data-room="<?= htmlspecialchars($row['lab_room']) ?>"
                             data-units="<?= $units ?>"
                             onclick="event.stopPropagation(); openEditModal(this)">
                             <i class="fas fa-pen"></i>
@@ -143,20 +163,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
                         </button>
                     </div>
 
-                    <input type="text" class="search-bar" placeholder="Search computer lab room...">
+                    <div class="search-wrapper">
+                        <input type="text"
+                            id="labSearchInput"
+                            class="search-bar"
+                            placeholder="Search computer lab room..."
+                            oninput="searchLaboratories()">
+                    </div>
 
                     <div class="room-list-container">
                         <?php
 
                         $query = "SELECT 
-                l.lab_name, 
-                l.lab_room, 
-                l.lab_status, 
-                COUNT(u.set_ID) as total_units 
-              FROM laboratories l
-              LEFT JOIN units u ON l.lab_room = u.lab_room
-              GROUP BY l.lab_id, l.lab_name, l.lab_room, l.lab_status
-              ORDER BY l.lab_room ASC";
+            l.lab_id, 
+            l.lab_name, 
+            l.lab_room, 
+            l.lab_status, 
+            COUNT(u.set_ID) as total_units 
+          FROM laboratories l
+          LEFT JOIN units u ON l.lab_room = u.lab_room
+          GROUP BY l.lab_id, l.lab_name, l.lab_room, l.lab_status
+          ORDER BY l.lab_room ASC";
 
                         $result = $conn->query($query);
 
@@ -177,15 +204,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
 
                                     <div class="room-actions">
                                         <button class="action-btn edit-btn"
-                                            data-name="<?= htmlspecialchars($row['lab_name']) ?>"
+                                            data-id="<?= htmlspecialchars($row['lab_id']) ?>" data-name="<?= htmlspecialchars($row['lab_name']) ?>"
                                             data-room="<?= htmlspecialchars($row['lab_room']) ?>"
                                             data-units="<?= $units ?>"
                                             onclick="event.stopPropagation(); openEditModal(this)">
                                             <i class="fas fa-pen"></i>
                                         </button>
 
-                                        <button class="action-btn view-btn"
-                                            onclick="event.stopPropagation(); window.location.href='assets_management.php?room=<?= urlencode($row['lab_room']) ?>'">
+                                        <button type="button" class="action-btn view-btn"
+                                            onclick="event.stopPropagation(); window.location.href='assets_management.php?lab_id=<?php echo htmlspecialchars($row['lab_id']); ?>'">
                                             <i class="fas fa-hand-pointer"></i>
                                         </button>
 
@@ -244,13 +271,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
                     </div>
                     <div class="panel white-panel schedule-panel">
                         <div class="panel-header">
-                            <h3 id="schedule-title">Loading Schedule...</h3>
-                            <button class="btn-green-solid" onclick="document.getElementById('scheduleInput').click()">
-                                <i class="fas fa-image"></i> Upload
-                            </button>
+                            <h3 id="schedule-title">Select a Room</h3>
+                            <button class="btn-green-solid" onclick="document.getElementById('scheduleInput').click()">Upload</button>
                             <input type="file" id="scheduleInput" accept="image/*" style="display: none;">
                         </div>
-                        <div class="schedule-placeholder" id="schedule-display"></div>
+
+                        <div id="schedule-display">
+                            <p>Please select a room.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -289,38 +317,70 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
         </div>
     </div>
 
+    <div id="qrModal" class="modal-overlay" style="display: none;">
+        <div class="modal-container" style="text-align: center; max-width: 400px;">
+            <div class="modal-header" style="justify-content: center;">
+                <h3 id="qrModalTitle">Room - QR Code</h3>
+            </div>
+
+            <div class="modal-body" style="padding: 20px;">
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                    Export and display this QR code at the laboratory entrance. Staff can scan it to instantly view the full list of computer units assigned to this room.
+                </p>
+                <div id="qrcode-container" style="display: flex; justify-content: center; padding: 10px; background: white; border-radius: 8px;"></div>
+            </div>
+
+            <div class="modal-footer" style="justify-content: center; gap: 10px;">
+                <button type="button" class="btn-cancel" onclick="closeModal('qrModal')">Cancel</button>
+                <button type="button" class="btn-create" onclick="exportQRCode()">
+                    <i class="fas fa-sign-out-alt"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="editLabModal" class="modal-overlay">
         <div class="modal-container">
             <div class="modal-header header-with-actions">
                 <h3>View Computer Laboratory</h3>
                 <div class="header-actions">
-                    <button class="icon-btn-purple"><i class="fas fa-qrcode"></i> QR</button>
-                    <button class="icon-btn-orange-solid"><i class="fas fa-box-archive"></i></button>
+
+                    <button class="action-btn icon-btn-purple"
+                        data-room="<?= htmlspecialchars($row['lab_room']) ?>"
+                        data-id="<?= htmlspecialchars($row['lab_id']) ?>"
+                        onclick="event.stopPropagation(); openQrModal(this)">
+                        <i class="fas fa-qrcode"></i>
+
+                    </button>
+
                 </div>
             </div>
 
             <div class="modal-body">
-                <form id="editLabForm">
+                <form id="editLabForm" method="POST" action="">
+                    <input type="hidden" id="edit_lab_id" name="edit_lab_id">
+                    <input type="hidden" name="original_room_number" id="original_room_number">
+
                     <div class="form-group">
                         <label>Room Name</label>
-                        <input type="text" id="edit_room_name" class="modal-input">
+                        <input type="text" name="edit_room_name" id="edit_room_name" class="modal-input" required>
                     </div>
 
                     <div class="form-group">
                         <label>Room Number</label>
-                        <input type="text" id="edit_room_number" class="modal-input">
+                        <input type="text" name="edit_room_number" id="edit_room_number" class="modal-input" required>
                     </div>
 
                     <div class="form-group">
                         <label>Total Units</label>
-                        <input type="number" id="edit_total_units" class="modal-input">
+                        <input type="number" id="edit_total_units" class="modal-input" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
                     </div>
                 </form>
             </div>
 
             <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('editLabModal')">Cancel</button>
-                <button class="btn-create"><i class="fas fa-pen"></i> Edit</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('editLabModal')">Cancel</button>
+                <button type="submit" name="edit_lab" form="editLabForm" class="btn-create"><i class="fas fa-pen"></i> Edit</button>
             </div>
         </div>
     </div>
@@ -390,8 +450,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
         </div>
     </div>
 
+    <div id="scheduleModal" class="modal-overlay" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <img id="modalImg" src="" alt="Full Schedule">
+        </div>
+    </div>
+
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/laboratory_management.js?v=<?php echo time(); ?>"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 
 </html>

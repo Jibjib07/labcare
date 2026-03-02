@@ -1,3 +1,4 @@
+
 /**
  * ------------------------------------------------------------------
  * 1. MODAL FUNCTIONS
@@ -16,10 +17,20 @@ function openModal(modalId) {
 
 // Closes the modal by its ID
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
+    if (modalId && typeof modalId === 'string') {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
+
+    const scheduleModal = document.getElementById('scheduleModal');
+    if (scheduleModal) {
+        scheduleModal.style.display = 'none';
+    }
+
+    // 3. Always re-enable scrolling just in case
+    document.body.style.overflow = "auto";
 }
 
 // Bonus: Close the modal if the user clicks anywhere outside the white box (on the dark overlay)
@@ -49,26 +60,23 @@ window.onclick = function(event) {
  * Triggered by the inline onclick="..." on the Edit Button
  * ------------------------------------------------------------------
  */
-function openEditModal(buttonElement) {
-    // 1. Retrieve data attributes from the clicked button
-    const roomName = buttonElement.getAttribute('data-name');
-    const roomNumber = buttonElement.getAttribute('data-room');
-    const totalUnits = buttonElement.getAttribute('data-units');
+function openEditModal(button) {
+    // 1. Grab the data attributes attached to the button we clicked
+    const roomName = button.getAttribute('data-name');
+    const roomNumber = button.getAttribute('data-room');
+    const totalUnits = button.getAttribute('data-units');
 
-    // 2. Select the input fields in the Edit Modal
-    const nameInput = document.getElementById('edit_room_name');
-    const numberInput = document.getElementById('edit_room_number');
-    const unitsInput = document.getElementById('edit_total_units');
-
-    // 3. Set the values
-    if(nameInput) nameInput.value = roomName;
-    if(numberInput) numberInput.value = roomNumber;
-    if(unitsInput) unitsInput.value = totalUnits;
+    // 2. Fill the inputs inside the modal
+    document.getElementById('edit_room_name').value = roomName;
+    document.getElementById('edit_room_number').value = roomNumber;
+    document.getElementById('edit_total_units').value = totalUnits;
+    
+    // 3. Fill the hidden input so the PHP knows which record to update
+    document.getElementById('original_room_number').value = roomNumber;
 
     // 4. Open the modal
-    openModal('editLabModal');
+    openModal('editLabModal'); // Assuming your modal wrapper has id="editLabModal"
 }
-
 /**
  * ------------------------------------------------------------------
  * 3. ARCHIVE MODAL LOGIC (Populate Data)
@@ -95,114 +103,75 @@ function openArchiveModal(buttonElement) {
 
 /**
  * ------------------------------------------------------------------
- * 4. NAVIGATION LOGIC (View Button Only)
+ * 1. GLOBAL STATE & HELPERS
  * ------------------------------------------------------------------
  */
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // Select all view buttons
-    const viewButtons = document.querySelectorAll('.view-btn');
+let currentSelectedRoom = ''; 
 
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            // Stop the click from affecting parent elements
-            e.stopPropagation(); 
-
-            // 1. Get the specific room number from the clicked button
-            const roomNumber = this.getAttribute('data-room');
-
-            // 2. Redirect to Assets Management with that room number
-            window.location.href = 'assets_management.php?room=' + roomNumber;
-        });
-    });
-});
-
-/**
- * ------------------------------------------------------------------
- * 5. ROW SELECTION LOGIC (Desktop & Mobile)
- * Updates stats when a row/card is clicked.
- * ------------------------------------------------------------------
- */
-
-// Dummy data
-const labData = {
-    '104': { working: 42, repair: 8, condemned: 2, total: 52, assets: 10 },
-    '105': { working: 35, repair: 5, condemned: 0, total: 40, assets: 12 },
-    '106': { working: 30, repair: 2, condemned: 3, total: 35, assets: 8 },
-    '107': { working: 48, repair: 1, condemned: 1, total: 50, assets: 15 },
-    '108': { working: 25, repair: 5, condemned: 0, total: 30, assets: 5 },
-    '109': { working: 40, repair: 3, condemned: 2, total: 45, assets: 9 },
-    '110': { working: 42, repair: 0, condemned: 0, total: 42, assets: 11 }
-};
-
-function selectRoom(element, roomNumber) {
-    // 1. Visual Selection: Remove 'active' from all, add to clicked
-    // Handle Desktop Rows
-    document.querySelectorAll('.room-item').forEach(row => row.classList.remove('active'));
-    // Handle Mobile Cards
-    document.querySelectorAll('.m-room-card').forEach(card => card.classList.remove('active'));
-
-    // Add active class to the element that was clicked
-    if (element) {
-        element.classList.add('active');
-    }
-
-    // 2. Get Data
-    const stats = labData[roomNumber] || { working: 0, repair: 0, condemned: 0, total: 0, assets: 0 };
-
-    // 3. Update Desktop Stats
-    const dw = document.getElementById('val-working');
-    if(dw) dw.textContent = stats.working;
-    
-    const dr = document.getElementById('val-repair');
-    if(dr) dr.textContent = stats.repair;
-    
-    const dc = document.getElementById('val-condemned');
-    if(dc) dc.textContent = stats.condemned;
-    
-    const dt = document.getElementById('val-total');
-    if(dt) dt.textContent = stats.total;
-    
-    const da = document.getElementById('val-assets');
-    if(da) da.textContent = stats.assets;
-
-    // 4. Update Mobile Stats
-    const mw = document.getElementById('m-val-working');
-    if(mw) mw.textContent = stats.working;
-    
-    const mr = document.getElementById('m-val-repair');
-    if(mr) mr.textContent = stats.repair;
-    
-    const mc = document.getElementById('m-val-condemned');
-    if(mc) mc.textContent = stats.condemned;
-    
-    const mt = document.getElementById('m-val-total');
-    if(mt) mt.textContent = stats.total;
-
-    // 5. Update Schedule Title (Desktop only)
-    const st = document.getElementById('schedule-title');
-    if(st) st.textContent = 'Room ' + roomNumber + ' Schedule';
+// Helper to safely update text in both Desktop and Mobile views
+function updateUI(id, val) {
+    const el = document.getElementById(id);
+    if(el) el.textContent = val || 0;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // ... your existing listeners for viewButtons and scheduleInput ...
+/**
+ * ------------------------------------------------------------------
+ * 2. SELECT ROOM & DISPLAY LOGIC (Live Stats + Schedule)
+ * ------------------------------------------------------------------
+ */
+function selectRoom(element, roomNumber) {
+    currentSelectedRoom = roomNumber;
 
-    // --- AUTO-SELECT FIRST ROOM ---
-    // This finds the very first room-item in your desktop list
-    const firstRoom = document.querySelector('.room-item');
-    
-    if (firstRoom) {
-        // We simulate a click on the first element
-        // We use 'click()' because it triggers your existing selectRoom() function
-        firstRoom.click();
+    // A. Visual Selection: Remove 'active' from all, add to currently clicked
+    document.querySelectorAll('.room-item, .m-room-card').forEach(el => el.classList.remove('active'));
+    if (element) element.classList.add('active');
+
+    // B. Update Schedule Title
+    const st = document.getElementById('schedule-title');
+    if(st) st.textContent = 'Room ' + roomNumber + ' Schedule';
+
+    const schedDisplay = document.getElementById('schedule-display');
+    if(schedDisplay) {
+        schedDisplay.innerHTML = '<i class="fas fa-spinner fa-spin" style="color:#8c52ff; font-size: 1.5rem;"></i>';
     }
-});
+
+    // C. Fetch Data from Database
+    fetch(`../includes/get_room_stats.php?room=${roomNumber}`)
+        .then(response => response.json())
+        .then(data => {
+            // 1. Update Desktop Stats
+            updateUI('val-working', data.working);
+            updateUI('val-repair', data.repair);
+            updateUI('val-condemned', data.condemn);
+            updateUI('val-total', data.total_units);
+            updateUI('val-assets', data.total_assets);
+
+            // 2. Update Mobile Stats
+            updateUI('m-val-working', data.working);
+            updateUI('m-val-repair', data.repair);
+            updateUI('m-val-condemned', data.condemn);
+            updateUI('m-val-total', data.total_units);
+
+            // 3. Display Schedule Image (Fits 300px, No Scroll)
+            if (data.schedule && data.schedule !== '') {
+               schedDisplay.innerHTML = `
+        <img src="${data.schedule}" 
+             class="schedule-img-fit" 
+             style="cursor: zoom-in;" 
+             onclick="openScheduleModal(this.src)">`;
+            } else {
+                schedDisplay.innerHTML = `<p style="color: #999; font-size: 0.9rem;">No schedule uploaded for Room ${roomNumber}.</p>`;
+            }
+        })
+        .catch(err => {
+            console.error('Fetch error:', err);
+            if(schedDisplay) schedDisplay.innerHTML = '<p style="color:red;">Error loading data.</p>';
+        });
+}
 
 /**
  * ------------------------------------------------------------------
- * 6. SCHEDULE IMAGE UPLOAD PREVIEW
- * Opens file explorer and renders selected image in the placeholder
+ * 3. SCHEDULE UPLOAD (PREVIEW & AJAX)
  * ------------------------------------------------------------------
  */
 const scheduleInput = document.getElementById('scheduleInput');
@@ -211,19 +180,182 @@ const scheduleDisplay = document.getElementById('schedule-display');
 if (scheduleInput && scheduleDisplay) {
     scheduleInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
-        
         if (file) {
+            if (!currentSelectedRoom) {
+                alert("Please select a room first!");
+                this.value = '';
+                return;
+            }
+
+            // 1. Instant UI Feedback: Local Preview (Same fit-logic as DB load)
             const reader = new FileReader();
-
             reader.onload = function(event) {
-                // Clear any existing placeholder text and inject the image
                 scheduleDisplay.innerHTML = `
-                    <img src="${event.target.result}" 
-                         style="width: 100%; height: 100%; object-fit: contain; display: block;">
-                `;
+                    <img src="${event.target.result}" class="schedule-img-fit" style="opacity: 0.4;">
+                    <div id="upload-status" style="position: absolute; background: rgba(140, 82, 255, 0.9); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem;">
+                        <i class="fas fa-sync fa-spin"></i> Saving...
+                    </div>`;
             };
-
             reader.readAsDataURL(file);
+
+            // 2. AJAX Upload
+            const formData = new FormData();
+            formData.append('schedule_image', file);
+            formData.append('room_number', currentSelectedRoom); 
+
+            fetch('includes/upload_schedule.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                 scheduleDisplay.innerHTML = `
+        <img src="${data.file_path}" 
+             class="schedule-img-fit" 
+             style="cursor: zoom-in;" 
+             onclick="openScheduleModal(this.src)">`;
+                } else {
+                    alert("Upload failed: " + data.error);
+                    selectRoom(null, currentSelectedRoom); 
+                }
+            })
+            .catch(error => {
+                console.error("Upload error:", error);
+                selectRoom(null, currentSelectedRoom);
+            });
+        }
+    });
+}
+
+/**
+ * ------------------------------------------------------------------
+ * 4. AUTO-SELECT FIRST ITEM ON LOAD
+ * ------------------------------------------------------------------
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Look for the first row in your table/list
+    const firstRoom = document.querySelector('.room-item'); 
+    if (firstRoom) {
+        // This triggers the click event automatically
+        firstRoom.click(); 
+    }
+});
+
+let currentQRRoom = '';
+ 
+function openEditModal(button) {
+    // Grab the data, including the lab_id
+    const labId = button.getAttribute('data-id');
+    const roomName = button.getAttribute('data-name');
+    const roomNumber = button.getAttribute('data-room');
+    const totalUnits = button.getAttribute('data-units');
+
+    // Fill the Edit Modal inputs
+    document.getElementById('edit_lab_id').value = labId; // Storing the ID!
+    document.getElementById('edit_room_name').value = roomName;
+    document.getElementById('edit_room_number').value = roomNumber;
+    document.getElementById('edit_total_units').value = totalUnits;
+    document.getElementById('original_room_number').value = roomNumber;
+
+    openModal('editLabModal');
+}
+
+// 2. When clicking the QR button inside the Edit Modal:
+function openQrModal() {
+    // Steal the ID and Room Number right out of the Edit Modal's hidden fields!
+    let labId = document.getElementById('edit_lab_id').value;
+    let roomNumber = document.getElementById('edit_room_number').value;
+
+    if (!labId) {
+        console.error("No Lab ID found!");
+        return;
+    }
+
+    currentQRRoom = roomNumber;
+
+    closeModal('editLabModal');
+    
+    // Update the QR Modal Title with the Room Number
+    document.getElementById('qrModalTitle').innerText = `Room ${roomNumber} - QR Code`;
+    
+    // Clear old QR code
+    const qrContainer = document.getElementById('qrcode-container');
+    qrContainer.innerHTML = ''; 
+
+    // Build the URL using the lab_id!
+    let basePath = window.location.href.substring(0, window.location.href.lastIndexOf("/"));
+    let targetUrl = `${basePath}/assets_management.php?lab_id=${labId}`;
+
+    // Generate QR
+    new QRCode(qrContainer, {
+        text: targetUrl,
+        width: 200,
+        height: 200,
+        colorDark: "#8c52ff",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+
+    // Open QR Modal
+    openModal('qrModal');
+}
+
+// Function to download the QR code when "Export" is clicked
+function exportQRCode() {
+    // Find the canvas image generated by the library
+    const qrCanvas = document.querySelector('#qrcode-container canvas');
+    
+    if (qrCanvas) {
+        // Convert the canvas to a downloadable image URL
+        const imageUrl = qrCanvas.toDataURL("image/png");
+        
+        // Create a temporary link to trigger the download
+        const downloadLink = document.createElement("a");
+        downloadLink.href = imageUrl;
+        downloadLink.download = `LabCare_Room_${currentQRRoom}_QR.png`;
+        
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+}
+
+function openScheduleModal(imgSrc) {
+    const modal = document.getElementById('scheduleModal');
+    const modalImg = document.getElementById('modalImg');
+    
+    if(modal && modalImg) {
+        modalImg.src = imgSrc;
+        modal.style.display = "flex"; // Shows the modal
+        document.body.style.overflow = "hidden"; // Stops the background from scrolling
+    }
+}
+
+
+function searchLaboratories() {
+    // 1. Get the search query and make it lowercase
+    const input = document.getElementById("labSearchInput");
+    const filter = input.value.toLowerCase();
+    
+    // 2. Grab all the laboratory items (Desktop rows and Mobile cards)
+    const items = document.querySelectorAll('.room-item, .m-room-card');
+    
+    // 3. Loop through each item
+    items.forEach(item => {
+        // Get the text content (Room Number and Name)
+        const textValue = item.textContent || item.innerText;
+        
+        // 4. If the text includes the search query, show it; otherwise, hide it
+        if (textValue.toLowerCase().includes(filter)) {
+            // Check if it's a table row or a div to maintain layout
+            if (item.tagName === 'TR') {
+                item.style.display = ''; // Default for table rows
+            } else {
+                item.style.display = 'flex'; // Default for mobile cards
+            }
+        } else {
+            item.style.display = 'none';
         }
     });
 }
