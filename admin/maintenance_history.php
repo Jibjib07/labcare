@@ -94,7 +94,12 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr><th>Room Number</th><th>Asset Tag</th><th>Property ID</th><th>Latest Maintenance Date</th></tr>
+                                    <tr>
+                                        <th>Room Number</th>
+                                        <th>Asset Tag</th>
+                                        <th>Property ID</th>
+                                        <th>Latest Maintenance Date</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     <?php
@@ -123,7 +128,11 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr><th>Room Number</th><th>Room Name</th><th>Status</th></tr>
+                                    <tr>
+                                        <th>Room Number</th>
+                                        <th>Room Name</th>
+                                        <th>Status</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     <?php
@@ -181,7 +190,13 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr><th>Property ID</th><th>Asset Tag</th><th>Retirement Date</th><th>Origin Lab</th><th>Status</th></tr>
+                                    <tr>
+                                        <th>Property ID</th>
+                                        <th>Asset Tag</th>
+                                        <th>Retirement Date</th>
+                                        <th>Origin Lab</th>
+                                        <th>Status</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     <?php
