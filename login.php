@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+// Handle Logout
 if (isset($_GET['action']) && $_GET['action'] == 'logout') {
     session_unset();
     session_destroy();
@@ -8,28 +9,29 @@ if (isset($_GET['action']) && $_GET['action'] == 'logout') {
     exit();
 }
 
+// Role-based redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    header("Location: index.php");
+    if (strtolower($_SESSION['user_role']) === 'admin') {
+        header("Location: admin/dashboard.php");
+    } else {
+        header("Location: user/dashboard.php");
+    }
     exit();
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - LabCare</title>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link href="https://api.fontshare.com/v2/css?f[]=geist@1,2&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/login.css?v=<?php echo time(); ?>">
 </head>
 
 <body class="login-body">
-
     <div class="glass-container">
         <div class="brand-section">
             <img src="assets/logo.png" alt="LabCare Logo" class="main-logo">
@@ -46,6 +48,7 @@ if (isset($_SESSION['user_id'])) {
                     <?php
                     if ($_GET['error'] == 'invalid_password') echo "Incorrect password.";
                     if ($_GET['error'] == 'user_not_found') echo "Account not found.";
+                    if ($_GET['error'] == 'inactive') echo "Account is disabled.";
                     ?>
                 </div>
             <?php endif; ?>
@@ -77,21 +80,17 @@ if (isset($_SESSION['user_id'])) {
 
         <p class="disclaimer"><strong>Disclaimer:</strong> For Computer Laboratory Use Only</p>
     </div>
+
     <script>
         const togglePassword = document.querySelector('.fa-eye-slash');
         const passwordInput = document.querySelector('input[name="password"]');
 
         togglePassword.addEventListener('click', function() {
-            // Toggle the type attribute
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-
-            // Toggle the eye / eye-slash icon
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
     </script>
-
 </body>
-
 </html>

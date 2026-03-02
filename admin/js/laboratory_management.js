@@ -5,22 +5,32 @@
  * ------------------------------------------------------------------
  */
 
-// Generic Open/Close functions
+// Opens the modal by its ID
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        modal.style.display = 'flex';
-    } else {
-        console.error("Modal not found: " + modalId);
+        // 'flex' is usually best for centering modal content, but use 'block' if your CSS requires it
+        modal.style.display = 'flex'; 
     }
 }
 
+// Closes the modal by its ID
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'none';
     }
 }
+
+// Bonus: Close the modal if the user clicks anywhere outside the white box (on the dark overlay)
+window.addEventListener('click', function(event) {
+    // You can add other modal IDs here if you have them (like editLabModal or archiveLabModal)
+    const addLabModal = document.getElementById('addLabModal');
+    
+    if (event.target === addLabModal) {
+        closeModal('addLabModal');
+    }
+});
 
 // Global Click Listener: Close modal if user clicks outside the modal content
 window.onclick = function(event) {

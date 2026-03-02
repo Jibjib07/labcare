@@ -1,5 +1,5 @@
 <?php
-include 'includes/db.php';
+include '../includes/db.php';
 
 $current_room = isset($_GET['room']) ? htmlspecialchars($_GET['room']) : '104';
 ?>
