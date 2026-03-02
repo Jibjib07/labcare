@@ -10,7 +10,6 @@ body {
 }
 
 .main-content {
-  /* Adjust based on sidebar */
   padding: 20px;
 }
 
@@ -116,6 +115,15 @@ body {
 /* Search Inputs */
 .search-filter-row {
   margin-bottom: 15px;
+  align-items: center;
+}
+
+.btn-filter-date {
+  height: 38px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-input {
@@ -222,6 +230,60 @@ tbody tr:hover {
 }
 tbody tr.active-row:hover {
   background-color: #e8f5e9;
+}
+
+/* Right Panel Detail Boxes */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-restore,
+.btn-green-export {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.detail-group {
+  margin-top: 20px;
+}
+
+.detail-group label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.detail-box {
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  padding: 15px;
+  border-radius: 4px;
+  min-height: 100px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.detail-box.mini {
+  min-height: auto;
+  padding: 10px 15px;
+}
+
+.status-pill {
+  background: #bdbdbd;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 /* Badges */
@@ -342,4 +404,184 @@ tbody tr.active-row:hover {
     margin-bottom: 20px;
     min-height: 400px;
   }
+}
+
+/* =========================================
+   7. MODAL STYLES
+   ========================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4); /* Dark semi-transparent background */
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  width: 700px;
+  max-width: 95%;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-title {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.modal-desc {
+  color: #555;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 25px;
+}
+
+.modal-split {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 25px;
+}
+
+.modal-left {
+  flex: 1;
+}
+
+.modal-right {
+  flex: 2;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+/* Inputs & Textarea */
+.readonly-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  color: #555;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+textarea#modal-remarks {
+  width: 100%;
+  height: 80px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: none;
+  box-sizing: border-box;
+  background: #f4f6f8;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.checkbox-grid label {
+  font-size: 12px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal;
+}
+
+/* Modal Buttons */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.btn-cancel {
+  background: white;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+  background: #f0f0f0;
+}
+
+/* =========================================
+   8. DATE FILTER POPOVER
+   ========================================= */
+.filter-popover {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  width: 280px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.filter-popover .date-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.filter-popover .input-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #555;
+}
+
+.filter-popover .date-picker {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.filter-popover .date-picker:focus {
+  border-color: #4caf50;
+  outline: none;
+}
+
+.popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
