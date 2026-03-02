@@ -1,17 +1,27 @@
-<?php
-include 'includes/db.php';
+<?php include '../includes/db.php';
 
-// Should be auto change based on db
-$labs = [
-    ['name' => 'Computer Lab 1', 'room' => '104', 'active' => True, 'units' => 42],
-    ['name' => 'Computer Lab 2', 'room' => '105', 'active' => false, 'units' => 40],
-    ['name' => 'Computer Lab 3', 'room' => '106', 'active' => false, 'units' => 35],
-    ['name' => 'Computer Lab 4', 'room' => '107', 'active' => false, 'units' => 50],
-    ['name' => 'Computer Lab 5', 'room' => '108', 'active' => false, 'units' => 30],
-    ['name' => 'Computer Lab 6', 'room' => '109', 'active' => false, 'units' => 45],
-    ['name' => 'Computer Lab 7', 'room' => '110', 'active' => false, 'units' => 42],
-];
-?>
+// --- ADD NEW LABORATORY LOGIC ---
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
+    $lab_name = $_POST['lab_name'];
+    $lab_room = $_POST['lab_room'];
+
+    // Prevent SQL injection
+    $lab_name = $conn->real_escape_string($lab_name);
+    $lab_room = $conn->real_escape_string($lab_room);
+
+    // Insert into database (lab_status will automatically be 'Active' based on our setup)
+    $insert_query = "INSERT INTO laboratories (lab_name, lab_room) VALUES ('$lab_name', '$lab_room')";
+
+    if ($conn->query($insert_query)) {
+        // Refresh the page to show the new lab
+        header("Location: laboratory_management.php?success=lab_added");
+        exit();
+    } else {
+        $error_msg = "Error adding laboratory: " . $conn->error;
+    }
+} ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -136,44 +146,66 @@ $labs = [
                     <input type="text" class="search-bar" placeholder="Search computer lab room...">
 
                     <div class="room-list-container">
-                        <?php foreach ($labs as $lab):
-                            $activeClass = $lab['active'] ? 'active' : '';
-                            $units = isset($lab['units']) ? $lab['units'] : 0;
+                        <?php
+
+                        $query = "SELECT 
+                l.lab_name, 
+                l.lab_room, 
+                l.lab_status, 
+                COUNT(u.set_ID) as total_units 
+              FROM laboratories l
+              LEFT JOIN units u ON l.lab_room = u.lab_room
+              GROUP BY l.lab_id, l.lab_name, l.lab_room, l.lab_status
+              ORDER BY l.lab_room ASC";
+
+                        $result = $conn->query($query);
+
+                        if ($result && $result->num_rows > 0):
+                            while ($row = $result->fetch_assoc()):
+                                // Check if active for styling
+                                $activeClass = (strtolower($row['lab_status']) === 'active') ? 'active' : '';
+                                $units = $row['total_units'];
                         ?>
-                            <div class="room-item <?= $activeClass ?>"
-                                onclick="selectRoom(this, '<?= $lab['room'] ?>')"
-                                style="cursor: pointer;">
+                                <div class="room-item <?= $activeClass ?>"
+                                    onclick="selectRoom(this, '<?= htmlspecialchars($row['lab_room']) ?>')"
+                                    style="cursor: pointer;">
 
-                                <div class="room-info">
-                                    <span class="lab-name"><?= $lab['name'] ?></span>
-                                    <span class="room-badge">Room <?= $lab['room'] ?></span>
+                                    <div class="room-info">
+                                        <span class="lab-name"><?= htmlspecialchars($row['lab_name']) ?></span>
+                                        <span class="room-badge">Room <?= htmlspecialchars($row['lab_room']) ?></span>
+                                    </div>
+
+                                    <div class="room-actions">
+                                        <button class="action-btn edit-btn"
+                                            data-name="<?= htmlspecialchars($row['lab_name']) ?>"
+                                            data-room="<?= htmlspecialchars($row['lab_room']) ?>"
+                                            data-units="<?= $units ?>"
+                                            onclick="event.stopPropagation(); openEditModal(this)">
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+
+                                        <button class="action-btn view-btn"
+                                            onclick="event.stopPropagation(); window.location.href='assets_management.php?room=<?= urlencode($row['lab_room']) ?>'">
+                                            <i class="fas fa-hand-pointer"></i>
+                                        </button>
+
+                                        <button class="action-btn delete-btn"
+                                            data-name="<?= htmlspecialchars($row['lab_name']) ?>"
+                                            data-room="<?= htmlspecialchars($row['lab_room']) ?>"
+                                            data-units="<?= $units ?>"
+                                            onclick="event.stopPropagation(); openArchiveModal(this)">
+                                            <i class="fas fa-archive"></i>
+                                        </button>
+                                    </div>
                                 </div>
-
-                                <div class="room-actions">
-                                    <button class="action-btn edit-btn"
-                                        data-name="<?= $lab['name'] ?>"
-                                        data-room="<?= $lab['room'] ?>"
-                                        data-units="<?= $units ?>"
-                                        onclick="event.stopPropagation(); openEditModal(this)">
-                                        <i class="fas fa-pen"></i>
-                                    </button>
-
-                                    <button class="action-btn view-btn"
-                                        data-room="<?= $lab['room'] ?>"
-                                        onclick="event.stopPropagation()">
-                                        <i class="fas fa-hand-pointer"></i>
-                                    </button>
-
-                                    <button class="action-btn delete-btn"
-                                        data-name="<?= $lab['name'] ?>"
-                                        data-room="<?= $lab['room'] ?>"
-                                        data-units="<?= $units ?>"
-                                        onclick="event.stopPropagation(); openArchiveModal(this)">
-                                        <i class="fas fa-archive"></i>
-                                    </button>
-                                </div>
+                            <?php
+                            endwhile;
+                        else:
+                            ?>
+                            <div class="empty-state" style="padding: 20px; text-align: center; color: #666;">
+                                No computer laboratories found. Click 'Add' to create one.
                             </div>
-                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -225,29 +257,34 @@ $labs = [
         </div>
     </div>
 
-    <div id="addLabModal" class="modal-overlay">
+    <div id="addLabModal" class="modal-overlay" style="display: none;">
         <div class="modal-container">
             <div class="modal-header">
                 <h3>Add New Computer Laboratory</h3>
             </div>
 
             <div class="modal-body">
-                <form id="addLabForm">
+                <form id="addLabForm" method="POST" action="">
+
                     <div class="form-group">
                         <label>Room Name</label>
-                        <input type="text" class="modal-input" placeholder="e.g. Computer Lab 1">
+                        <input type="text" name="lab_name" class="modal-input" placeholder="e.g. Computer Lab 1" required>
                     </div>
 
                     <div class="form-group">
                         <label>Room Number</label>
-                        <input type="text" class="modal-input" placeholder="e.g. 104">
+                        <input type="text" name="lab_room" class="modal-input" placeholder="e.g. 104" required>
                     </div>
+
                 </form>
             </div>
 
             <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('addLabModal')">Cancel</button>
-                <button class="btn-create"><i class="fas fa-plus-circle"></i> Create</button>
+                <button type="button" class="btn-cancel" onclick="closeModal('addLabModal')">Cancel</button>
+
+                <button type="submit" name="create_lab" form="addLabForm" class="btn-create">
+                    <i class="fas fa-plus-circle"></i> Create
+                </button>
             </div>
         </div>
     </div>

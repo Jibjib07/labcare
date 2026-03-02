@@ -75,7 +75,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </ul>
     </nav>
 
-    <div class="logout-section">
-        <a href="logout.php" class="btn-logout">Log Out</a>
-    </div>
+<div class="logout-section">
+    <a href="../login.php?action=logout" class="btn-logout">Log Out</a>
+</div>
 </div>

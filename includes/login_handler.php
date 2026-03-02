@@ -1,40 +1,59 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-include 'db.php';
+session_start();
+
+// Include the database connection (Since both files are in 'includes/', we just use 'db.php')
+require 'db.php'; 
 
 if (isset($_POST['login_btn'])) {
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Updated query to match your schema
-    $query = "SELECT * FROM users WHERE user_email = '$email' LIMIT 1";
-    $result = mysqli_query($conn, $query);
+    // Prevent SQL Injection
+    $email = $conn->real_escape_string($email);
+    $password = $conn->real_escape_string($password);
 
-    if (mysqli_num_rows($result) > 0) {
-        $user = mysqli_fetch_assoc($result);
+    // Query the database for the user
+    $query = "SELECT * FROM users WHERE user_email = '$email'";
+    $result = $conn->query($query);
 
-        // Match the SHA256 encryption used in your SQL insert
-        $hashed_input = hash('sha256', $password);
+    if ($result && $result->num_rows > 0) {
+        $row = $result->fetch_assoc();
 
-        if ($hashed_input === $user['user_password']) {
-            // Set session variables using exact column names from your SQL
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['username'] = $user['user_name'];
-            $_SESSION['user_role'] = $user['user_role'];
+        // Verify password (plain text for now based on your DB insert)
+        if ($password === $row['user_password']) {
+            
+            // Check if the account is active
+            if (strtolower($row['user_status']) !== 'active') {
+                header("Location: ../login.php?error=inactive");
+                exit();
+            }
 
-            header("Location: ../troubleshooting.php");
+            // Set Session Variables
+            $_SESSION['user_id'] = $row['user_id'];
+            $_SESSION['user_name'] = $row['user_name'];
+            $_SESSION['user_role'] = $row['user_role'];
+
+            // Role-Based Redirection
+            if (strtolower($row['user_role']) === 'admin') {
+                header("Location: ../admin/dashboard.php");
+            } else {
+                header("Location: ../user/dashboard.php");
+            }
             exit();
+
         } else {
+            // Incorrect password
             header("Location: ../login.php?error=invalid_password");
             exit();
         }
     } else {
+        // Email not found in database
         header("Location: ../login.php?error=user_not_found");
         exit();
     }
 } else {
+    // If accessed directly without submitting the form
     header("Location: ../login.php");
     exit();
 }
+?>
