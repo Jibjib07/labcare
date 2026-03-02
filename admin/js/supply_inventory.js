@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- 1. FILTER LOGIC ---
   const searchInput = document.getElementById("tableSearch");
   const categoryFilter = document.getElementById("categoryFilter");
-  // We target only the filter radios inside the .radio-group div
   const filterRadios = document.querySelectorAll(
     '.radio-group input[name="stock_status"]',
   );
@@ -21,25 +20,22 @@ document.addEventListener("DOMContentLoaded", function () {
       : "all";
 
     tableRows.forEach((row) => {
-      // 1. Get row data
+      // Get row data
       const supplyName = row.cells[0].innerText.toLowerCase();
       const rowCategory = row.getAttribute("data-category");
-      // We lowercase it to ensure "Out of Stock" matches "out of stock"
       const rowStatusText = row.cells[2].innerText.trim().toLowerCase();
 
-      // 2. Filter logic
+      // Filter logic
       const matchesSearch = supplyName.includes(searchTerm);
       const matchesCategory =
         selectedCategory === "all" || rowCategory === selectedCategory;
 
-      // Convert value "out_of_stock" -> "out of stock"
       const filterStatusText = selectedStockValue.replace(/_/g, " ");
 
-      // Match if 'all' is picked OR if the text is found in the status cell
       const matchesStock =
         selectedStockValue === "all" || rowStatusText === filterStatusText;
 
-      // 3. Apply visibility
+      // Apply visibility
       row.style.display =
         matchesSearch && matchesCategory && matchesStock ? "" : "none";
     });
@@ -80,19 +76,23 @@ document.addEventListener("DOMContentLoaded", function () {
       const category = this.getAttribute("data-category");
       const status = this.cells[2].innerText.trim();
 
-      // Update View Mode (Ensure these IDs exist in your PHP)
+      // Update View Mode
       const viewName = document.getElementById("view_supply_name");
       const viewStatus = document.getElementById("view_supply_status");
+      const viewCategory = document.getElementById("view_supply_category");
+
       if (viewName) viewName.innerText = name;
       if (viewStatus) viewStatus.innerText = status;
+      if (viewCategory) viewCategory.innerText = category;
 
       // Update Edit Mode Form
-      const editId = document.querySelector('input[name="supply_id"]'); // Add hidden ID to your PHP form
-      const editName = document.querySelector(
-        '#edit-mode input[name="supply_name"]',
-      );
+      const editId = document.querySelector('input[name="supply_id"]');
+      const editName = document.getElementById("edit_supply_name");
+      const editCategory = document.getElementById("edit_supply_category");
+
       if (editId) editId.value = id;
       if (editName) editName.value = name;
+      if (editCategory) editCategory.value = category;
 
       // Sync Edit Radios (Status)
       const editInStock = document.querySelector(
