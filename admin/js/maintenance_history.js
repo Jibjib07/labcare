@@ -1,7 +1,171 @@
-/**
- * Switch History Tabs (Visual Toggle Only)
- * Handles the pill-shaped buttons: Maintenance Logs | System Archives | Asset Retirement
- */
+document.addEventListener("DOMContentLoaded", function () {
+  const searchInput = document.querySelector(".search-input");
+
+  // 1. DYNAMIC SEARCH (Searches only the currently active tab)
+  searchInput.addEventListener("keyup", function () {
+    const searchTerm = this.value.toLowerCase();
+
+    // Safely find the visible tab instead of relying on inline styles
+    const tabs = document.querySelectorAll(".tab-content");
+    let activeTab = null;
+    tabs.forEach((tab) => {
+      if (window.getComputedStyle(tab).display !== "none") {
+        activeTab = tab;
+      }
+    });
+
+    if (activeTab) {
+      const rows = activeTab.querySelectorAll("tbody tr");
+      rows.forEach((row) => {
+        row.style.display = row.textContent.toLowerCase().includes(searchTerm)
+          ? ""
+          : "none";
+      });
+    }
+  });
+
+  // 2. UNIFIED CLICK HANDLER
+  document.addEventListener("click", function (e) {
+    const row = e.target.closest(".selectable-row");
+    if (!row) return;
+
+    // Highlight Row
+    document
+      .querySelectorAll(".selectable-row")
+      .forEach((r) => r.classList.remove("active-row"));
+    row.classList.add("active-row");
+
+    // Hide all right-side views
+    document
+      .querySelectorAll(".history-view")
+      .forEach((v) => (v.style.display = "none"));
+
+    // Identify the active Tab Type
+    const activeTab = document
+      .querySelector(".toggle-link.active")
+      .getAttribute("onclick");
+
+    if (activeTab.includes("archives")) {
+      // Show Archive Mode
+      const view = document.getElementById("view-archives-details");
+      if (view) view.style.display = "block";
+
+      // Set the Room Number in the Header
+      const roomId = row.dataset.roomNum;
+      document.getElementById("archive-room-id").textContent =
+        `[Room ${roomId}]`;
+      fetchArchiveData(roomId);
+    } else if (activeTab.includes("retired")) {
+      // Show Retired Mode (4 Columns)
+      const view = document.getElementById("view-retired-timeline");
+      if (view) view.style.display = "block";
+      updateTagLabels(row);
+
+      // --- Trigger the AJAX Fetch ---
+      const targetId = row.dataset.id || row.dataset.propId;
+      fetchTimelineData(targetId, "retired");
+    } else {
+      // Show Full Maintenance Mode (6 Columns)
+      const view = document.getElementById("view-full-timeline");
+      if (view) view.style.display = "block";
+      updateTagLabels(row);
+
+      // --- Trigger the AJAX Fetch ---
+      const targetId = row.dataset.unitId || row.dataset.propId;
+      fetchTimelineData(targetId, "maintenance");
+    }
+  });
+});
+
+// =========================================
+// MODAL LOGIC (Condemn Unit)
+// =========================================
+
+function openCondemnModal() {
+  // Find the currently selected row
+  const activeRow = document.querySelector(".selectable-row.active-row");
+
+  if (!activeRow) {
+    alert("Please select an item from the table first.");
+    return;
+  }
+
+  // Extract data from the selected row
+  const tag = activeRow.dataset.tag || activeRow.cells[1].innerText;
+  // It checks for unit-id first, then falls back to prop-id for assets
+  const id =
+    activeRow.dataset.unitId ||
+    activeRow.dataset.propId ||
+    activeRow.cells[2].innerText;
+
+  // Populate the modal fields
+  document.getElementById("modal-tag-display").textContent = `[${tag}]`;
+  document.getElementById("modal-set-tag").value = tag;
+  document.getElementById("modal-set-id").value = id;
+
+  // Show the modal
+  document.getElementById("condemn-modal").style.display = "flex";
+}
+
+function closeCondemnModal() {
+  document.getElementById("condemn-modal").style.display = "none";
+
+  // Reset the form so it's clean for the next time
+  document.getElementById("condemn-form").reset();
+}
+
+// Close modal if user clicks outside the white box
+document
+  .getElementById("condemn-modal")
+  .addEventListener("click", function (e) {
+    if (e.target === this) {
+      closeCondemnModal();
+    }
+  });
+
+function submitCondemn() {
+  const id = document.getElementById("modal-set-id").value;
+  const remarks = document.getElementById("modal-remarks").value;
+
+  const checkedBoxes = document.querySelectorAll(
+    'input[name="action_taken"]:checked',
+  );
+  const actions = Array.from(checkedBoxes)
+    .map((cb) => cb.value)
+    .join(", ");
+
+  if (!actions) {
+    alert("Please select at least one Action Taken.");
+    return;
+  }
+
+  console.log(
+    "Submitting Condemn for ID:",
+    id,
+    "Actions:",
+    actions,
+    "Remarks:",
+    remarks,
+  );
+  // TODO: Add AJAX call to process_condemn.php here
+
+  // Close the modal after submission
+  alert("Unit condemned successfully.");
+  closeCondemnModal();
+}
+
+// =========================================
+// GLOBAL FUNCTIONS
+// =========================================
+
+function updateTagLabels(row) {
+  const tag = row.dataset.tag || row.cells[1].innerText;
+  document.querySelectorAll(".selected-tag-label").forEach((el) => {
+    el.textContent = `[${tag}]`;
+  });
+}
+
+// Tab Switcher (The Pill Buttons)
 function switchHistoryTab(tabName, btnElement) {
   // 1. Toggle Active Button UI
   document
@@ -68,9 +232,131 @@ function fetchTimelineData(id, type) {
       : "#view-full-timeline .data-body";
   const tbody = document.querySelector(tbodyId);
 
-  // Show the one you clicked
-  const target = document.getElementById(tabName + "-tab");
-  if (target) {
-    target.style.display = "block";
-  }
+  // Show loading state while fetching data
+  const colSpan = type === "retired" ? "4" : "6";
+  tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding: 20px;"><em>Loading history...</em></td></tr>`;
+
+  // Fetch the data from your new PHP script
+  fetch(`fetch_timeline.php?id=${id}&type=${type}`)
+    .then((response) => response.text())
+    .then((htmlData) => {
+      tbody.innerHTML = htmlData;
+    })
+    .catch((error) => {
+      console.error("Error fetching data:", error);
+      tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; color: red;">Failed to load data. Please check your connection.</td></tr>`;
+    });
 }
+
+// Function to fetch and display Archive Details (JSON)
+function fetchArchiveData(roomId) {
+  const reasonBox = document.getElementById("archive-reason-text");
+  const adminBox = document.getElementById("archived-by-name");
+
+  // Show loading state
+  reasonBox.innerHTML = "<em>Loading archive details...</em>";
+  adminBox.innerHTML = "<em>Loading...</em>";
+
+  // Fetch the data from PHP
+  fetch(`fetch_timeline.php?id=${roomId}&type=archive`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.status === "success") {
+        reasonBox.textContent = data.reason;
+        adminBox.textContent = data.admin;
+      } else {
+        reasonBox.innerHTML = `<em>${data.reason}</em>`;
+        adminBox.textContent = data.admin;
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching archive data:", error);
+      reasonBox.innerHTML =
+        "<em style='color: red;'>Failed to load archive details.</em>";
+      adminBox.textContent = "-";
+    });
+}
+
+// =========================================
+// FILTER LOGIC (Text + Date combined)
+// =========================================
+
+function toggleDateFilter() {
+  const popover = document.getElementById("date-filter-popover");
+  popover.style.display = popover.style.display === "none" ? "block" : "none";
+}
+
+function clearDateFilter() {
+  document.getElementById("filter-start-date").value = "";
+  document.getElementById("filter-end-date").value = "";
+  applyFilters();
+  toggleDateFilter();
+}
+
+function applyFilters() {
+  const searchTerm = document
+    .getElementById("main-search-input")
+    .value.toLowerCase();
+  const startDateVal = document.getElementById("filter-start-date").value;
+  const endDateVal = document.getElementById("filter-end-date").value;
+
+  // Convert date inputs to Date objects for comparison
+  const start = startDateVal ? new Date(startDateVal) : null;
+  const end = endDateVal ? new Date(endDateVal) : null;
+  if (end) end.setHours(23, 59, 59);
+
+  // Safely find the visible tab
+  const tabs = document.querySelectorAll(".tab-content");
+  let activeTab = null;
+  tabs.forEach((tab) => {
+    if (window.getComputedStyle(tab).display !== "none") {
+      activeTab = tab;
+    }
+  });
+
+  if (!activeTab) return;
+
+  // Default to column 4 (index 3) for Maintenance/Retirement Date, but Archives and Retired Logs use column 3 (index 2)
+  let dateColIndex = 3; // Default to column 4 (Maintenance/Retirement Date)
+  if (activeTab.id === "archives-tab" || activeTab.id.includes("retired")) {
+    dateColIndex = 2; // Archives and Retired Logs (Retirement/Archival Date)
+  }
+
+  // Filter the rows
+  const rows = activeTab.querySelectorAll("tbody tr");
+  rows.forEach((row) => {
+    // Text Match
+    const textMatch = row.textContent.toLowerCase().includes(searchTerm);
+
+    // Date Match
+    let dateMatch = true;
+    if (start || end) {
+      const dateCell = row.cells[dateColIndex];
+      if (dateCell) {
+        const rowDate = new Date(dateCell.textContent.trim());
+
+        if (start && rowDate < start) dateMatch = false;
+        if (end && rowDate > end) dateMatch = false;
+      }
+    }
+
+    // Show row ONLY if it matches BOTH text search and date range
+    row.style.display = textMatch && dateMatch ? "" : "none";
+  });
+
+  // Optional: Hide the popover after clicking Apply
+  document.getElementById("date-filter-popover").style.display = "none";
+}
+
+// Close date popover if clicked outside
+document.addEventListener("click", function (e) {
+  const popover = document.getElementById("date-filter-popover");
+  const filterBtn = document.querySelector(".btn-filter-date");
+  if (
+    popover.style.display === "block" &&
+    !popover.contains(e.target) &&
+    !filterBtn.contains(e.target)
+  ) {
+    popover.style.display = "none";
+  }
+});
