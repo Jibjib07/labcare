@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (view) view.style.display = "block";
       updateTagLabels(row);
 
-      // --- NEW: Trigger the AJAX Fetch ---
+      // --- Trigger the AJAX Fetch ---
       const targetId = row.dataset.id || row.dataset.propId;
       fetchTimelineData(targetId, "retired");
     } else {
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (view) view.style.display = "block";
       updateTagLabels(row);
 
-      // --- NEW: Trigger the AJAX Fetch ---
+      // --- Trigger the AJAX Fetch ---
       const targetId = row.dataset.unitId || row.dataset.propId;
       fetchTimelineData(targetId, "maintenance");
     }
@@ -127,7 +127,6 @@ function submitCondemn() {
   const id = document.getElementById("modal-set-id").value;
   const remarks = document.getElementById("modal-remarks").value;
 
-  // Here we gather which checkboxes are checked
   const checkedBoxes = document.querySelectorAll(
     'input[name="action_taken"]:checked',
   );
@@ -166,7 +165,6 @@ function updateTagLabels(row) {
   });
 }
 
-// Tab Switcher (The Pill Buttons)
 // Tab Switcher (The Pill Buttons)
 function switchHistoryTab(tabName, btnElement) {
   // 1. Toggle Active Button UI
@@ -234,7 +232,7 @@ function fetchTimelineData(id, type) {
       : "#view-full-timeline .data-body";
   const tbody = document.querySelector(tbodyId);
 
-  // Show a loading message while waiting for the database
+  // Show loading state while fetching data
   const colSpan = type === "retired" ? "4" : "6";
   tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding: 20px;"><em>Loading history...</em></td></tr>`;
 
@@ -242,7 +240,6 @@ function fetchTimelineData(id, type) {
   fetch(`fetch_timeline.php?id=${id}&type=${type}`)
     .then((response) => response.text())
     .then((htmlData) => {
-      // Inject the generated HTML rows straight into the table
       tbody.innerHTML = htmlData;
     })
     .catch((error) => {
@@ -256,16 +253,15 @@ function fetchArchiveData(roomId) {
   const reasonBox = document.getElementById("archive-reason-text");
   const adminBox = document.getElementById("archived-by-name");
 
-  // Show a loading state in the text boxes
+  // Show loading state
   reasonBox.innerHTML = "<em>Loading archive details...</em>";
   adminBox.innerHTML = "<em>Loading...</em>";
 
   // Fetch the data from PHP
   fetch(`fetch_timeline.php?id=${roomId}&type=archive`)
-    .then((response) => response.json()) // Parse the response as JSON
+    .then((response) => response.json())
     .then((data) => {
       if (data.status === "success") {
-        // Inject the fresh database text into the boxes
         reasonBox.textContent = data.reason;
         adminBox.textContent = data.admin;
       } else {
@@ -293,8 +289,8 @@ function toggleDateFilter() {
 function clearDateFilter() {
   document.getElementById("filter-start-date").value = "";
   document.getElementById("filter-end-date").value = "";
-  applyFilters(); // Re-run filters to show all rows
-  toggleDateFilter(); // Close popover
+  applyFilters();
+  toggleDateFilter();
 }
 
 function applyFilters() {
@@ -304,10 +300,10 @@ function applyFilters() {
   const startDateVal = document.getElementById("filter-start-date").value;
   const endDateVal = document.getElementById("filter-end-date").value;
 
-  // Convert string inputs to actual Date objects for comparison
+  // Convert date inputs to Date objects for comparison
   const start = startDateVal ? new Date(startDateVal) : null;
   const end = endDateVal ? new Date(endDateVal) : null;
-  if (end) end.setHours(23, 59, 59); // Ensure it includes the entire end day
+  if (end) end.setHours(23, 59, 59);
 
   // Safely find the visible tab
   const tabs = document.querySelectorAll(".tab-content");
@@ -320,11 +316,10 @@ function applyFilters() {
 
   if (!activeTab) return;
 
-  // Determine which column holds the Date based on the active tab
-  // (Arrays start at 0, so column 4 is index 3)
-  let dateColIndex = 3; // Default: Unit Logs / Asset Logs (Latest Maintenance Date)
+  // Default to column 4 (index 3) for Maintenance/Retirement Date, but Archives and Retired Logs use column 3 (index 2)
+  let dateColIndex = 3; // Default to column 4 (Maintenance/Retirement Date)
   if (activeTab.id === "archives-tab" || activeTab.id.includes("retired")) {
-    dateColIndex = 2; // Archives and Retired tabs have the Date in column 3
+    dateColIndex = 2; // Archives and Retired Logs (Retirement/Archival Date)
   }
 
   // Filter the rows
@@ -338,7 +333,6 @@ function applyFilters() {
     if (start || end) {
       const dateCell = row.cells[dateColIndex];
       if (dateCell) {
-        // Convert table text like "11/20/2025" to a Date object
         const rowDate = new Date(dateCell.textContent.trim());
 
         if (start && rowDate < start) dateMatch = false;

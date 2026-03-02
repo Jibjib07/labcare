@@ -38,7 +38,7 @@
 
                     <div class="search-filter-row" style="display: flex; gap: 10px; position: relative;">
                         <input type="text" class="search-input" id="main-search-input" placeholder="Search a set tag...." style="flex: 2;">
-
+                        
                         <button class="btn-filter-date" onclick="toggleDateFilter()" style="flex: 1; background: white; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; color: #666; cursor: pointer; padding: 0 10px;">
                             Date Range <i class="fas fa-filter" style="margin-left: 5px;"></i>
                         </button>
@@ -65,27 +65,24 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr>
-                                        <th>Room Number</th>
-                                        <th>Set Tag</th>
-                                        <th>Set ID</th>
-                                        <th>Latest Maintenance Date</th>
-                                    </tr>
+                                    <tr><th>Room Number</th><th>Set Tag</th><th>Set ID</th><th>Latest Maintenance Date</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php
-                                    // 1. QUERY FOR UNIT LOGS
-                                    $query_units = "SELECT set_ID, set_tag, latest_maintainance FROM units ORDER BY latest_maintainance DESC";
+                                    $query_units = "SELECT lab_room, set_tag, set_id, latest_maintainance FROM units WHERE set_status != 'Condemned' OR set_status IS NULL ORDER BY latest_maintainance DESC";
                                     $result_units = $conn->query($query_units);
 
                                     if ($result_units && $result_units->num_rows > 0) {
                                         while ($row = $result_units->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-unit-id='" . htmlspecialchars($row['set_ID']) . "' data-tag='" . htmlspecialchars($row['set_tag']) . "'>";
+                                            echo "<tr class='selectable-row' data-unit-id='" . htmlspecialchars($row['set_id']) . "' data-tag='" . htmlspecialchars($row['set_tag']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['set_id']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['latest_maintainance']) . "</td>";
+                                            echo "</tr>";
                                         }
                                     } else {
-                                        echo "<tr><td colspan='4' style='text-align:center;'>No unit logs available.</td></tr>";
+                                        echo "<tr><td colspan='4' style='text-align:center;'>No active unit logs available.</td></tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -97,30 +94,24 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr>
-                                        <th>Room Number</th>
-                                        <th>Set Tag</th>
-                                        <th>Property ID</th>
-                                        <th>Latest Maintenance Date</th>
-                                    </tr>
+                                    <tr><th>Room Number</th><th>Asset Tag</th><th>Property ID</th><th>Latest Maintenance Date</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php
-                                    // 2. QUERY FOR ASSET LOGS
-                                    $query_assets = "SELECT lab_room, asset_tag, asset_property, latest_maintenance FROM assets ORDER BY latest_maintenance DESC";
+                                    $query_assets = "SELECT lab_room, asset_tag, asset_id, latest_maintenance FROM assets WHERE asset_status != 'Condemned' OR asset_status IS NULL ORDER BY latest_maintenance DESC";
                                     $result_assets = $conn->query($query_assets);
 
                                     if ($result_assets && $result_assets->num_rows > 0) {
                                         while ($row = $result_assets->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-asset-id='" . htmlspecialchars($row['asset_property']) . "' data-tag='" . htmlspecialchars($row['asset_tag']) . "'>";
+                                            echo "<tr class='selectable-row' data-prop-id='" . htmlspecialchars($row['asset_id']) . "' data-tag='" . htmlspecialchars($row['asset_tag']) . "'>";
                                             echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['asset_property']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['asset_id']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['latest_maintenance']) . "</td>";
                                             echo "</tr>";
                                         }
                                     } else {
-                                        echo "<tr><td colspan='4' style='text-align:center;'>No asset logs available.</td></tr>";
+                                        echo "<tr><td colspan='4' style='text-align:center;'>No active asset logs available.</td></tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -132,33 +123,23 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr>
-                                        <th>Room Number</th>
-                                        <th>Room Name</th>
-                                        <th>Archive Date</th>
-                                        <th>Total Units</th>
-                                        <th>Status</th>
-                                    </tr>
+                                    <tr><th>Room Number</th><th>Room Name</th><th>Status</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php
-                                    // 3. QUERY FOR ARCHIVES
-                                    $query_archives = "SELECT room_number, room_name, archive_date, total_units, status FROM room_archives ORDER BY archive_date DESC";
+                                    $query_archives = "SELECT lab_room, lab_name, lab_status FROM laboratories WHERE lab_status = 'Archived'";
                                     $result_archives = $conn->query($query_archives);
 
                                     if ($result_archives && $result_archives->num_rows > 0) {
                                         while ($row = $result_archives->fetch_assoc()) {
-                                            // Notice we only pass the room_num now, because AJAX handles fetching the reason/admin!
-                                            echo "<tr class='selectable-row' data-type='archive' data-room-num='" . htmlspecialchars($row['room_number']) . "'>";
-                                            echo "<td>" . htmlspecialchars($row['room_number']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['room_name']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['archive_date']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['total_units']) . "</td>";
-                                            echo "<td><span class='status-pill'>" . htmlspecialchars($row['status']) . "</span></td>";
+                                            echo "<tr class='selectable-row' data-type='archive' data-room-num='" . htmlspecialchars($row['lab_room']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['lab_name']) . "</td>";
+                                            echo "<td><span class='status-pill'>" . htmlspecialchars($row['lab_status']) . "</span></td>";
                                             echo "</tr>";
                                         }
                                     } else {
-                                        echo "<tr><td colspan='5' style='text-align:center;'>No archived rooms.</td></tr>";
+                                        echo "<tr><td colspan='3' style='text-align:center;'>No archived rooms.</td></tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -170,28 +151,21 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr>
-                                        <th>Set ID</th>
-                                        <th>Set Tag</th>
-                                        <th>Retirement Date</th>
-                                        <th>Origin Lab</th>
-                                        <th>Status</th>
-                                    </tr>
+                                    <tr><th>Set ID</th><th>Set Tag</th><th>Retirement Date</th><th>Origin Lab</th><th>Status</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php
-                                    // 4. QUERY FOR RETIRED UNITS
-                                    $query_ret_units = "SELECT unit_id, set_tag, retirement_date, origin_lab, status FROM retired_units ORDER BY retirement_date DESC";
+                                    $query_ret_units = "SELECT set_id, set_tag, latest_maintainance, lab_room, set_status FROM units WHERE set_status = 'Condemned' ORDER BY latest_maintainance DESC";
                                     $result_ret_units = $conn->query($query_ret_units);
 
                                     if ($result_ret_units && $result_ret_units->num_rows > 0) {
                                         while ($row = $result_ret_units->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['set_tag']) . "' data-id='" . htmlspecialchars($row['unit_id']) . "'>";
-                                            echo "<td>" . htmlspecialchars($row['unit_id']) . "</td>";
+                                            echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['set_tag']) . "' data-id='" . htmlspecialchars($row['set_id']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['set_id']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['retirement_date']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['origin_lab']) . "</td>";
-                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['status']) . "</span></td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_maintainance']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
+                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['set_status']) . "</span></td>";
                                             echo "</tr>";
                                         }
                                     } else {
@@ -207,28 +181,21 @@
                         <div class="table-container">
                             <table class="history-table">
                                 <thead>
-                                    <tr>
-                                        <th>Property ID</th>
-                                        <th>Set Tag</th>
-                                        <th>Retirement Date</th>
-                                        <th>Origin Lab</th>
-                                        <th>Status</th>
-                                    </tr>
+                                    <tr><th>Property ID</th><th>Asset Tag</th><th>Retirement Date</th><th>Origin Lab</th><th>Status</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php
-                                    // 5. QUERY FOR RETIRED ASSETS
-                                    $query_ret_assets = "SELECT property_id, set_tag, retirement_date, origin_lab, status FROM retired_assets ORDER BY retirement_date DESC";
+                                    $query_ret_assets = "SELECT asset_id, asset_tag, latest_maintenance, lab_room, asset_status FROM assets WHERE asset_status = 'Condemned' ORDER BY latest_maintenance DESC";
                                     $result_ret_assets = $conn->query($query_ret_assets);
 
                                     if ($result_ret_assets && $result_ret_assets->num_rows > 0) {
                                         while ($row = $result_ret_assets->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-type='retired-asset' data-tag='" . htmlspecialchars($row['set_tag']) . "' data-prop-id='" . htmlspecialchars($row['property_id']) . "'>";
-                                            echo "<td>" . htmlspecialchars($row['property_id']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['retirement_date']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['origin_lab']) . "</td>";
-                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['status']) . "</span></td>";
+                                            echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['asset_tag']) . "' data-prop-id='" . htmlspecialchars($row['asset_id']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['asset_id']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_maintenance']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
+                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['asset_status']) . "</span></td>";
                                             echo "</tr>";
                                         }
                                     } else {
@@ -242,7 +209,7 @@
                 </div>
 
                 <div class="panel white-panel right-panel">
-
+    
                     <div id="view-full-timeline" class="history-view">
                         <div class="section-header-row">
                             <h3><span class="selected-tag-label"></span> Maintenance Timeline</h3>
@@ -252,12 +219,8 @@
                             <table class="timeline-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Reported by</th>
-                                        <th>Affected</th>
-                                        <th>Action Taken</th>
-                                        <th>Remarks</th>
-                                        <th>Status</th>
+                                        <th>Date</th><th>Reported by</th><th>Affected</th>
+                                        <th>Action Taken</th><th>Remarks</th><th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="data-body">
@@ -279,10 +242,7 @@
                             <table class="timeline-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Reported by</th>
-                                        <th>Remarks</th>
-                                        <th>Status</th>
+                                        <th>Date</th><th>Reported by</th><th>Remarks</th><th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="data-body">
@@ -322,51 +282,50 @@
     </div>
 
     <div id="condemn-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <h2 class="modal-title">Condemn this Unit?</h2>
-            <p class="modal-desc">
-                Are you sure you want to condemn <strong id="modal-tag-display">[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
-            </p>
+    <div class="modal-content">
+        <h2 class="modal-title">Condemn this Unit?</h2>
+        <p class="modal-desc">
+            Are you sure you want to condemn <strong id="modal-tag-display">[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
+        </p>
 
-            <form id="condemn-form">
-                <div class="modal-split">
-                    <div class="modal-left">
-                        <div class="form-group">
-                            <label>Set Tag:</label>
-                            <input type="text" id="modal-set-tag" readonly class="readonly-input">
-                        </div>
-                        <div class="form-group">
-                            <label>Set ID:</label>
-                            <input type="text" id="modal-set-id" readonly class="readonly-input">
-                        </div>
+        <form id="condemn-form">
+            <div class="modal-split">
+                <div class="modal-left">
+                    <div class="form-group">
+                        <label>Set Tag:</label>
+                        <input type="text" id="modal-set-tag" readonly class="readonly-input">
                     </div>
-
-                    <div class="modal-right">
-                        <label>Action Taken:</label>
-                        <div class="checkbox-grid">
-                            <label><input type="checkbox" name="action_taken" value="Hardware Failure"> Hardware Failure (Non-repairable)</label>
-                            <label><input type="checkbox" name="action_taken" value="Physical Damage"> Significant Physical Damage</label>
-                            <label><input type="checkbox" name="action_taken" value="System Obsolescence"> System Obsolescence (End of Life)</label>
-                            <label><input type="checkbox" name="action_taken" value="Other"> Other (Please specify...)</label>
-                        </div>
-
-                        <div class="form-group remarks-group">
-                            <label>Remarks:</label>
-                            <textarea id="modal-remarks" placeholder="Provide specific details for the audit log..."></textarea>
-                        </div>
+                    <div class="form-group">
+                        <label>Set ID:</label>
+                        <input type="text" id="modal-set-id" readonly class="readonly-input">
                     </div>
                 </div>
 
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeCondemnModal()">Cancel</button>
-                    <button type="button" class="btn-red-condemn" onclick="submitCondemn()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                <div class="modal-right">
+                    <label>Action Taken:</label>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" name="action_taken" value="Hardware Failure"> Hardware Failure (Non-repairable)</label>
+                        <label><input type="checkbox" name="action_taken" value="Physical Damage"> Significant Physical Damage</label>
+                        <label><input type="checkbox" name="action_taken" value="System Obsolescence"> System Obsolescence (End of Life)</label>
+                        <label><input type="checkbox" name="action_taken" value="Other"> Other (Please specify...)</label>
+                    </div>
+                    
+                    <div class="form-group remarks-group">
+                        <label>Remarks:</label>
+                        <textarea id="modal-remarks" placeholder="Provide specific details for the audit log..."></textarea>
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeCondemnModal()">Cancel</button>
+                <button type="button" class="btn-red-condemn" onclick="submitCondemn()"><i class="fas fa-trash-alt"></i> Condemn</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/maintenance_history.js?v=<?php echo time(); ?>"></script>
 </body>
-
 </html>

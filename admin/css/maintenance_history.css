@@ -10,7 +10,6 @@ body {
 }
 
 .main-content {
-  /* Adjust based on sidebar */
   padding: 20px;
 }
 
@@ -120,7 +119,7 @@ body {
 }
 
 .btn-filter-date {
-  height: 38px; /* Match search input height */
+  height: 38px;
   padding: 0 15px;
   display: flex;
   align-items: center;
@@ -279,7 +278,7 @@ tbody tr.active-row:hover {
 }
 
 .status-pill {
-  background: #bdbdbd; /* Match the grey in your screenshot */
+  background: #bdbdbd;
   color: white;
   padding: 4px 10px;
   border-radius: 20px;
@@ -495,7 +494,6 @@ textarea#modal-remarks {
   background: #f4f6f8;
 }
 
-/* Checkbox Grid (2x2 layout) */
 .checkbox-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -541,7 +539,7 @@ textarea#modal-remarks {
    ========================================= */
 .filter-popover {
   position: absolute;
-  top: 45px; /* Pushes it just below the search bar */
+  top: 45px;
   right: 0;
   width: 280px;
   background: white;
@@ -549,7 +547,7 @@ textarea#modal-remarks {
   border-radius: 8px;
   padding: 15px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  z-index: 100; /* Ensures it floats above the table */
+  z-index: 100;
 }
 
 .filter-popover .date-inputs {

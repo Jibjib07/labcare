@@ -63,56 +63,31 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr data-id="1" data-category="Connectivity & Cables">
-                                <td>HDMI Cables</td>
-                                <td>Connectivity & Cables</td>
-                                <td><span class="badge red">Out of Stock</span></td>
-                            </tr>
-                            <tr data-id="2" data-category="Peripherals">
-                                <td>Keyboards</td>
-                                <td>Peripherals</td>
-                                <td><span class="badge green">In Stock</span></td>
-                            </tr>
-                                <tr data-id="3" data-category="Internal Components">
-                                <td>RAM Sticks (8GB/16GB)</td>
-                                <td>Internal Components</td>
-                                <td><span class="badge green">In Stock</span></td>
-                            </tr>
-                            <tr data-id="4" data-category="Networking Tools">
-                                <td>Crimping Tool</td>
-                                <td>Networking Tools</td>
-                                <td><span class="badge green">In Stock</span></td>
-                            </tr>
-                            <tr data-id="5" data-category="Networking Consumables">
-                                <td>RJ45 Connectors</td>
-                                <td>Networking Consumables</td>
-                                <td><span class="badge green">In Stock</span></td>
-                            </tr>
-                            <tr data-id="6" data-category="Maintenance & Cleaning">
-                                <td>Thermal Paste</td>
-                                <td>Maintenance & Cleaning</td>
-                                <td><span class="badge green">In Stock</span></td>
-                            </tr>
-                            <tr data-id="7" data-category="Power Management">
-                                <td>AVR Fuses</td>
-                                <td>Power Management</td>
-                                <td><span class="badge green">In Stock</span></td>
-                            </tr>
-                            <tr data-id="8" data-category="Facility Supplies">
-                                <td>Printer Toner/Ink</td>
-                                <td>Facility Supplies</td>
-                                <td><span class="badge green">In Stock</span></td>
-                            </tr>
+                            <?php
+                            $query = "SELECT supply_id, supply_name, supply_category, supply_status FROM supply ORDER BY supply_name ASC";
+                            $result = mysqli_query($conn, $query);
+
+                            if (mysqli_num_rows($result) > 0) {
+                                while ($row = mysqli_fetch_assoc($result)) {
+                                    $id = htmlspecialchars($row['supply_id']);
+                                    $name = htmlspecialchars($row['supply_name']);
+                                    $category = htmlspecialchars($row['supply_category']);
+                                    $status = htmlspecialchars($row['supply_status']);
+
+                                    $badgeClass = ($status === 'In Stock') ? 'badge green' : 'badge red';
+
+                                    echo "<tr data-id='{$id}' data-category='{$category}'>";
+                                    echo "    <td>{$name}</td>";
+                                    echo "    <td>{$category}</td>";
+                                    echo "    <td><span class='{$badgeClass}'>{$status}</span></td>";
+                                    echo "</tr>";
+                                }
+                            } else {
+                                echo "<tr><td colspan='3' style='text-align: center; padding: 20px;'>No supplies found in inventory.</td></tr>";
+                            }
+                            ?>
                         </tbody>
                     </table>
-                </div>
-
-                <div class="pagination">
-                    <span class="page-nav">< Previous</span>
-                    <span class="page-num active">1</span>
-                    <span class="page-num">2</span>
-                    <span class="page-num">3</span>
-                    <span class="page-nav">Next ></span>
                 </div>
             </div>
 
@@ -138,6 +113,10 @@
                         <div class="detail-group">
                             <label>Current Status:</label>
                             <div class="detail-input" id="view_supply_status">-</div>
+                        </div>
+                        <div class="detail-group">
+                            <label>Category:</label>
+                            <div class="detail-input" id="view_supply_category">-</div>
                         </div>
                     </div>
 
@@ -172,6 +151,7 @@
 
                 <div id="edit-mode" style="display: none;">
                     <form action="handlers/update_supply.php" method="POST">
+                        <input type="hidden" name="supply_id" id="edit_supply_id">
                         <div class="panel-header-row">
                             <h3>Supply Details</h3>
                             <div class="header-actions">
@@ -185,24 +165,38 @@
                         <div class="detail-grid">
                             <div class="detail-group">
                                 <label>Supply Name:</label>
-                                <input type="text" name="supply_name" class="modal-input" value="HDMI Cables">
+                                <input type="text" name="supply_name" id="edit_supply_name" class="modal-input" value="" placeholder="Select an item first..." readonly>
                             </div>
                             <div class="detail-group">
                                 <label>Current Status:</label>
                                 <div class="status-toggle-container">
                                     <label class="custom-radio">
-                                        <input type="radio" name="stock_status" value="Out of Stock" checked>
+                                        <input type="radio" name="stock_status" id="edit_out_stock" value="Out of Stock">
                                         <span class="checkmark"></span> Out of Stock
                                     </label>
                                     <label class="custom-radio">
-                                        <input type="radio" name="stock_status" value="In Stock">
+                                        <input type="radio" name="stock_status" id="edit_in_stock" value="In Stock">
                                         <span class="checkmark"></span> In Stock
                                     </label>
                                 </div>
                             </div>
+                            <div class="detail-group">
+                                <label>Category:</label>
+                                <select name="supply_category" id="edit_supply_category" class="modal-input">
+                                    <option value="" disabled selected>Select a category...</option>
+                                    <option value="Connectivity & Cables">Connectivity & Cables</option>
+                                    <option value="Peripherals">Peripherals</option>
+                                    <option value="Internal Components">Internal Components</option>
+                                    <option value="Networking Tools">Networking Tools</option>
+                                    <option value="Networking Consumables">Networking Consumables</option>
+                                    <option value="Maintenance & Cleaning">Maintenance & Cleaning</option>
+                                    <option value="Power Management">Power Management</option>
+                                    <option value="Facility Supplies">Facility Supplies</option> 
+                                </select>
+                            </div>
                         </div>
 
-                        <div class="remarks-container">
+                        <div class="remarks-container" style="margin-top: 20px;">
                             <label class="modal-label">Update Remarks (Required):</label>
                             <textarea name="update_remarks" class="modal-input remarks-textarea" placeholder="Provide a reason for this stock update..." required></textarea>
                         </div>
