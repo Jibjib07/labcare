@@ -1,247 +1,298 @@
-/* =========================================
-   1. SHARED UTILITIES
-   ========================================= */
-.page-header {
-  margin-bottom: 25px;
+/* --- SHARED LAYOUT & UI UTILITIES --- */
+body.bg-light {
+    background-color: #f4f7f6;
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
 }
+
+.main-content {
+    padding: 30px;
+}
+
 .page-header h1 {
-  font-size: 24px;
-  color: #000;
-  margin-bottom: 5px;
-  font-weight: 800;
+    font-size: 24px;
+    color: #333;
+    font-weight: 800;
+    margin-bottom: 5px;
 }
+
 .page-header p {
-  color: #555;
-  font-size: 14px;
+    color: #555;
+    font-size: 14px;
+    margin-bottom: 25px;
 }
 
-.white-panel {
-  background: white;
-  border-radius: 8px;
-  padding: 25px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-}
-
+/* Fluid Adaptive Grid (User Management Style) */
 .troubleshoot-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 20px;
-  align-items: start;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; 
+    gap: 20px;
+    align-items: start;
 }
 
-.panel-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.panel-header-row h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: #222;
+.card-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    height: fit-content; 
 }
 
-/* Buttons */
-.btn-green-add {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.btn-edit {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.btn-archive {
-  background: #ff5722;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+/* Right Column Wrapper */
+.right-column-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-/* =========================================
-   2. LEFT PANEL: GUIDE LIST
-   ========================================= */
-.search-filter-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-.search-input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-}
-.filter-dropdown {
-  background: white;
-  border: 1px solid #ddd;
-  padding: 0 15px;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #555;
-  min-width: 80px;
-  justify-content: space-between;
+/* Responsive Stacking */
+@media screen and (max-width: 1100px) {
+    .troubleshoot-layout {
+        grid-template-columns: 1fr;
+    }
+    .main-content {
+        padding: 15px;
+    }
 }
 
-/* Status Toggles (Radio Buttons) */
-.status-toggle-row {
-  display: flex;
-  justify-content: flex-start; /* Align left */
-  gap: 20px;
-  margin-bottom: 15px;
-  padding-left: 5px;
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
 }
 
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #555;
-  cursor: pointer;
-  font-weight: 500;
+.panel-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #222;
+    margin: 0;
 }
 
-.radio-label input[type="radio"] {
-  accent-color: #555; /* Gray color when selected */
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  cursor: pointer;
+.detail-header {
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 15px;
 }
 
-/* Table */
-.table-container {
-  overflow-x: auto;
-  margin-bottom: 15px;
-}
-.guide-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.guide-table th {
-  background: #1b4d3e;
-  color: white;
-  padding: 12px 15px;
-  text-align: left;
-  font-size: 12px;
+/* --- BUTTONS --- */
+.btn-green-add, .btn-edit, .btn-save-update {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.guide-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 13px;
-  color: #333;
+.btn-archive, .btn-archive-confirm {
+    background: #FF5722;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
 }
 
-.active-row {
-  background-color: #e8f5e9;
-  font-weight: 600;
-} /* Light Green Highlight */
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  gap: 5px;
-  font-size: 12px;
-  color: #666;
-  align-items: center;
-}
-.page-num {
-  padding: 4px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.page-num.active {
-  background: #f0f0f0;
-  font-weight: bold;
-  border-color: #ccc;
-  color: #000;
-}
-.page-nav {
-  cursor: pointer;
-  padding: 0 5px;
+.btn-cancel {
+    background: white;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
 }
 
-/* =========================================
-   3. RIGHT PANEL: FULL DETAILS
-   ========================================= */
+.btn-cancel:hover { background: #f9f9f9; }
+
 .action-buttons {
-  display: flex;
-  gap: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+/* --- EDIT MODE INPUTS --- */
+.edit-input,
+.edit-textarea {
+    width: 100%;
+    padding: 12px 18px;
+    border: 1px solid #f2f2f2;
+    background-color: #fafafa;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #555;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
 }
 
-.detail-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 5px;
+.edit-input:focus,
+.edit-textarea:focus {
+    border-color: #4CAF50;
+    background-color: #fff;
 }
 
-/* Detail Text (Clean Style) */
-.detail-box {
-  background: transparent;
-  border: none;
-  padding: 0;
-  font-size: 13px;
-  color: #555;
-  line-height: 1.6;
+.edit-textarea { height: 60px; resize: none; }
+.edit-textarea.large { height: 100px; }
+
+/* --- LEFT PANEL ELEMENTS --- */
+.filter-controls { margin-bottom: 20px; }
+.search-row { display: flex; gap: 10px; margin-bottom: 15px; position: relative; }
+.search-input { flex: 1; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 13px; outline: none; }
+.filter-container { position: relative; }
+
+.filter-dropdown {
+    background: white; border: 1px solid #e0e0e0; padding: 0 15px; border-radius: 8px;
+    font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #7E7E7E; height: 100%; min-height: 38px;
 }
 
-/* Bullet Lists in Details */
-.bullet-list {
-  margin: 0;
-  padding-left: 18px;
-}
-.bullet-list li {
-  margin-bottom: 3px;
+.filter-options {
+    display: none; position: absolute; top: 45px; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); z-index: 100; min-width: 200px;
 }
 
-/* =========================================
-   4. RESPONSIVENESS
-   ========================================= */
-@media (max-width: 900px) {
-  .troubleshoot-layout {
-    grid-template-columns: 1fr; /* Stack vertically */
-  }
+.filter-options div { padding: 10px 15px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; color: #444; }
+.filter-options div.active-filter { background-color: #f1f8f1; color: #4CAF50; font-weight: 700; }
+
+.radio-row { display: flex; gap: 20px; font-size: 13px; color: #7E7E7E; padding-left: 5px; flex-wrap: wrap; }
+.radio-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.radio-label input { accent-color: #7E7E7E; }
+
+.table-area { flex: 1; overflow-y: visible; margin-bottom: 20px; }
+.guide-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.guide-table th { background: #104236; color: white; padding: 12px 10px; text-align: left; font-size: 11px; }
+.guide-table td { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.clickable-row:hover { background-color: #f9f9f9; cursor: pointer; }
+.clickable-row.active-row { background-color: #f1f8f1 !important; font-weight: 600; }
+
+.pagination-footer { display: none; }
+
+/* RESTORED MODAL STYLING */
+.guide-modal-overlay {
+    display: none; 
+    position: fixed; 
+    z-index: 9999; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4); 
+    justify-content: center; 
+    align-items: center;
 }
+
+.guide-modal-card {
+    background: #fff; 
+    width: 580px; 
+    border-radius: 12px; 
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+    display: flex; 
+    flex-direction: column; 
+    max-width: 95%;
+}
+
+.guide-modal-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 12px 25px; 
+    border-bottom: 1px solid #eee; 
+    background: #fff; 
+}
+
+.guide-modal-header h3 { font-size: 16px; font-weight: 700; color: #222; margin: 0; }
+
+.btn-create-submit {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.guide-modal-body { 
+    padding: 15px 25px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    overflow-y: auto; 
+    max-height: 80vh; 
+}
+
+.modal-input-group label { 
+    display: block; 
+    font-weight: 700; 
+    font-size: 12px; 
+    margin-bottom: 4px; 
+    color: #333; 
+}
+
+.modal-input-group input, 
+.modal-input-group select, 
+.modal-input-group textarea { 
+    width: 100%; 
+    padding: 8px 12px; 
+    border: 1px solid #ddd; 
+    border-radius: 6px; 
+    font-size: 13px; 
+    outline: none; 
+}
+
+.modal-input-group textarea { height: 60px; resize: none; font-family: inherit; }
+
+/* --- DETAILS & TOAST --- */
+.detail-section { margin-top: 15px; margin-bottom: 20px; }
+.detail-section label { display: block; font-weight: 700; font-size: 13px; color: #222; margin-bottom: 8px; }
+
+.info-box { background-color: #fafafa; border-radius: 8px; padding: 12px 18px; font-size: 13px; color: #555; line-height: 1.6; border: 1px solid #f2f2f2; }
+.title-text { font-weight: 500; color: #333; }
+.bullet-list { margin: 0; padding-left: 18px; }
+.bullet-list li { margin-bottom: 5px; }
+
+.toast-notification {
+    position: fixed; top: 20px; right: 20px; background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px 20px;
+    display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05); z-index: 10000;
+    transform: translateX(150%); transition: transform 0.4s ease;
+}
+
+.toast-notification.active { transform: translateX(0); }
+
+/* --- CONFIRMATION OVERLAYS --- */
+.detail-panel { position: relative; }
+
+.archive-confirm-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(2px);
+    z-index: 100; display: flex; justify-content: center; align-items: flex-start; padding-top: 60px; border-radius: 12px;
+}
+
+.archive-confirm-card { background: white; width: 85%; max-width: 400px; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); border: 1px solid #eee; }
+.archive-confirm-card h3 { font-size: 16px; margin: 0 0 10px 0; color: #222; }
+.archive-confirm-card p { font-size: 13px; color: #666; margin-bottom: 20px; }
+
+.confirm-info-group { margin-bottom: 15px; }
+.confirm-info-group label { display: block; font-size: 11px; font-weight: 700; color: #333; margin-bottom: 4px; }
+.confirm-val { background: #fafafa; padding: 10px; border-radius: 6px; font-size: 13px; color: #444; border: 1px solid #f0f0f0; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+
+.toast-notification.archived-toast { border: 2px solid #FF5722; }
