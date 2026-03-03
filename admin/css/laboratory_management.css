@@ -752,3 +752,17 @@
 .schedule-img-fit {
     cursor: zoom-in;
 }
+
+/* Login-style Error Message for Modals */
+.error-msg {
+  background: #fcecea;
+  color: #c53030;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #feb2b2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

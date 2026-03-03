@@ -1,45 +1,75 @@
-<?php include '../includes/db.php';
+<?php
+include '../includes/db.php';
+
+$add_error = '';
+$edit_error = '';
 
 // --- ADD NEW LABORATORY LOGIC ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
-    $lab_name = $_POST['lab_name'];
-    $lab_room = $_POST['lab_room'];
+    $lab_name = $conn->real_escape_string($_POST['lab_name']);
+    $lab_room = $conn->real_escape_string($_POST['lab_room']);
 
-    $lab_name = $conn->real_escape_string($lab_name);
-    $lab_room = $conn->real_escape_string($lab_room);
+    $check_query = "SELECT * FROM laboratories 
+                    WHERE (lab_name = '$lab_name' OR lab_room = '$lab_room') 
+                    AND LOWER(lab_status) = 'active'";
 
-    $insert_query = "INSERT INTO laboratories (lab_name, lab_room) VALUES ('$lab_name', '$lab_room')";
+    $check_result = $conn->query($check_query);
 
-    if ($conn->query($insert_query)) {
-        header("Location: laboratory_management.php?success=lab_added");
-        exit();
+    if ($check_result && $check_result->num_rows > 0) {
+        $row = $check_result->fetch_assoc();
+        if (strtolower($row['lab_name']) === strtolower($lab_name)) {
+            $add_error = "The laboratory name '$lab_name' is already taken.";
+        } else {
+            $add_error = "Room Number '$lab_room' is already in use.";
+        }
     } else {
-        $error_msg = "Error adding laboratory: " . $conn->error;
+        $insert_query = "INSERT INTO laboratories (lab_name, lab_room, lab_status) VALUES ('$lab_name', '$lab_room', 'Active')";
+        if ($conn->query($insert_query)) {
+            header("Location: laboratory_management.php?success=lab_added");
+            exit();
+        } else {
+            $add_error = "Database Error: " . $conn->error;
+        }
     }
 }
+
 // --- EDIT LABORATORY LOGIC ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
+    $lab_id = $conn->real_escape_string($_POST['edit_lab_id']);
     $original_room = $conn->real_escape_string($_POST['original_room_number']);
     $new_name = $conn->real_escape_string($_POST['edit_room_name']);
     $new_room = $conn->real_escape_string($_POST['edit_room_number']);
 
-    $update_query = "UPDATE laboratories SET lab_name = '$new_name', lab_room = '$new_room' WHERE lab_room = '$original_room'";
+    $check_query = "SELECT * FROM laboratories 
+                    WHERE (lab_name = '$new_name' OR lab_room = '$new_room') 
+                    AND LOWER(lab_status) = 'active' 
+                    AND lab_id != '$lab_id'";
 
-    if ($conn->query($update_query)) {
+    $check_result = $conn->query($check_query);
 
-        if ($original_room !== $new_room) {
-            $conn->query("UPDATE units SET lab_room = '$new_room' WHERE lab_room = '$original_room'");
-            $conn->query("UPDATE assets SET lab_room = '$new_room' WHERE lab_room = '$original_room'");
+    if ($check_result && $check_result->num_rows > 0) {
+        $row = $check_result->fetch_assoc();
+        if (strtolower($row['lab_name']) === strtolower($new_name)) {
+            $edit_error = "The name '$new_name' is already taken by another room.";
+        } else {
+            $edit_error = "Room Number '$new_room' is already assigned elsewhere.";
         }
-
-        header("Location: laboratory_management.php?success=lab_updated");
-        exit();
     } else {
-        $error_msg = "Error updating laboratory: " . $conn->error;
+        $update_query = "UPDATE laboratories SET lab_name = '$new_name', lab_room = '$new_room' WHERE lab_id = '$lab_id'";
+
+        if ($conn->query($update_query)) {
+            if ($original_room !== $new_room) {
+                $conn->query("UPDATE units SET lab_room = '$new_room' WHERE lab_room = '$original_room'");
+                $conn->query("UPDATE assets SET lab_room = '$new_room' WHERE lab_room = '$original_room'");
+            }
+            header("Location: laboratory_management.php?success=lab_updated");
+            exit();
+        } else {
+            $edit_error = "Database Error: " . $conn->error;
+        }
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -292,6 +322,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
             </div>
 
             <div class="modal-body">
+                <?php if (!empty($add_error)): ?>
+                    <div class="error-msg">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span><?php echo $add_error; ?></span>
+                    </div>
+                <?php endif; ?>
+
                 <form id="addLabForm" method="POST" action="">
 
                     <div class="form-group">
@@ -357,6 +394,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
             </div>
 
             <div class="modal-body">
+                <?php if (!empty($edit_error)): ?>
+                    <div class="error-msg">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span><?php echo $edit_error; ?></span>
+                    </div>
+                <?php endif; ?>
+
                 <form id="editLabForm" method="POST" action="">
                     <input type="hidden" id="edit_lab_id" name="edit_lab_id">
                     <input type="hidden" name="original_room_number" id="original_room_number">
@@ -460,6 +504,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/laboratory_management.js?v=<?php echo time(); ?>"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // If Add failed, open the Add modal automatically
+            <?php if (!empty($add_error)): ?>
+                document.getElementById('addLabModal').style.display = 'flex';
+            <?php endif; ?>
+
+            // If Edit failed, open the Edit modal automatically
+            <?php if (!empty($edit_error)): ?>
+                document.getElementById('editLabModal').style.display = 'flex';
+                // Keep the values the user typed so they don't have to start over
+                document.getElementById('edit_lab_id').value = "<?php echo isset($_POST['edit_lab_id']) ? htmlspecialchars($_POST['edit_lab_id']) : ''; ?>";
+                document.getElementById('original_room_number').value = "<?php echo isset($_POST['original_room_number']) ? htmlspecialchars($_POST['original_room_number']) : ''; ?>";
+                document.getElementById('edit_room_name').value = "<?php echo isset($_POST['edit_room_name']) ? htmlspecialchars($_POST['edit_room_name']) : ''; ?>";
+                document.getElementById('edit_room_number').value = "<?php echo isset($_POST['edit_room_number']) ? htmlspecialchars($_POST['edit_room_number']) : ''; ?>";
+            <?php endif; ?>
+        });
+    </script>
 </body>
 
 </html>
