@@ -1,0 +1,286 @@
+/* =========================================
+   1. GLOBAL RESET & FONTS
+   ========================================= */
+* {
+  box-sizing: border-box;
+  font-family: "Geist", sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================
+   2. BODY & BACKGROUND
+   ========================================= */
+.login-body {
+  background: url("../assets/background_login.png") no-repeat center center
+    fixed;
+  background-size: cover;
+  background-color: #104236; /* Fallback color */
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 20px;
+}
+
+/* =========================================
+   3. FROSTED GLASS CONTAINER
+   ========================================= */
+.glass-container {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 40px;
+
+  width: 100%;
+  max-width: 440px;
+
+  padding: 5px 45px 25px 45px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================
+   4. BRANDING SECTION
+   ========================================= */
+.brand-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: -10px;
+  width: 100%;
+  margin-left: -15px;
+  margin-top: -12px;
+}
+
+.main-logo {
+  width: 110px;
+  height: auto;
+  margin-top: -15px;
+  margin-bottom: -15px;
+  position: relative;
+  z-index: 1;
+}
+
+.brand-name {
+  color: #104236;
+  font-size: 43px;
+  font-weight: 700;
+  margin-left: -28px;
+  margin-bottom: -21px;
+}
+
+.bname2 {
+  color: #4caf50;
+}
+
+/* =========================================
+   5. WHITE LOGIN CARD
+   ========================================= */
+.login-card,
+.login-box {
+  background: #ffffff;
+  width: 100%;
+  padding: 45px 23px 30px 23px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 2;
+}
+
+.login-card h2,
+.auth-title-large {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 8px;
+}
+
+.subtitle,
+.auth-subtitle-gray {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+/* =========================================
+   6. FORM ELEMENTS & INPUTS
+   ========================================= */
+.input-group {
+  margin-bottom: 22px;
+  text-align: left;
+  width: 100%;
+}
+
+.input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 10px 15px;
+  padding-right: 45px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input-wrapper input:focus {
+  border-color: #104236;
+}
+
+.input-wrapper i {
+  position: absolute;
+  right: 18px;
+  color: #b0b0b0;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 3;
+}
+
+/* =========================================
+   7. BUTTONS & LINKS
+   ========================================= */
+
+.btn-login,
+.btn-dark-green {
+  width: 100%;
+  padding: 12px;
+  background-color: #104236;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.3s;
+}
+
+.btn-login:hover,
+.btn-dark-green:hover {
+  background-color: #0d352b;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.login-footer a,
+.return-link {
+  color: #104236;
+  text-decoration: underline;
+  font-size: 11px;
+  font-weight: 500;
+  text-underline-offset: 2px;
+}
+
+/* =========================================
+   8. TOAST NOTIFICATIONS
+   ========================================= */
+.auth-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  transform: translateY(-150%);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.auth-toast.active {
+  transform: translateY(0);
+}
+
+.toast-icon-wrapper {
+  background: #f0fdf4;
+  color: #4caf50;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+}
+
+.toast-icon-wrapper.green-bg {
+  background: #4caf50;
+  color: white;
+}
+.toast-content h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #104236;
+  font-weight: 700;
+}
+.toast-content p {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #777;
+}
+
+/* =========================================
+   9. DYNAMIC RESPONSIVENESS
+   ========================================= */
+@media screen and (max-width: 480px) {
+  .glass-container {
+    padding: 10px 25px 25px 25px;
+    border-radius: 30px;
+    width: 95%;
+  }
+  .brand-name {
+    font-size: 32px;
+  }
+  .main-logo {
+    width: 90px;
+  }
+  .login-card {
+    padding: 35px 20px 25px 20px;
+  }
+}
+
+.disclaimer {
+  margin-top: 15px;
+  font-size: 10px;
+  color: #000;
+}
+.error-msg {
+  background: #fcecea;
+  color: #c53030;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #feb2b2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

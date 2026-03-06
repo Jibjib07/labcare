@@ -1,0 +1,244 @@
+/* =========================================
+   1. GLOBAL RESET & FONTS
+   ========================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    display: flex;
+    background-color: #f4f6f8;
+    min-height: 100vh;
+}
+
+/* Hide mobile elements by default */
+.mobile-header, 
+.sidebar-overlay, 
+.mobile-close-btn { 
+    display: none; 
+}
+
+/* =========================================
+   2. DESKTOP SIDEBAR STYLES
+   ========================================= */
+.sidebar {
+    width: 260px;
+    background-color: #ffffff;
+    padding: 25px 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: fixed; /* Fixed to left */
+    left: 0;
+    top: 0;
+    border-right: 1px solid #e0e0e0;
+    z-index: 1000; /* High z-index to stay on top */
+    transition: transform 0.3s ease-in-out;
+}
+
+/* --- Logo Styling --- */
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 40px;
+    padding-left: 25px;
+}
+
+.logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Image Styling */
+.logo-icon img {
+    width: 70px; /* Adjust this width to match the size of your L */
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0e410f; /* Green color for the rest of the text */
+    letter-spacing: -0.5px;
+    line-height: 1;
+    margin-top: 5px; 
+    margin-left: -15px;
+}
+
+/* --- Navigation Menu --- */
+nav {
+    flex: 1; /* Pushes logout to bottom */
+}
+
+nav ul {
+    list-style: none;
+    width: 100%;
+}
+
+nav ul li {
+    margin-bottom: 8px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #666; /* Inactive Text Color */
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 8px; /* Rounded corners */
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+nav ul li a i {
+    width: 25px; /* Fixed width for icon alignment */
+    font-size: 16px;
+    margin-right: 10px;
+    color: #888;
+}
+
+/* Hover State */
+nav ul li a:hover {
+    background-color: #f5f9f7;
+    color: #1B4D3E;
+}
+nav ul li a:hover i {
+    color: #1B4D3E;
+}
+
+/* Active State (Matches Screenshot) */
+nav ul li a.active {
+    background-color: #1B4D3E; /* Dark Green BG */
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(27, 77, 62, 0.2);
+}
+
+nav ul li a.active i {
+    color: #ffffff;
+}
+
+/* --- Logout Button --- */
+.logout-section {
+    margin-top: 20px;
+}
+
+.btn-logout {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: #1B4D3E;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-logout:hover {
+    background-color: #143d30;
+}
+
+/* =========================================
+   3. MAIN CONTENT WRAPPER
+   ========================================= */
+.main-content {
+    margin-left: 260px; /* Space for fixed sidebar */
+    padding: 30px;
+    width: 100%;
+    transition: margin-left 0.3s ease;
+}
+
+
+/* =========================================
+   4. MOBILE RESPONSIVENESS (Max-width: 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    
+    body { flex-direction: column; }
+
+    /* --- Mobile Header --- */
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        background: white;
+        border-bottom: 1px solid #eee;
+        position: fixed;
+        top: 0; left: 0; width: 100%;
+        z-index: 999; /* Below sidebar, above content */
+    }
+
+    #mobile-menu-toggle {
+        background: none;
+        border: none;
+        font-size: 22px;
+        color: #1B4D3E;
+        cursor: pointer;
+        margin-right: 15px;
+    }
+
+    .logo-container.mobile {
+        margin-bottom: 0;
+        padding-left: 0;
+    }
+
+    /* --- Hide Desktop Only Elements --- */
+    .logo-container.desktop { display: none; }
+
+    /* --- Adjust Main Content --- */
+    .main-content {
+        margin-left: 0;
+        padding: 80px 20px 20px 20px; /* Top padding for header */
+        width: 100%;
+    }
+
+    /* --- Dark Overlay --- */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1001; /* Below sidebar */
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .sidebar-overlay.active { display: block; opacity: 1; }
+
+    /* --- Mobile Sidebar (Drawer) --- */
+    .sidebar {
+        position: fixed;
+        top: 0; left: -100%; /* Hidden Left */
+        width: 280px;
+        height: 100vh;
+        z-index: 1002; /* Topmost */
+        border-right: none;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+        padding-top: 60px; /* Space for close button */
+    }
+
+    .sidebar.active { left: 0; }
+
+    /* --- Close Button --- */
+    .mobile-close-btn {
+        display: flex;
+        align-items: center; justify-content: center;
+        position: absolute;
+        top: 20px; right: 20px;
+        background: #f5f5f5;
+        border: none;
+        color: #555;
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+    }
+}
