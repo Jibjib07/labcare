@@ -364,3 +364,260 @@ function cancelEditMode() {
     viewModes.forEach(el => el.style.display = 'block');
     editModes.forEach(el => el.style.display = 'none');
 }
+
+// Variable to store which PC is currently active
+let currentSelectedUnitId = '';
+
+function selectUnit(element, setId) {
+    currentSelectedUnitId = setId;
+
+    // 1. Remove the 'active' class from all items in the list
+    const allItems = document.querySelectorAll('.asset-item');
+    allItems.forEach(item => {
+        item.classList.remove('active');
+    });
+
+    // 2. Add the 'active' class to the clicked row
+    element.classList.add('active');
+
+    // 3. (Optional) You can update the right panel title here
+    const unitName = element.querySelector('.item-name').innerText;
+    document.querySelector('.right-panel .section-header-row h3').innerText = unitName + " Details";
+
+    console.log("Selected Set ID:", currentSelectedUnitId);
+    // In the future, you can make an AJAX call here to fetch the specific specs for this set_id
+}
+
+/**
+ * Detects the first available unit number by scanning the existing list
+ */
+function calculateNextUnitNumber() {
+    const unitElements = document.querySelectorAll('#assetListContainer .item-name');
+    let existingNumbers = [];
+    
+    unitElements.forEach(el => {
+        const text = el.innerText;
+        // Only target actual PC units
+        if (text.includes('PC-')) {
+            const match = text.match(/\d+/);
+            if (match) existingNumbers.push(parseInt(match[0], 10));
+        }
+    });
+    
+    existingNumbers.sort((a, b) => a - b);
+    availableNumbersList = [];
+    
+    // Build the next 50 available gaps/numbers
+    for (let i = 1; i <= 200; i++) {
+        if (!existingNumbers.includes(i)) {
+            availableNumbersList.push(i.toString().padStart(2, '0'));
+        }
+        if (availableNumbersList.length >= 50) break;
+    }
+
+    // Always trigger the UI update immediately after calculating
+    updateBulkUnitNumbers();
+}
+
+function openAddModal() {
+    document.getElementById('bulk_count').value = 2;
+    toggleAddMode('single'); 
+    document.getElementById('addComputerModal').style.display = 'flex';
+}
+
+function calculateComputerAge() {
+    const dateInput = document.getElementById('purchase_date_input');
+    const displayInput = document.getElementById('computer_age_display');
+
+    if (!dateInput.value) {
+        displayInput.value = "";
+        return;
+    }
+
+    let purchaseDate = new Date(dateInput.value);
+    const today = new Date();
+
+    // Strip the time portion so we are purely comparing the calendar days
+    today.setHours(0, 0, 0, 0);
+    purchaseDate.setHours(0, 0, 0, 0);
+
+    // FIX: If the user selects a date in the future, automatically snap it back to TODAY
+    if (purchaseDate > today) {
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        
+        dateInput.value = `${yyyy}-${mm}-${dd}`;
+        purchaseDate = today; // Reset our calculation variable to today
+    }
+
+    // Calculate the difference in years
+    let years = today.getFullYear() - purchaseDate.getFullYear();
+    let months = today.getMonth() - purchaseDate.getMonth();
+
+    // Adjust down by 1 year if the exact purchase month/day hasn't happened yet this year
+    if (months < 0 || (months === 0 && today.getDate() < purchaseDate.getDate())) {
+        years--;
+    }
+
+    // FIX: Fallback to ensure it never goes below 0 (Less than a year = 0)
+    if (years < 0) {
+        years = 0;
+    }
+
+    // Output ONLY the year integer (e.g., "0", "1", "5")
+    displayInput.value = years;
+}
+
+function getActiveToggle(groupId) {
+    const activeBtn = document.querySelector(`#${groupId} .status-btn.active`);
+    if (activeBtn) {
+        // Maps the HTML 'data-type' directly to your Database exact wording
+        return activeBtn.getAttribute('data-type') === 'repair' ? 'For Repair' : 'Working';
+    }
+    return 'Working'; // Fallback just in case
+}
+
+function submitNewUnit() {
+    const labRoom = document.getElementById('room_number_input').value;
+    const urlParams = new URLSearchParams(window.location.search);
+    const labId = urlParams.get('lab_id') || 0; 
+
+    // Determine tags to send
+    let unitTags = [];
+    if (isBulkMode) {
+        const count = parseInt(document.getElementById('bulk_count').value) || 2;
+        unitTags = availableNumbersList.slice(0, count);
+    } else {
+        unitTags = [document.getElementById('smart_unit_no').value];
+    }
+
+    if (unitTags.length === 0) return;
+
+    // ... [Keep your status toggle collection] ...
+    const statusButtons = document.querySelectorAll('.status-btn.active');
+    let statusArray = [];
+    statusButtons.forEach(btn => statusArray.push(btn.getAttribute('data-type')));
+
+    const formData = new FormData();
+    // Send the array of tags as a JSON string
+    formData.append('unit_tags', JSON.stringify(unitTags)); 
+    formData.append('lab_id', labId);
+    formData.append('lab_room', labRoom);
+    statusArray.forEach(status => formData.append('statuses[]', status));
+
+    // --- NEW: APPEND SPECS DATA ---
+    formData.append('property_id', document.getElementById('spec_property').value);
+    formData.append('cpu', document.getElementById('spec_cpu').value);
+    formData.append('brand', document.getElementById('spec_brand').value);
+    formData.append('os', document.getElementById('spec_os').value);
+    formData.append('purchase_date', document.getElementById('purchase_date_input').value);
+    formData.append('gpu', document.getElementById('spec_gpu').value);
+    formData.append('ram', document.getElementById('spec_ram').value);
+    formData.append('storage', document.getElementById('spec_storage').value);
+    formData.append('capacity', document.getElementById('spec_capacity').value);
+
+    // --- NEW: APPEND PORTS DATA ---
+    formData.append('usb_ports', document.getElementById('usb_ports_count').value);
+    formData.append('usb_status', getActiveToggle('usb_toggle'));
+    formData.append('wifi_status', getActiveToggle('wifi_toggle'));
+    formData.append('mic_status', getActiveToggle('mic_toggle'));
+    formData.append('hdmi_status', getActiveToggle('hdmi_toggle'));
+    formData.append('headphone_status', getActiveToggle('headphone_toggle'));
+    formData.append('display_status', getActiveToggle('display_toggle'));
+    formData.append('inline_status', getActiveToggle('inline_toggle'));
+    formData.append('ethernet_status', getActiveToggle('ethernet_toggle'));
+
+    // --- NEW: APPEND HEALTH DATA ---
+    let rawAgeStr = document.getElementById('computer_age_display').value;
+    let comAge = parseInt(rawAgeStr); 
+    if (isNaN(comAge)) comAge = 0;
+
+    formData.append('com_age', comAge);
+    formData.append('disk_health', getActiveToggle('disk_toggle'));
+    formData.append('num_repair', document.getElementById('num_repair_input').value || 0);
+    formData.append('power_health', getActiveToggle('power_toggle'));
+
+    // --- NEW: APPEND PERIPHERALS DATA ---
+    formData.append('monitor_property', document.getElementById('monitor_property_input').value);
+    formData.append('monitor_brand', document.getElementById('monitor_brand_input').value);
+    formData.append('monitor_status', getActiveToggle('monitor_toggle'));
+
+    formData.append('mouse_brand', document.getElementById('mouse_brand_input').value);
+    formData.append('mouse_status', getActiveToggle('mouse_toggle'));
+
+    formData.append('keyboard_brand', document.getElementById('keyboard_brand_input').value);
+    formData.append('keyboard_status', getActiveToggle('keyboard_toggle'));
+
+    formData.append('avr_brand', document.getElementById('avr_brand_input').value);
+    formData.append('avr_status', getActiveToggle('avr_toggle'));
+
+    fetch('includes/insert_unit.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Success! Unit saved.');
+            location.reload();
+        } else {
+            alert('Database Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch Error:', error);
+    });
+}
+
+let isBulkMode = false;
+let availableNumbersList = []; // Stores the next available sequence
+
+function toggleAddMode(mode) {
+    const circleSingle = document.getElementById('circle_single');
+    const circleMultiple = document.getElementById('circle_multiple');
+    const bulkContainer = document.getElementById('bulk_input_container');
+    const propIdInput = document.getElementById('spec_property');
+
+    if (mode === 'single') {
+        isBulkMode = false;
+        circleSingle.classList.add('checked');
+        circleMultiple.classList.remove('checked');
+        bulkContainer.style.display = 'none';
+        
+        propIdInput.disabled = false;
+        propIdInput.style.background = '#fff';
+    } else {
+        isBulkMode = true;
+        circleMultiple.classList.add('checked');
+        circleSingle.classList.remove('checked');
+        bulkContainer.style.display = 'flex';
+        
+        propIdInput.value = '';
+        propIdInput.disabled = true;
+        propIdInput.style.background = '#f4f4f4';
+    }
+    
+    // Crucial fix: Always recalculate and update the screen when switching modes
+    calculateNextUnitNumber(); 
+}
+
+function updateBulkUnitNumbers() {
+    const inputField = document.getElementById('smart_unit_no');
+    
+    if (!isBulkMode) {
+        // Single Mode: Just show the first available number
+        inputField.value = availableNumbersList[0] || '';
+    } else {
+        // Bulk Mode: Read the quantity input and show the sequence
+        let count = parseInt(document.getElementById('bulk_count').value, 10);
+        
+        // Safety net if the user deletes the number
+        if (isNaN(count) || count < 1) {
+            count = 1; 
+        }
+        
+        const previewNumbers = availableNumbersList.slice(0, count);
+        inputField.value = previewNumbers.join(', ');
+    }
+}
