@@ -5,6 +5,46 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 try {
     require_once __DIR__ . '/../../includes/db.php';
 
+    // =========================================================
+    // 1. UNIQUENESS VALIDATION (ADDING) - IGNORING CONDEMNED
+    // =========================================================
+    $new_specs_id = trim($_POST['property_id'] ?? '');
+    $new_mon_id = trim($_POST['monitor_property'] ?? '');
+
+    // Check System Unit ID
+    if ($new_specs_id !== '') {
+        $check_sys = $conn->prepare("
+            SELECT s.set_id 
+            FROM specs s 
+            JOIN units u ON s.set_id = u.set_id 
+            WHERE s.specs_property = ? 
+            AND (u.set_status != 'Condemned' OR u.set_status IS NULL)
+        ");
+        $check_sys->bind_param("s", $new_specs_id);
+        $check_sys->execute();
+        if ($check_sys->get_result()->num_rows > 0) {
+            throw new Exception("The System Unit Property ID '$new_specs_id' is already assigned to an active unit.");
+        }
+        $check_sys->close();
+    }
+
+    // Check Monitor ID
+    if ($new_mon_id !== '') {
+        $check_mon = $conn->prepare("
+            SELECT p.set_id 
+            FROM peripherals p 
+            JOIN units u ON p.set_id = u.set_id 
+            WHERE p.monitor_property = ? 
+            AND (u.set_status != 'Condemned' OR u.set_status IS NULL)
+        ");
+        $check_mon->bind_param("s", $new_mon_id);
+        $check_mon->execute();
+        if ($check_mon->get_result()->num_rows > 0) {
+            throw new Exception("The Monitor Property ID '$new_mon_id' is already assigned to an active monitor.");
+        }
+        $check_mon->close();
+    }
+
     // ---------------------------------------------------------
     // STEP 1: COLLECT ALL POST DATA FIRST
     // ---------------------------------------------------------
