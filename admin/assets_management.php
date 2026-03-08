@@ -67,6 +67,34 @@ function getNextAvailableUnit($conn, $current_room)
     // 3. Return formatted with leading zero
     return sprintf("%02d", $next);
 }
+
+function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '', $inputId = '', $inputValue = '')
+{
+    $subHtml = '';
+    if ($hasSubInput) {
+        $subHtml = "
+            <div class=\"sub-detail-row\">
+                <span>$subLabel:</span>
+                <div id=\"view_$inputId\" class=\"detail-box small-box view-mode\"></div>
+                <input type=\"number\" id=\"edit_$inputId\" class=\"edit-mode edit-input small-edit-box\" min=\"0\" max=\"20\" style=\"display:none;\">
+            </div>
+        ";
+    }
+    return "
+        <div class=\"detail-group\">
+            <label>$label</label>
+            <div class=\"status-row\">
+                <span>Status:</span>
+                <div id=\"pill_{$id}_status\" class=\"status-pill green view-mode\"></div>
+                <div id=\"toggle_{$id}_status\" class=\"status-toggle-group edit-mode\" style=\"display:none;\">
+                    <button type=\"button\" class=\"status-btn active\" data-type=\"working\" onclick=\"toggleStatus(this)\">Working</button>
+                    <button type=\"button\" class=\"status-btn\" data-type=\"repair\" onclick=\"toggleStatus(this)\">For Repair</button>
+                </div>
+            </div>
+            $subHtml
+        </div>
+    ";
+}
 ?>
 <!DOCTYPE html>
 
@@ -158,21 +186,21 @@ function getNextAvailableUnit($conn, $current_room)
                             while ($unit = $units_result->fetch_assoc()):
                                 $display_name = "PC-" . htmlspecialchars($unit['set_tag']);
 
-                                // 1. Get the base status first
-                                $status = !empty($unit['set_status']) ? $unit['set_status'] : 'Working';
+                                // Get the database status
+                                $db_status = !empty($unit['set_status']) ? $unit['set_status'] : 'Working';
 
-                                // 2. NEW LOGIC: Override if EITHER System Unit OR Monitor Property ID is missing
+                                // Determine display status and behavior based on property ID completeness
                                 $isMissingId = empty($unit['specs_property']) || empty($unit['monitor_property']);
 
                                 if ($isMissingId) {
-                                    $status = 'No Property ID';
-                                    // Route click to the new bulk assignment modal
+                                    $display_status = 'No Property ID';
+                                    // Route click to the bulk assignment modal
                                     $onclick = "openMissingIdModal('" . htmlspecialchars($current_room) . "')";
-                                    $row_class = 'asset-item gray-row';
+                                    $row_class = 'asset-item gray-row missing-id';
                                 } else {
+                                    $display_status = $db_status; // Use actual database status
                                     // Route click to the normal right panel
                                     $set_id = htmlspecialchars($unit['set_id']);
-                                    $onclick = "selectUnit(this, '$set_id')";
                                     $row_class = 'asset-item';
                                 }
 
@@ -184,11 +212,11 @@ function getNextAvailableUnit($conn, $current_room)
                                     'No Property ID' => 'badge purple'
                                 ];
 
-                                $badge_class = isset($status_map[$status]) ? $status_map[$status] : 'badge gray';
+                                $badge_class = isset($status_map[$display_status]) ? $status_map[$display_status] : 'badge gray';
                         ?>
-                                <div class="<?= $row_class ?>" onclick="<?= $onclick ?>">
+                                <div class="<?= $row_class ?>" <?php if ($isMissingId) echo "onclick=\"$onclick\""; ?> data-set-id="<?= htmlspecialchars($unit['set_id']) ?>" data-specs-property="<?= htmlspecialchars($unit['specs_property'] ?? '') ?>" data-monitor-property="<?= htmlspecialchars($unit['monitor_property'] ?? '') ?>" data-db-status="<?= htmlspecialchars($db_status) ?>">
                                     <span class="item-name"><?= $display_name ?></span>
-                                    <span class="<?= $badge_class ?>"><?= htmlspecialchars($status) ?></span>
+                                    <span class="<?= $badge_class ?>"><?= htmlspecialchars($display_status) ?></span>
                                 </div>
                             <?php
                             endwhile;
@@ -303,108 +331,23 @@ function getNextAvailableUnit($conn, $current_room)
 
                         <div id="tab-external" class="tab-content" style="display: none;">
                             <div class="detail-grid-row">
-                                <div class="detail-group">
-                                    <label>USB Ports</label>
-                                    <div class="status-row">
-                                        <span>Status:</span>
-                                        <div id="pill_usb_status" class="status-pill green view-mode"></div>
-                                        <div id="toggle_usb_status" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                                        </div>
-                                    </div>
-                                    <div class="sub-detail-row">
-                                        <span>Available Ports:</span>
-                                        <div id="view_usb_ports" class="detail-box small-box view-mode"></div>
-                                        <input type="number" id="edit_usb_ports" class="edit-mode edit-input small-edit-box" min="0" max="20" style="display:none;">
-                                    </div>
-                                </div>
-                                <div class="detail-group">
-                                    <label>Wi-Fi Card</label>
-                                    <div class="status-row">
-                                        <span>Status:</span>
-                                        <div id="pill_wifi_status" class="status-pill green view-mode"></div>
-                                        <div id="toggle_wifi_status" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <?php echo generateStatusToggle('usb', 'USB Ports', true, 'Available Ports', 'usb_ports'); ?>
+                                <?php echo generateStatusToggle('wifi', 'Wi-Fi Card'); ?>
                             </div>
 
                             <div class="detail-grid-row">
-                                <div class="detail-group">
-                                    <label>Microphone Jack</label>
-                                    <div class="status-row">
-                                        <span>Status:</span>
-                                        <div id="pill_mic_status" class="status-pill green view-mode"></div>
-                                        <div id="toggle_mic_status" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="detail-group">
-                                    <label>HDMI Port</label>
-                                    <div class="status-row">
-                                        <span>Status:</span>
-                                        <div id="pill_hdmi_status" class="status-pill green view-mode"></div>
-                                        <div id="toggle_hdmi_status" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <?php echo generateStatusToggle('mic', 'Microphone Jack'); ?>
+                                <?php echo generateStatusToggle('hdmi', 'HDMI Port'); ?>
                             </div>
 
                             <div class="detail-grid-row">
-                                <div class="detail-group">
-                                    <label>Headphone Jack</label>
-                                    <div class="status-row">
-                                        <span>Status:</span>
-                                        <div id="pill_headphone_status" class="status-pill green view-mode"></div>
-                                        <div id="toggle_headphone_status" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="detail-group">
-                                    <label>Display Port</label>
-                                    <div class="status-row">
-                                        <span>Status:</span>
-                                        <div id="pill_display_status" class="status-pill green view-mode"></div>
-                                        <div id="toggle_display_status" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <?php echo generateStatusToggle('headphone', 'Headphone Jack'); ?>
+                                <?php echo generateStatusToggle('display', 'Display Port'); ?>
                             </div>
 
                             <div class="detail-grid-row">
-                                <div class="detail-group">
-                                    <label>In-line Jack</label>
-                                    <div class="status-row">
-                                        <span>Status:</span>
-                                        <div id="pill_inline_status" class="status-pill green view-mode"></div>
-                                        <div id="toggle_inline_status" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="detail-group">
-                                    <label>Ethernet Port</label>
-                                    <div class="status-row">
-                                        <span>Status:</span>
-                                        <div id="pill_ethernet_status" class="status-pill green view-mode"></div>
-                                        <div id="toggle_ethernet_status" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <?php echo generateStatusToggle('inline', 'In-line Jack'); ?>
+                                <?php echo generateStatusToggle('ethernet', 'Ethernet Port'); ?>
                             </div>
                         </div>
 
@@ -596,8 +539,17 @@ function getNextAvailableUnit($conn, $current_room)
                     </div>
 
                     <div class="search-filter-row">
-                        <input type="text" class="search-input" placeholder="Type a device or search...">
-                        <button class="filter-btn">Filter <i class="fas fa-filter"></i></button>
+                        <input type="text" id="faSearchInput" class="search-input" placeholder="Type a number of asset or search..." onkeyup="searchFAAssets()">
+
+                        <div class="filter-dropdown-container">
+                            <button class="filter-btn" onclick="toggleFAFilterMenu()">Filter <i class="fas fa-filter"></i></button>
+
+                            <ul class="filter-menu" id="faFilterMenu">
+                                <li onclick="filterFAAssets('All')">All</li>
+                                <li onclick="filterFAAssets('Working')">Working</li>
+                                <li onclick="filterFAAssets('For Repair')">For Repair</li>
+                            </ul>
+                        </div>
                     </div>
 
                     <div class="asset-list" id="facilityListContainer">
@@ -605,7 +557,7 @@ function getNextAvailableUnit($conn, $current_room)
                         $lab_id = $_GET['lab_id'] ?? 0;
                         $lab_id = intval($lab_id);
 
-                        $fa_query = "SELECT * FROM assets WHERE lab_id = '$lab_id' ORDER BY CAST(asset_tag AS UNSIGNED) ASC";
+                        $fa_query = "SELECT * FROM assets WHERE lab_id = '$lab_id' AND asset_status != 'Condemned' ORDER BY CAST(asset_tag AS UNSIGNED) ASC";
                         $fa_result = $conn->query($fa_query);
 
                         if ($fa_result && $fa_result->num_rows > 0) {
@@ -619,7 +571,7 @@ function getNextAvailableUnit($conn, $current_room)
                                 if ($status === 'Condemned' || $status === 'For Condemn') $badgeClass = 'red';
 
                                 echo "
-                                <div class='asset-item' onclick=\"selectFacilityAsset(this, '$id')\">
+                                <div class='asset-item' data-asset-id='$id'>
                                     <div class='asset-info'>
                                         <div class='item-name'>FA-$tag</div>
                                     </div>
@@ -635,537 +587,554 @@ function getNextAvailableUnit($conn, $current_room)
                     </div>
                 </div>
 
-                <div class="panel white-panel right-panel" id="view-facility-right" style="display: none;">
-                    <div class="section-header-row">
-                        <h3 id="view_fa_header_title">Select an Asset</h3>
-                        <div class="action-buttons">
-                            <button class="btn-edit" onclick="openFAEditMode()"><i class="fas fa-pen"></i> Edit</button>
-                            <button class="btn-condemn" onclick="openCondemnModal()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                <div class="panel white-panel right-panel" id="view-facility-right">
+
+                    <div id="fa-view-mode">
+                        <div class="section-header-row">
+                            <h3 id="view_fa_header_title">Select an Asset</h3>
+                            <div class="action-buttons">
+                                <button class="btn-edit" onclick="openFAEditMode()">
+                                    <i class="fas fa-pen"></i> Edit
+                                </button>
+                                <button class="btn-condemn" id="condemnFABtn" onclick="openCondemnModal()">
+                                    <i class="fas fa-trash-alt"></i> Condemn
+                                </button>
+                            </div>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-grid-row">
+                                <div class="detail-group"><label>Property ID:</label>
+                                    <div class="detail-box" id="view_fa_tag">---</div>
+                                </div>
+                            </div>
+                            <div class="detail-grid-row">
+                                <div class="detail-group"><label>Brand:</label>
+                                    <div class="detail-box" id="view_fa_brand">---</div>
+                                </div>
+                            </div>
+                            <div class="detail-grid-row">
+                                <div class="detail-group"><label>Status:</label>
+                                    <div class="detail-box" id="view_fa_status_box">
+                                        <span id="view_fa_status">---</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="activity-section">
+                            <div class="activity-header">
+                                <h4>Recent Activity</h4>
+                                <a href="#" class="view-history-link">View Full Maintenance History</a>
+                            </div>
+                            <table class="activity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Reported by</th>
+                                        <th>Remarks</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fa_activity_log_body">
+                                    <tr>
+                                        <td colspan="5" style="text-align:center; color:#888;">Activity logs will appear here.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="detail-content">
-                        <div class="detail-grid-row">
-                            <div class="detail-group"><label>Property ID:</label>
-                                <div class="detail-box" id="view_fa_tag">---</div>
+
+                    <div id="fa-edit-mode" style="display: none;">
+                        <div class="section-header-row">
+                            <h3 id="edit_fa_header_title">FA-00 Asset Details</h3>
+                            <div class="action-buttons">
+                                <button class="btn-edit" onclick="saveFAChanges()"><i class="fas fa-save"></i> Save</button>
+                                <button class="btn-cancel" id="cancelFAEditBtn" onclick="closeFAEditMode()">Cancel</button>
                             </div>
                         </div>
-                        <div class="detail-grid-row">
-                            <div class="detail-group"><label>Brand:</label>
-                                <div class="detail-box" id="view_fa_brand">---</div>
+
+                        <div class="detail-content">
+                            <div class="detail-grid-row">
+                                <div class="detail-group">
+                                    <label>Device Name:</label>
+                                    <input type="text" id="edit_fa_name" class="modal-input" style="width: 100%; box-sizing: border-box;">
+                                </div>
                             </div>
-                        </div>
-                        <div class="detail-grid-row">
-                            <div class="detail-group"><label>Status:</label>
-                                <div class="detail-box" id="view_fa_status_box">
-                                    <span id="view_fa_status">---</span>
+                            <div class="detail-grid-row">
+                                <div class="detail-group">
+                                    <label>Property ID:</label>
+                                    <input type="text" id="edit_fa_property" class="modal-input" style="width: 100%; box-sizing: border-box;">
+                                </div>
+                            </div>
+                            <div class="detail-grid-row">
+                                <div class="detail-group">
+                                    <label>Brand:</label>
+                                    <input type="text" id="edit_fa_brand" class="modal-input" style="width: 100%; box-sizing: border-box;">
+                                </div>
+                            </div>
+                            <div class="detail-grid-row">
+                                <div class="detail-group">
+                                    <label>Status:</label>
+                                    <div class="status-button-group">
+                                        <input type="hidden" id="edit_fa_status" value="Working">
+
+                                        <div class="status-btn-container">
+                                            <button type="button" class="status-btn" data-type="Working" onclick="toggleStatusFA(this)">Working</button>
+                                            <button type="button" class="status-btn" data-type="For Repair" onclick="toggleStatusFA(this)">For Repair</button>
+                                        </div>
+
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
 
-    </div>
-
-    <div id="addComputerModal" class="modal-overlay">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h3>Add New Computer Unit</h3>
-            </div>
-
-            <div class="modal-body">
-                <div class="unit-type-toggle" style="display: flex; align-items: center; gap: 15px;">
-                    <label class="radio-option active" onclick="toggleAddMode('single')">
-                        <span class="radio-circle checked" id="circle_single"></span> Single Unit
-                    </label>
-                    <label class="radio-option" onclick="toggleAddMode('multiple')">
-                        <span class="radio-circle" id="circle_multiple"></span> Multiple Unit
-                    </label>
-
-                    <div id="bulk_input_container" style="display: none; align-items: center; gap: 10px; margin-left: 10px;">
-                        <label style="font-size: 13px; font-weight: 600; color: #555;">Quantity:</label>
-                        <input type="number" id="bulk_count" class="modal-input small-input" value="2" min="2" max="50" style="width: 70px; padding: 6px;" oninput="updateBulkUnitNumbers()">
-                    </div>
+        <div id="addComputerModal" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3>Add New Computer Unit</h3>
                 </div>
 
-                <div class="specs-tabs modal-tabs-nav">
-                    <button class="spec-tab active" onclick="switchModalTab('m-identity', this)">Identity & Specifications</button>
-                    <button class="spec-tab" onclick="switchModalTab('m-external', this)">External I/O Ports</button>
-                    <button class="spec-tab" onclick="switchModalTab('m-health', this)">Health & Maintenance Summary</button>
-                    <button class="spec-tab" onclick="switchModalTab('m-peripherals', this)">Peripherals</button>
-                </div>
+                <div class="modal-body">
+                    <div class="unit-type-toggle" style="display: flex; align-items: center; gap: 15px;">
+                        <label class="radio-option active" onclick="toggleAddMode('single')">
+                            <span class="radio-circle checked" id="circle_single"></span> Single Unit
+                        </label>
+                        <label class="radio-option" onclick="toggleAddMode('multiple')">
+                            <span class="radio-circle" id="circle_multiple"></span> Multiple Unit
+                        </label>
 
-                <div id="m-identity" class="modal-tab-content">
-                    <div class="modal-form-grid">
-                        <div class="form-group"><label>Property ID</label><input type="text" id="spec_property" class="modal-input" placeholder="Enter unique property number"></div>
-                        <div class="form-group"><label>Processor (CPU)</label><input type="text" id="spec_cpu" class="modal-input" placeholder="e.g., Intel Core i5-12400"></div>
-                        <div class="form-group"><label>Brand</label><input type="text" id="spec_brand" class="modal-input" placeholder="e.g., Dell, HP, Lenovo"></div>
-                        <div class="form-group"><label>Operating System</label><input type="text" id="spec_os" class="modal-input" placeholder="e.g., Windows 11 Pro"></div>
-
-                        <div class="form-group">
-                            <label>Purchase Date</label>
-                            <input type="date" id="purchase_date_input" class="modal-input" value="<?= date('Y-m-d'); ?>" onchange="calculateComputerAge()">
-                        </div>
-
-                        <div class="form-group"><label>Graphics Card (GPU)</label><input type="text" id="spec_gpu" class="modal-input" placeholder="e.g., Integrated Intel UHD"></div>
-
-                        <div class="form-group">
-                            <label>Room Number</label>
-                            <input type="text" id="room_number_input" class="modal-input" value="<?= htmlspecialchars($current_room); ?>" readonly style="background: #f4f4f4; cursor: not-allowed;">
-                        </div>
-
-                        <div class="form-group"><label>RAM (Installed Memory)</label><input type="text" id="spec_ram" class="modal-input" placeholder="e.g., 16 GB"></div>
-
-                        <div class="form-group">
-                            <label>Unit Number</label>
-                            <input type="text" id="smart_unit_no" class="modal-input" value="<?= getNextAvailableUnit($conn, $current_room) ?>" readonly style="background: #f4f4f4; font-weight: bold; color: #333;">
-                        </div>
-
-                        <div class="form-group"><label>Storage Type</label><input type="text" id="spec_storage" class="modal-input" placeholder="e.g., SSD (M.2 NVMe)"></div>
-                        <div class="form-group"></div>
-                        <div class="form-group"><label>Storage Capacity</label><input type="text" id="spec_capacity" class="modal-input" placeholder="e.g., 512 GB"></div>
-                    </div>
-                </div>
-
-                <div id="m-external" class="modal-tab-content" style="display: none;">
-                    <div class="modal-form-grid">
-                        <div class="form-group">
-                            <label>USB Ports</label>
-                            <div class="status-toggle-group" id="usb_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                            <div class="sub-input-row">
-                                <label>Available Ports:</label>
-                                <input type="number" id="usb_ports_count" class="modal-input small-input" value="0">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Wi-fi Card</label>
-                            <div class="status-toggle-group" id="wifi_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Microphone Jack</label>
-                            <div class="status-toggle-group" id="mic_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>HDMI Port</label>
-                            <div class="status-toggle-group" id="hdmi_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Headphone Jack</label>
-                            <div class="status-toggle-group" id="headphone_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Display Port</label>
-                            <div class="status-toggle-group" id="display_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>In-Line Jack</label>
-                            <div class="status-toggle-group" id="inline_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Ethernet Port</label>
-                            <div class="status-toggle-group" id="ethernet_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
+                        <div id="bulk_input_container" style="display: none; align-items: center; gap: 10px; margin-left: 10px;">
+                            <label style="font-size: 13px; font-weight: 600; color: #555;">Quantity:</label>
+                            <input type="number" id="bulk_count" class="modal-input small-input" value="2" min="2" max="50" style="width: 70px; padding: 6px;" oninput="updateBulkUnitNumbers()">
                         </div>
                     </div>
-                </div>
 
-                <div id="m-health" class="modal-tab-content" style="display: none;">
-                    <div class="modal-form-grid">
-                        <div class="form-group">
-                            <label>Computer Age</label>
-                            <div class="sub-input-row">
-                                <label>Total:</label>
-                                <input type="text" id="computer_age_display" class="modal-input" placeholder="Calculated automatically" readonly style="background:#f4f4f4; color: #555;">
+                    <div class="specs-tabs modal-tabs-nav">
+                        <button class="spec-tab active" onclick="switchModalTab('m-identity', this)">Identity & Specifications</button>
+                        <button class="spec-tab" onclick="switchModalTab('m-external', this)">External I/O Ports</button>
+                        <button class="spec-tab" onclick="switchModalTab('m-health', this)">Health & Maintenance Summary</button>
+                        <button class="spec-tab" onclick="switchModalTab('m-peripherals', this)">Peripherals</button>
+                    </div>
+
+                    <div id="m-identity" class="modal-tab-content">
+                        <div class="modal-form-grid">
+                            <div class="form-group"><label>Property ID</label><input type="text" id="spec_property" class="modal-input" placeholder="Enter unique property number"></div>
+                            <div class="form-group"><label>Processor (CPU)</label><input type="text" id="spec_cpu" class="modal-input" placeholder="e.g., Intel Core i5-12400"></div>
+                            <div class="form-group"><label>Brand</label><input type="text" id="spec_brand" class="modal-input" placeholder="e.g., Dell, HP, Lenovo"></div>
+                            <div class="form-group"><label>Operating System</label><input type="text" id="spec_os" class="modal-input" placeholder="e.g., Windows 11 Pro"></div>
+
+                            <div class="form-group">
+                                <label>Purchase Date</label>
+                                <input type="date" id="purchase_date_input" class="modal-input" value="<?= date('Y-m-d'); ?>" onchange="calculateComputerAge()">
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Disk Health (SMART Status)</label>
-                            <div class="status-toggle-group" id="disk_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+
+                            <div class="form-group"><label>Graphics Card (GPU)</label><input type="text" id="spec_gpu" class="modal-input" placeholder="e.g., Integrated Intel UHD"></div>
+
+                            <div class="form-group">
+                                <label>Room Number</label>
+                                <input type="text" id="room_number_input" class="modal-input" value="<?= htmlspecialchars($current_room); ?>" readonly style="background: #f4f4f4; cursor: not-allowed;">
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Number of Repairs</label>
-                            <div class="sub-input-row">
-                                <label>Total:</label>
-                                <input type="number" id="num_repair_input" class="modal-input" value="0" disabled style="background:#e9e9e9;">
+
+                            <div class="form-group"><label>RAM (Installed Memory)</label><input type="text" id="spec_ram" class="modal-input" placeholder="e.g., 16 GB"></div>
+
+                            <div class="form-group">
+                                <label>Unit Number</label>
+                                <input type="text" id="smart_unit_no" class="modal-input" value="<?= getNextAvailableUnit($conn, $current_room) ?>" readonly style="background: #f4f4f4; font-weight: bold; color: #333;">
                             </div>
+
+                            <div class="form-group"><label>Storage Type</label><input type="text" id="spec_storage" class="modal-input" placeholder="e.g., SSD (M.2 NVMe)"></div>
+                            <div class="form-group"></div>
+                            <div class="form-group"><label>Storage Capacity</label><input type="text" id="spec_capacity" class="modal-input" placeholder="e.g., 512 GB"></div>
                         </div>
-                        <div class="form-group">
-                            <label>Power Supply</label>
-                            <div class="status-toggle-group" id="power_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                    </div>
+
+                    <div id="m-external" class="modal-tab-content" style="display: none;">
+                        <div class="modal-form-grid">
+                            <div class="form-group">
+                                <label>USB Ports</label>
+                                <div class="status-toggle-group" id="usb_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                                <div class="sub-input-row">
+                                    <label>Available Ports:</label>
+                                    <input type="number" id="usb_ports_count" class="modal-input small-input" value="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Wi-fi Card</label>
+                                <div class="status-toggle-group" id="wifi_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Microphone Jack</label>
+                                <div class="status-toggle-group" id="mic_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>HDMI Port</label>
+                                <div class="status-toggle-group" id="hdmi_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Headphone Jack</label>
+                                <div class="status-toggle-group" id="headphone_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Display Port</label>
+                                <div class="status-toggle-group" id="display_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>In-Line Jack</label>
+                                <div class="status-toggle-group" id="inline_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Ethernet Port</label>
+                                <div class="status-toggle-group" id="ethernet_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="m-peripherals" class="modal-tab-content" style="display: none;">
-                    <div class="modal-form-grid">
-
-                        <div class="form-group peripheral-group">
-                            <label class="group-title">Monitor</label>
-                            <div class="sub-field">
-                                <label>Property ID:</label>
-                                <input type="text" id="monitor_property_input" class="modal-input" placeholder="1025482128">
+                    <div id="m-health" class="modal-tab-content" style="display: none;">
+                        <div class="modal-form-grid">
+                            <div class="form-group">
+                                <label>Computer Age</label>
+                                <div class="sub-input-row">
+                                    <label>Total:</label>
+                                    <input type="text" id="computer_age_display" class="modal-input" placeholder="Calculated automatically" readonly style="background:#f4f4f4; color: #555;">
+                                </div>
                             </div>
-                            <div class="sub-field">
-                                <label>Brand:</label>
-                                <input type="text" id="monitor_brand_input" class="modal-input" placeholder="Acer">
+                            <div class="form-group">
+                                <label>Disk Health (SMART Status)</label>
+                                <div class="status-toggle-group" id="disk_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
                             </div>
-                            <div class="status-toggle-group" id="monitor_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                            <div class="form-group">
+                                <label>Number of Repairs</label>
+                                <div class="sub-input-row">
+                                    <label>Total:</label>
+                                    <input type="number" id="num_repair_input" class="modal-input" value="0" disabled style="background:#e9e9e9;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Power Supply</label>
+                                <div class="status-toggle-group" id="power_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="form-group peripheral-group">
-                            <label class="group-title">Mouse</label>
-                            <div class="sub-field">
-                                <label>Brand:</label>
-                                <input type="text" id="mouse_brand_input" class="modal-input" placeholder="Acer">
-                            </div>
-                            <div class="status-toggle-group" id="mouse_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-
-                        <div class="form-group peripheral-group">
-                            <label class="group-title">Keyboard</label>
-                            <div class="sub-field">
-                                <label>Brand:</label>
-                                <input type="text" id="keyboard_brand_input" class="modal-input" placeholder="Acer">
-                            </div>
-                            <div class="status-toggle-group" id="keyboard_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-
-                        <div class="form-group peripheral-group">
-                            <label class="group-title">AVR (Automatic Voltage Regulator)</label>
-                            <div class="sub-field">
-                                <label>Brand:</label>
-                                <input type="text" id="avr_brand_input" class="modal-input" placeholder="Acer">
-                            </div>
-                            <div class="status-toggle-group" id="avr_toggle">
-                                <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
-                            </div>
-                        </div>
-
                     </div>
+
+                    <div id="m-peripherals" class="modal-tab-content" style="display: none;">
+                        <div class="modal-form-grid">
+
+                            <div class="form-group peripheral-group">
+                                <label class="group-title">Monitor</label>
+                                <div class="sub-field">
+                                    <label>Property ID:</label>
+                                    <input type="text" id="monitor_property_input" class="modal-input" placeholder="1025482128">
+                                </div>
+                                <div class="sub-field">
+                                    <label>Brand:</label>
+                                    <input type="text" id="monitor_brand_input" class="modal-input" placeholder="Acer">
+                                </div>
+                                <div class="status-toggle-group" id="monitor_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group peripheral-group">
+                                <label class="group-title">Mouse</label>
+                                <div class="sub-field">
+                                    <label>Brand:</label>
+                                    <input type="text" id="mouse_brand_input" class="modal-input" placeholder="Acer">
+                                </div>
+                                <div class="status-toggle-group" id="mouse_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group peripheral-group">
+                                <label class="group-title">Keyboard</label>
+                                <div class="sub-field">
+                                    <label>Brand:</label>
+                                    <input type="text" id="keyboard_brand_input" class="modal-input" placeholder="Acer">
+                                </div>
+                                <div class="status-toggle-group" id="keyboard_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group peripheral-group">
+                                <label class="group-title">AVR (Automatic Voltage Regulator)</label>
+                                <div class="sub-field">
+                                    <label>Brand:</label>
+                                    <input type="text" id="avr_brand_input" class="modal-input" placeholder="Acer">
+                                </div>
+                                <div class="status-toggle-group" id="avr_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
                 </div>
 
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('addComputerModal')">Cancel</button>
-                <button class="btn-create" onclick="submitNewUnit()">
-                    <i class="fas fa-plus-circle"></i> Create
-                </button>
+                <div class="modal-footer">
+                    <button class="btn-cancel" onclick="closeModal('addComputerModal')">Cancel</button>
+                    <button class="btn-create" onclick="submitNewUnit()">
+                        <i class="fas fa-plus-circle"></i> Create
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="condemnModal" class="modal-overlay">
-        <div class="modal-container condemn-modal">
-            <div class="modal-header">
-                <h3>Condemned this Unit?</h3>
-            </div>
+        <div id="condemnModal" class="modal-overlay">
+            <div class="modal-container condemn-modal">
+                <div class="modal-header">
+                    <h3 id="condemn_modal_title">Condemned this Unit?</h3>
+                </div>
 
-            <div class="modal-body">
-                <p class="condemn-warning">
-                    Are you sure you want to condemn <strong id="condemn_display_name">[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
-                </p>
+                <div class="modal-body">
+                    <p class="condemn-warning">
+                        Are you sure you want to condemn <strong id="condemn_display_name">[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
+                    </p>
 
-                <div class="condemn-grid">
-                    <div class="condemn-info">
-                        <div class="form-group">
-                            <label>Set Tag:</label>
-                            <input type="text" id="condemn_set_tag" class="modal-input readonly-input" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Set ID:</label>
-                            <input type="text" id="condemn_set_id" class="modal-input readonly-input" readonly>
-                        </div>
-                    </div>
-
-                    <div class="condemn-action">
-                        <div class="form-group">
-                            <label>Action Taken:</label>
-                            <div class="checkbox-grid">
-                                <label class="check-container"><input type="checkbox" name="condemn_reason" value="Hardware Failure (Non-repairable)"> <span>Hardware Failure (Non-repairable)</span></label>
-                                <label class="check-container"><input type="checkbox" name="condemn_reason" value="Significant Physical Damage"> <span>Significant Physical Damage</span></label>
-                                <label class="check-container"><input type="checkbox" name="condemn_reason" value="System Obsolescence (End of Life)"> <span>System Obsolescence (End of Life)</span></label>
-                                <label class="check-container"><input type="checkbox" name="condemn_reason" value="Other"> <span>Other (Please specify...)</span></label>
+                    <div class="condemn-grid">
+                        <div class="condemn-info">
+                            <div class="form-group">
+                                <label id="condemn_tag_label">Set Tag:</label>
+                                <input type="text" id="condemn_set_tag" class="modal-input readonly-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label id="condemn_id_label">Set ID:</label>
+                                <input type="text" id="condemn_set_id" class="modal-input readonly-input" readonly>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Remarks:</label>
-                            <textarea id="condemn_remarks" class="modal-textarea" placeholder="Provide specific details for the audit log..."></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('condemnModal')">Cancel</button>
-                <button class="btn-confirm-condemn" onclick="submitCondemn()"><i class="fas fa-trash-alt"></i> Condemn</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="transferModal" class="modal-overlay">
-        <div class="modal-container transfer-modal">
-            <div class="modal-header">
-                <h3>Transfer Asset to Active Labs</h3>
-            </div>
-
-            <div class="modal-body">
-                <div class="transfer-grid">
-
-                    <div class="transfer-list-card">
-                        <h4>Computer Unit List</h4>
-                        <input type="text" class="modal-input search-sm" placeholder="Search">
-                        <div class="select-all-row">
-                            <label class="check-container select-all-text"><input type="checkbox"> <span>Select All</span></label>
-                        </div>
-                        <div class="transfer-table-container">
-                            <table class="transfer-table">
-                                <thead>
-                                    <tr>
-                                        <th>Set Tag</th>
-                                        <th>Set ID</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>PC-01</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>PC-02</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>PC-03</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>PC-04</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>PC-05</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>PC-06</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="transfer-list-card">
-                        <h4>Facility Asset List</h4>
-                        <input type="text" class="modal-input search-sm" placeholder="Search">
-                        <div class="select-all-row">
-                            <label class="check-container select-all-text"><input type="checkbox"> <span>Select All</span></label>
-                        </div>
-                        <div class="transfer-table-container">
-                            <table class="transfer-table">
-                                <thead>
-                                    <tr>
-                                        <th>Set Tag</th>
-                                        <th>Property ID</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>FA-01</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>FA-02</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>FA-03</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>FA-04</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>FA-05</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><label class="check-container"><input type="checkbox"> <span>FA-06</span></label></td>
-                                        <td>12548298</td>
-                                        <td><span class="badge green">Working</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="transfer-form-col">
-                        <div class="form-group">
-                            <label>Source Room:</label>
-                            <input type="text" class="modal-input readonly-input" value="Room 104" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Target Lab:</label>
-                            <div class="select-wrapper">
-                                <select class="modal-input custom-select">
-                                    <option>Lab Room</option>
-                                    <option>Room 105</option>
-                                    <option>Room 106</option>
-                                </select>
-                                <i class="fas fa-filter select-icon"></i>
+                        <div class="condemn-action">
+                            <div class="form-group">
+                                <label>Action Taken:</label>
+                                <div class="checkbox-grid">
+                                    <label class="check-container"><input type="checkbox" name="condemn_reason" value="Hardware Failure (Non-repairable)"> <span>Hardware Failure (Non-repairable)</span></label>
+                                    <label class="check-container"><input type="checkbox" name="condemn_reason" value="Significant Physical Damage"> <span>Significant Physical Damage</span></label>
+                                    <label class="check-container"><input type="checkbox" name="condemn_reason" value="System Obsolescence (End of Life)"> <span>System Obsolescence (End of Life)</span></label>
+                                    <label class="check-container"><input type="checkbox" name="condemn_reason" value="Other"> <span>Other (Please specify...)</span></label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Remarks:</label>
+                                <textarea id="condemn_remarks" class="modal-textarea" placeholder="Provide specific details for the audit log..."></textarea>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Action Taken:</label>
-                            <div class="checkbox-grid">
-                                <label class="check-container"><input type="checkbox"> <span>Replacement for Broken Unit</span></label>
-                                <label class="check-container"><input type="checkbox"> <span>Hardware Upgrade / Swap</span></label>
-                                <label class="check-container"><input type="checkbox"> <span>Lab Capacity Expansion</span></label>
-                                <label class="check-container"><input type="checkbox"> <span>Other (Please specify...)</span></label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-cancel" onclick="closeModal('condemnModal')">Cancel</button>
+                    <button class="btn-confirm-condemn" onclick="submitCondemnAction()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="transferModal" class="modal-overlay">
+            <div class="modal-container transfer-modal">
+                <div class="modal-header">
+                    <h3>Transfer Asset to Active Labs</h3>
+                </div>
+
+                <div class="modal-body">
+                    <div class="transfer-grid">
+                        <div class="transfer-list-card">
+                            <h4>Computer Unit List</h4>
+                            <input type="text" class="modal-input search-sm" placeholder="Search" onkeyup="filterTransferList('transferUnitsTableBody', this.value)">
+                            <div class="select-all-row">
+                                <label class="check-container select-all-text">
+                                    <input type="checkbox" id="selectAllUnits" onclick="toggleTransferSelection('unit')"> <span>Select All</span>
+                                </label>
+                            </div>
+                            <div class="transfer-table-container">
+                                <table class="transfer-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Set Tag</th>
+                                            <th>Set ID</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transferUnitsTableBody">
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Remarks:</label>
-                            <textarea class="modal-textarea" placeholder="Provide specific details for this status update..."></textarea>
+
+                        <div class="transfer-list-card">
+                            <h4>Facility Asset List</h4>
+                            <input type="text" class="modal-input search-sm" placeholder="Search" onkeyup="filterTransferList('transferAssetsTableBody', this.value)">
+                            <div class="select-all-row">
+                                <label class="check-container select-all-text">
+                                    <input type="checkbox" id="selectAllAssets" onclick="toggleTransferSelection('asset')"> <span>Select All</span>
+                                </label>
+                            </div>
+                            <div class="transfer-table-container">
+                                <table class="transfer-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Set Tag</th>
+                                            <th>Property ID</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transferAssetsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="transfer-form-col">
+                            <div class="form-group">
+                                <label>Source Room:</label>
+                                <input type="text" id="transfer_source_room" class="modal-input readonly-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Target Lab:</label>
+                                <div class="select-wrapper">
+                                    <select id="transfer_target_lab" class="modal-input custom-select">
+                                        <option value="">Select Lab Room</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Action Taken:</label>
+                                <div class="checkbox-grid" id="transfer_actions">
+                                    <label class="check-container"><input type="checkbox" value="Replacement for Broken Unit"> <span>Replacement for Broken Unit</span></label>
+                                    <label class="check-container"><input type="checkbox" value="Hardware Upgrade / Swap"> <span>Hardware Upgrade / Swap</span></label>
+                                    <label class="check-container"><input type="checkbox" value="Lab Capacity Expansion"> <span>Lab Capacity Expansion</span></label>
+                                    <label class="check-container"><input type="checkbox" value="Other"> <span>Other</span></label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Remarks:</label>
+                                <textarea id="transfer_remarks" class="modal-textarea" placeholder="Provide specific details..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-cancel" onclick="closeModal('transferModal')">Cancel</button>
+                    <button class="btn-confirm-transfer" onclick="processTransfer()"><i class="fas fa-check-circle"></i> Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="missingIdModal" class="modal-overlay">
+            <div class="modal-container assignment-modal">
+                <div class="modal-header">
+                    <h3>Finalize Deployment: Serial Number Assignment</h3>
+                    <p style="font-size: 13px; color: #666; margin-top: 5px;">Please assign unique serial numbers for <span id="missing_count_text">0</span> units created</p>
+                </div>
+
+                <div class="modal-body" style="padding: 0;">
+                    <table class="assignment-table">
+                        <thead>
+                            <tr>
+                                <th>Set Name</th>
+                                <th>System Unit's Property ID</th>
+                                <th>Monitor's Property ID</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="missingIdsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-cancel" onclick="closeModal('missingIdModal')">Cancel</button>
+                    <button class="btn-finalize" onclick="finalizeDeployment()"><i class="fas fa-check-circle"></i> Finalized</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="addFacilityAssetModal" class="modal-overlay" style="display: none;">
+            <div class="modal-container" style="max-width: 450px;">
+                <div class="modal-header">
+                    <h3>Add New Asset</h3>
+                </div>
+
+                <div class="modal-body" style="padding: 20px;">
+                    <div class="form-group">
+                        <label style="font-size: 13px; font-weight: 600; color: #333;">Device Name</label>
+                        <input type="text" id="fa_asset_name" class="modal-input" placeholder="e.g. Printer, Air Conditioner, Projector" style="width: 100%; box-sizing: border-box;">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="font-size: 13px; font-weight: 600; color: #333;">Property ID</label>
+                        <input type="text" id="fa_asset_property" class="modal-input" placeholder="Enter unique property number" style="width: 100%; box-sizing: border-box;">
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin: 15px 0;">
+                        <div class="form-group" style="flex: 1;">
+                            <label style="font-size: 13px; font-weight: 600; color: #333;">Set Tag</label>
+                            <input type="text" id="fa_set_tag" class="modal-input readonly-input" value="(Automatic)" readonly disabled style="width: 100%; box-sizing: border-box; background-color: #f5f5f5; color: #888; text-align: center;">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label style="font-size: 13px; font-weight: 600; color: #333;">Brand</label>
+                            <input type="text" id="fa_brand" class="modal-input" placeholder="e.g. Acer, Samsung" style="width: 100%; box-sizing: border-box;">
                         </div>
                     </div>
 
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('transferModal')">Cancel</button>
-                <button class="btn-confirm-transfer"><i class="fas fa-check-circle"></i> Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="missingIdModal" class="modal-overlay">
-        <div class="modal-container assignment-modal">
-            <div class="modal-header">
-                <h3>Finalize Deployment: Serial Number Assignment</h3>
-                <p style="font-size: 13px; color: #666; margin-top: 5px;">Please assign unique serial numbers for <span id="missing_count_text">0</span> units created</p>
-            </div>
-
-            <div class="modal-body" style="padding: 0;">
-                <table class="assignment-table">
-                    <thead>
-                        <tr>
-                            <th>Set Name</th>
-                            <th>System Unit's Property ID</th>
-                            <th>Monitor's Property ID</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="missingIdsTableBody">
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('missingIdModal')">Cancel</button>
-                <button class="btn-finalize" onclick="finalizeDeployment()"><i class="fas fa-check-circle"></i> Finalized</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="addFacilityAssetModal" class="modal-overlay" style="display: none;">
-        <div class="modal-container" style="max-width: 450px;">
-            <div class="modal-header">
-                <h3>Add New Asset</h3>
-            </div>
-
-            <div class="modal-body" style="padding: 20px;">
-                <div class="form-group">
-                    <label style="font-size: 13px; font-weight: 600; color: #333;">Device Name</label>
-                    <input type="text" id="fa_asset_name" class="modal-input" placeholder="e.g. Printer, Air Conditioner, Projector" style="width: 100%; box-sizing: border-box;">
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label style="font-size: 13px; font-weight: 600; color: #333;">Set Tag</label>
-                        <input type="text" id="fa_set_tag" class="modal-input readonly-input" value="(Automatic)" readonly disabled style="width: 100%; box-sizing: border-box; background-color: #f5f5f5; color: #888; text-align: center;">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label style="font-size: 13px; font-weight: 600; color: #333;">Brand</label>
-                        <input type="text" id="fa_brand" class="modal-input" placeholder="e.g. Acer, Samsung" style="width: 100%; box-sizing: border-box;">
+                    <div class="form-group">
+                        <label style="font-size: 13px; font-weight: 600; color: #333;">Status</label>
+                        <select id="fa_status" class="modal-input" style="width: 100%; box-sizing: border-box; background-color: #e8f5e9; color: #2e7d32; font-weight: bold; border: 1px solid #c8e6c9;" onchange="updateFAStatusColor(this)">
+                            <option value="Working" style="background: #fff; color: #333;">Working</option>
+                            <option value="For Repair" style="background: #fff; color: #333;">For Repair</option>
+                        </select>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label style="font-size: 13px; font-weight: 600; color: #333;">Status</label>
-                    <select id="fa_status" class="modal-input" style="width: 100%; box-sizing: border-box; background-color: #e8f5e9; color: #2e7d32; font-weight: bold; border: 1px solid #c8e6c9;" onchange="updateFAStatusColor(this)">
-                        <option value="Working" style="background: #fff; color: #333;">Working</option>
-                        <option value="For Repair" style="background: #fff; color: #333;">For Repair</option>
-                    </select>
+                <div class="modal-footer" style="padding: 15px 20px;">
+                    <button class="btn-cancel" onclick="closeModal('addFacilityAssetModal')">Cancel</button>
+                    <button class="btn-finalize" onclick="submitFacilityAsset()" style="background-color: #4caf50; padding: 8px 25px;"><i class="fas fa-plus-circle"></i> Create</button>
                 </div>
             </div>
-
-            <div class="modal-footer" style="padding: 15px 20px;">
-                <button class="btn-cancel" onclick="closeModal('addFacilityAssetModal')">Cancel</button>
-                <button class="btn-finalize" onclick="submitFacilityAsset()" style="background-color: #4caf50; padding: 8px 25px;"><i class="fas fa-plus-circle"></i> Create</button>
-            </div>
         </div>
-    </div>
 
-    <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
-    <script src="js/assets_management.js?v=<?php echo time(); ?>"></script>
+        <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
+        <script src="js/assets_management.js?v=<?php echo time(); ?>"></script>
 
-    <div id="toast-container" class="toast-container"></div>
+        <div id="toast-container" class="toast-container"></div>
 
 </body>
 
