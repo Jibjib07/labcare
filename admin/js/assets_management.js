@@ -1,5 +1,6 @@
-<<<<<<< HEAD
-=======
+let currentEditingSetId = null;   // For Computer Units
+let currentSelectedFAId = null;   // For Facility Assets
+
 // ==========================================
 // TOAST NOTIFICATION SYSTEM
 // ==========================================
@@ -12,6 +13,21 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification(toastData.title, toastData.message, toastData.type);
         sessionStorage.removeItem('pendingToast'); // Clear it so it only shows once
     }
+
+    // Add event listeners for asset items
+    document.querySelectorAll('#assetListContainer .asset-item:not(.missing-id)').forEach(item => {
+        item.addEventListener('click', function() {
+            const setId = this.getAttribute('data-set-id');
+            if (setId) selectUnit(this, setId);
+        });
+    });
+
+    document.querySelectorAll('#facilityListContainer .asset-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const assetId = this.getAttribute('data-asset-id');
+            if (assetId) selectFacilityAsset(this, assetId);
+        });
+    });
 });
 
 function showNotification(title, message, type = 'success') {
@@ -44,6 +60,51 @@ function reloadWithToast(title, message, type = 'success') {
     location.reload(); 
 }
 
+// ==========================================
+// STATUS DETERMINATION FUNCTIONS
+// ==========================================
+
+/**
+ * Determines the display status for a unit based on data completeness and repair status
+ * @param {Object} unitData - Unit data object with specs_property, monitor_property, and status fields
+ * @returns {string} Display status
+ */
+function determineUnitDisplayStatus(unitData) {
+    // 1. Check if property IDs are missing (highest priority)
+    if (!unitData.specs_property || !unitData.monitor_property) {
+        return 'No Property ID';
+    }
+
+    // 2. Check for repair status (from database)
+    if (unitData.set_status === 'For Repair') {
+        return 'For Repair';
+    }
+
+    // 3. Check for condemn status
+    if (unitData.set_status === 'For Condemn' || unitData.set_status === 'Condemned') {
+        return unitData.set_status;
+    }
+
+    // 4. Default to Working
+    return 'Working';
+}
+
+/**
+ * Gets the appropriate badge class for a status
+ * @param {string} status - Status string
+ * @returns {string} CSS class for badge
+ */
+function getStatusBadgeClass(status) {
+    const statusMap = {
+        'Working': 'badge green',
+        'Condemned': 'badge red',
+        'For Condemn': 'badge red',
+        'For Repair': 'badge yellow',
+        'No Property ID': 'badge purple'
+    };
+    return statusMap[status] || 'badge gray';
+}
+
 // SINGLE, UNIFIED CLICK LISTENER
 window.addEventListener('click', function(event) {
     // 1. Close Modals
@@ -63,7 +124,6 @@ window.addEventListener('click', function(event) {
         }
     }
 });
->>>>>>> 191663f4747009d9b11937c3ca41bc8c13a68dd5
 /**
  * ------------------------------------------------------------------
  * 1. MAIN VIEW SWITCHER
@@ -71,29 +131,27 @@ window.addEventListener('click', function(event) {
  * ------------------------------------------------------------------
  */
 function switchView(viewName) {
-    // Get the main container elements
     const computerView = document.getElementById('view-computer');
     const facilityView = document.getElementById('view-facility');
+
+    // --- NEW: Reset selections so the modal doesn't get confused ---
+    currentEditingSetId = null;
+    currentSelectedFAId = null;
+
+    // Remove 'active' class from ALL list items in both sections
+    document.querySelectorAll('.asset-item').forEach(item => item.classList.remove('active'));
     
-    // Get the toggle buttons (optional, if you want to force active state via JS)
-    // Note: The HTML usually handles the 'active' class via PHP or static HTML, 
-    // but this ensures the view logic works.
+    // --- ensure the facility right panel remains visible when the section is shown ---
+    // we used to hide it here; removing that keeps the panel present with the default header text
 
     if (viewName === 'computer') {
-        // Show Computer View
         computerView.style.display = 'block';
         facilityView.style.display = 'none';
-        
-        // Update URL (Optional: helps if user refreshes page)
-        // history.pushState(null, null, '?view=computer');
-
     } else if (viewName === 'facility') {
-        // Show Facility View
         computerView.style.display = 'none';
         facilityView.style.display = 'block';
-        
-        // Update URL (Optional)
-        // history.pushState(null, null, '?view=facility');
+        const right = document.getElementById('view-facility-right');
+        if (right) right.style.display = 'block';
     }
 }
 
@@ -140,11 +198,219 @@ function switchTab(tabId, btnElement) {
  */
 
 // Open the Modal
-function openModal(modalId) {
+function openModal(modalId, ...args) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        modal.style.display = 'flex'; // Uses flex to center the content
+        modal.style.display = 'flex'; 
+
+        if (modalId === 'transferModal') {
+            const labId = args[0];
+            // Clear previous inputs/checkboxes before populating
+            resetTransferModal();
+            populateTransferModal(labId);
+        }
     }
+}
+
+async function populateTransferModal(labId) {
+    // 1. Reference all UI elements
+    const unitBody = document.getElementById('transferUnitsTableBody');
+    const assetBody = document.getElementById('transferAssetsTableBody');
+    const targetLabSelect = document.getElementById('transfer_target_lab');
+    const sourceInput = document.getElementById('transfer_source_room');
+
+    // 2. Clear current state and show loading
+    unitBody.innerHTML = '<tr><td colspan="3" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading Units...</td></tr>';
+    assetBody.innerHTML = '<tr><td colspan="3" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading Assets...</td></tr>';
+    targetLabSelect.innerHTML = '<option value="">Loading Labs...</option>';
+
+    try {
+        // 3. Fetch data from the PHP provider
+        const response = await fetch(`includes/get_assets_for_transfer.php?lab_id=${labId}`);
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const data = await response.json();
+
+        // 4. Set the Source Room Name (e.g., "Computer Lab 1 (Room 104)")
+        sourceInput.value = data.source_name || "Unknown Laboratory";
+
+        // 5. Populate Computer Unit List
+        if (data.units && data.units.length > 0) {
+            unitBody.innerHTML = data.units.map(unit => `
+                <tr>
+                    <td>
+                        <label class="check-container">
+                            <input type="checkbox" class="transfer-unit-checkbox" value="${unit.set_id}"> 
+                            <span>PC-${unit.set_tag}</span>
+                        </label>
+                    </td>
+                    <td>${unit.set_id}</td>
+                    <td><span class="badge ${unit.set_status.toLowerCase() === 'working' ? 'green' : 'yellow'}">${unit.set_status}</span></td>
+                </tr>
+            `).join('');
+        } else {
+            unitBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: #888;">No transferable units in this lab.</td></tr>';
+        }
+
+        // 6. Populate Facility Asset List
+        if (data.facility && data.facility.length > 0) {
+            assetBody.innerHTML = data.facility.map(asset => `
+                <tr>
+                    <td>
+                        <label class="check-container">
+                            <input type="checkbox" class="transfer-asset-checkbox" value="${asset.asset_id}"> 
+                            <span>${asset.asset_tag}</span>
+                        </label>
+                    </td>
+                    <td>${asset.asset_id}</td>
+                    <td><span class="badge ${asset.asset_status.toLowerCase() === 'working' ? 'green' : 'yellow'}">${asset.asset_status}</span></td>
+                </tr>
+            `).join('');
+        } else {
+            assetBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: #888;">No facility assets found.</td></tr>';
+        }
+
+        // 7. Populate Target Lab Dropdown (Name (Room) formatting)
+        targetLabSelect.innerHTML = '<option value="">Select Target Lab</option>';
+        if (data.labs && data.labs.length > 0) {
+            data.labs.forEach(lab => {
+                const option = document.createElement('option');
+                option.value = lab.lab_id;
+                option.textContent = lab.full_display; // Formatted as "Name (Room)" from PHP
+                targetLabSelect.appendChild(option);
+            });
+        } else {
+            targetLabSelect.innerHTML = '<option value="">No available labs for transfer</option>';
+        }
+
+    } catch (error) {
+        console.error('Transfer Modal Error:', error);
+        const errorRow = '<tr><td colspan="3" style="text-align:center; color: red;">Failed to load data.</td></tr>';
+        unitBody.innerHTML = errorRow;
+        assetBody.innerHTML = errorRow;
+        targetLabSelect.innerHTML = '<option value="">Error loading labs</option>';
+    }
+}
+
+// Utility to clear modal state
+function resetTransferModal() {
+    document.querySelectorAll('#transferModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#transferModal .modal-textarea').forEach(ta => ta.value = '');
+    const select = document.querySelector('#transferModal .custom-select');
+    if (select) select.selectedIndex = 0;
+}
+
+function filterTransferList(tbodyId, query) {
+    const rows = document.querySelectorAll(`#${tbodyId} tr`);
+    const q = query.toLowerCase().trim();
+
+    rows.forEach(row => {
+        if (row.cells.length < 2) return; 
+
+        // 2. Perform the search
+        const text = row.innerText.toLowerCase();
+        const isMatch = text.includes(q);
+        row.style.display = isMatch ? '' : 'none';
+
+        if (!isMatch) {
+            const cb = row.querySelector('input[type="checkbox"]');
+            if (cb) cb.checked = false;
+        }
+    });
+
+    const selectAllId = (tbodyId === 'transferUnitsTableBody') ? 'selectAllUnits' : 'selectAllAssets';
+    const selectAllCb = document.getElementById(selectAllId);
+    if (selectAllCb) selectAllCb.checked = false;
+}
+
+function toggleTransferSelection(type) {
+    const isChecked = type === 'unit' 
+        ? document.getElementById('selectAllUnits').checked 
+        : document.getElementById('selectAllAssets').checked;
+    
+    const selector = type === 'unit' ? '.transfer-unit-checkbox' : '.transfer-asset-checkbox';
+    
+    document.querySelectorAll(selector).forEach(cb => {
+        // Only toggle checkboxes that aren't hidden by a search filter
+        if (cb.closest('tr').style.display !== 'none') {
+            cb.checked = isChecked;
+        }
+    });
+}
+
+async function submitTransfer() {
+    const targetLabId = document.getElementById('transfer_target_lab').value;
+    const remarks = document.getElementById('transfer_remarks').value;
+    
+    // 1. Collect selected Units
+    const selectedUnits = Array.from(document.querySelectorAll('.transfer-unit-checkbox:checked'))
+                               .map(cb => cb.value);
+                               
+    // 2. Collect selected Assets
+    const selectedAssets = Array.from(document.querySelectorAll('.transfer-asset-checkbox:checked'))
+                                .map(cb => cb.value);
+
+    // 3. Collect checked reasons (Changed selector to match standard naming)
+    // Ensure your HTML container has id="transfer_actions"
+    const actions = Array.from(document.querySelectorAll('#transfer_actions input[type="checkbox"]:checked'))
+                         .map(cb => cb.value);
+
+    // Validation
+    if (!targetLabId) {
+        showNotification('Required', 'Please select a destination laboratory.', 'error');
+        return;
+    }
+    if (selectedUnits.length === 0 && selectedAssets.length === 0) {
+        showNotification('Selection Empty', 'Please select at least one item to transfer.', 'error');
+        return;
+    }
+
+    // Prepare Data - KEYS UPDATED TO MATCH PHP
+    const formData = new FormData();
+    formData.append('target_lab_id', targetLabId);
+    formData.append('remarks', remarks);
+    formData.append('actions', JSON.stringify(actions)); // Changed 'reasons' to 'actions'
+    formData.append('units', JSON.stringify(selectedUnits));
+    formData.append('assets', JSON.stringify(selectedAssets));
+
+    try {
+        const response = await fetch('includes/process_transfer.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        // Safety check for non-JSON responses (like PHP errors)
+        const text = await response.text();
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (e) {
+            console.error("Server returned non-JSON:", text);
+            throw new Error("Server error. Check console.");
+        }
+
+        if (result.success) {
+            closeModal('transferModal');
+            if (typeof reloadWithToast === "function") {
+                reloadWithToast('Success', 'Assets transferred and audit trail updated.', 'success');
+            } else {
+                location.reload();
+            }
+        } else {
+            // Use result.error to match the PHP's catch block
+            showNotification('Error', result.error || 'Transfer failed.', 'error');
+        }
+    } catch (error) {
+        console.error('Transfer Error:', error);
+        showNotification('Server Error', error.message || 'Could not connect to the server.', 'error');
+    }
+}
+
+// Helper to get status badge HTML
+function getStatusBadge(status) {
+    const badgeClass = status === 'Working' ? 'green' : status === 'For Repair' ? 'yellow' : 'red';
+    return `<span class="badge ${badgeClass}">${status}</span>`;
 }
 /**
  * Switch Modal Tabs
@@ -174,6 +440,19 @@ function closeModal(modalId) {
 }
 
 /**
+ * ENABLE/DISABLE TAB BUTTONS
+ */
+function setTabsDisabled(disabled) {
+    const tabs = document.querySelectorAll('.specs-content-box .spec-tab');
+    tabs.forEach((tab, index) => {
+        // Keep first tab (Identity) always enabled, disable others
+        if (index > 0) {
+            tab.disabled = disabled;
+        }
+    });
+}
+
+/**
  * TOGGLE STATUS BUTTONS
  */
 function toggleStatus(clickedBtn) {
@@ -192,260 +471,108 @@ function toggleStatus(clickedBtn) {
     clickedBtn.classList.add('active');
 }
 
-<<<<<<< HEAD
-// Global Window Click: Close modal if user clicks on the dark overlay (background)
-window.onclick = function(event) {
-    const modal = document.getElementById('addComputerModal');
-    // Check if the element clicked IS the modal container (the dark background), not the form inside
-    if (event.target === modal) {
-        modal.style.display = 'none';
-    }
-}
+// ==========================================
+// A. COMPUTER UNITS SEARCH & FILTER
+// ==========================================
+let currentComputerFilter = 'All';
 
-=======
->>>>>>> 191663f4747009d9b11937c3ca41bc8c13a68dd5
-/**
- * ------------------------------------------------------------------
- * 4. FILTER MENU LOGIC
- * ------------------------------------------------------------------
- */
-
-// Toggle the visibility of the dropdown
 function toggleFilterMenu() {
     document.getElementById("filterMenu").classList.toggle("show");
 }
 
-// Filter the asset list items based on the badge text
 function filterAssets(status) {
-    const items = document.querySelectorAll('.asset-item');
-    
-    items.forEach(item => {
-        const badge = item.querySelector('.badge');
-        if (!badge) return;
-        
-        const badgeText = badge.textContent.trim();
-        
-        // Show if "All" is selected or if the badge text matches exactly
-        if (status === 'All' || badgeText === status) {
-            item.style.display = 'flex'; // Use flex to retain your original styling
-        } else {
-            item.style.display = 'none'; // Hide non-matching items
-        }
-    });
-
-    // Close the dropdown menu after selecting an option
+    currentComputerFilter = status;
     document.getElementById("filterMenu").classList.remove("show");
+    applyComputerFilters();
 }
 
-<<<<<<< HEAD
-// Global Window Click: Close modals and dropdowns if clicking outside
-window.onclick = function(event) {
-    // 1. Close Modal Logic (Handles BOTH modals now)
-    const addModal = document.getElementById('addComputerModal');
-    const condemnModal = document.getElementById('condemnModal');
-    
-    if (event.target === addModal) {
-        addModal.style.display = 'none';
-    }
-    if (event.target === condemnModal) {
-        condemnModal.style.display = 'none';
-    }
-
-    // 2. Close Filter Dropdown Logic
-    if (!event.target.matches('.filter-btn') && !event.target.closest('.filter-btn')) {
-        const filterMenu = document.getElementById("filterMenu");
-        if (filterMenu && filterMenu.classList.contains('show')) {
-            filterMenu.classList.remove('show');
-        }
-    }
-}
-=======
->>>>>>> 191663f4747009d9b11937c3ca41bc8c13a68dd5
-
-/**
- * ------------------------------------------------------------------
- * 5. SEARCH LOGIC
- * Filters the asset list based purely on the unit name (e.g., PC-01)
- * ------------------------------------------------------------------
- */
 function searchAssets() {
-    // 1. Get the search query and make it lowercase for case-insensitive matching
+    applyComputerFilters();
+}
+
+function applyComputerFilters() {
     const input = document.getElementById("searchInput");
-    const filter = input.value.toLowerCase();
+    if (!input) return;
+    const filterText = input.value.toLowerCase();
     
-    // 2. Grab all the asset items in the list
-    const items = document.querySelectorAll('.asset-list .asset-item');
+    // ONLY target computer units
+    const items = document.querySelectorAll('#assetListContainer .asset-item');
     
-    // 3. Loop through each item to check its name
     items.forEach(item => {
-        const itemNameElement = item.querySelector('.item-name');
+        const nameEl = item.querySelector('.item-name');
+        const badgeEl = item.querySelector('.badge');
+        if (!nameEl || !badgeEl) return;
+
+        const name = nameEl.textContent.toLowerCase();
+        const status = badgeEl.textContent.trim();
         
-        if (itemNameElement) {
-            const textValue = itemNameElement.textContent || itemNameElement.innerText;
-            
-            // 4. If the name includes the search text, show it. Otherwise, hide it.
-            if (textValue.toLowerCase().includes(filter)) {
-                item.style.display = 'flex'; // Keep your flex styling intact
-            } else {
-                item.style.display = 'none';
-            }
-        }
+        const matchesSearch = name.includes(filterText);
+        const matchesFilter = (currentComputerFilter === 'All' || status === currentComputerFilter);
+        
+        item.style.display = (matchesSearch && matchesFilter) ? 'flex' : 'none';
     });
 }
 
-<<<<<<< HEAD
-// Global Window Click: Close modals and dropdowns if clicking outside
-window.onclick = function(event) {
-    // Array of all modal IDs
-    const modals = ['addComputerModal', 'condemnModal', 'transferModal'];
+// ==========================================
+// B. FACILITY ASSETS SEARCH & FILTER
+// ==========================================
+let currentFAFilter = 'All';
+
+function toggleFAFilterMenu() {
+    const menu = document.getElementById("faFilterMenu");
+    if (menu) menu.classList.toggle("show");
+}
+
+function filterFAAssets(status) {
+    currentFAFilter = status;
+    const menu = document.getElementById("faFilterMenu");
+    if (menu) menu.classList.remove("show");
+    applyFAFilters();
+}
+
+function searchFAAssets() {
+    applyFAFilters();
+}
+
+function applyFAFilters() {
+    // Uses a UNIQUE ID for the Facility search bar
+    const input = document.getElementById("faSearchInput");
+    if (!input) return;
+    const filterText = input.value.toLowerCase();
     
-    // Close Modals
-    modals.forEach(id => {
-        const modal = document.getElementById(id);
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
+    // ONLY target facility assets container
+    const items = document.querySelectorAll('#facilityListContainer .asset-item');
+    
+    items.forEach(item => {
+        const nameEl = item.querySelector('.item-name');
+        const badgeEl = item.querySelector('.badge');
+        if (!nameEl || !badgeEl) return;
 
-    // Close Filter Dropdown Logic
-    if (!event.target.matches('.filter-btn') && !event.target.closest('.filter-btn')) {
-        const filterMenu = document.getElementById("filterMenu");
-        if (filterMenu && filterMenu.classList.contains('show')) {
-            filterMenu.classList.remove('show');
-        }
-    }
+        const name = nameEl.textContent.toLowerCase();
+        const status = badgeEl.textContent.trim();
+        
+        const matchesSearch = name.includes(filterText);
+        const matchesFilter = (currentFAFilter === 'All' || status === currentFAFilter);
+        
+        item.style.display = (matchesSearch && matchesFilter) ? 'flex' : 'none';
+    });
 }
 
-=======
->>>>>>> 191663f4747009d9b11937c3ca41bc8c13a68dd5
 /**
  * ------------------------------------------------------------------
  * 7. UNIVERSAL EDIT MODE TOGGLE 
  * ------------------------------------------------------------------
  */
-<<<<<<< HEAD
-let isEditMode = false;
-
-function toggleEditMode() {
-    isEditMode = !isEditMode;
-    
-    const btn = document.getElementById('editToggleButton');
-    const btnResolve = document.getElementById('btnResolve');
-    const btnCondemn = document.getElementById('btnCondemn');
-    const btnCancel = document.getElementById('btnCancelEdit');
-
-    const viewModes = document.querySelectorAll('.specs-content-box .view-mode');
-    const editModes = document.querySelectorAll('.specs-content-box .edit-mode');
-
-    if (isEditMode) {
-        // --- SWITCH TO EDIT MODE ---
-        btn.innerHTML = '<i class="fas fa-save"></i> <span id="editText">Save</span>';
-        btn.classList.add('btn-save-active');
-        
-        // Hide Resolve/Condemn, Show Cancel
-        if (btnResolve) btnResolve.style.display = 'none';
-        if (btnCondemn) btnCondemn.style.display = 'none';
-        if (btnCancel) btnCancel.style.display = 'flex';
-        
-        viewModes.forEach(el => el.style.display = 'none');
-        editModes.forEach(el => {
-            el.style.display = el.classList.contains('status-toggle-group') ? 'flex' : 'block';
-        });
-        
-    } else {
-        // --- SAVE AND SWITCH TO VIEW MODE ---
-        btn.innerHTML = '<i class="fas fa-pen"></i> <span id="editText">Edit</span>';
-        btn.classList.remove('btn-save-active');
-        
-        // Show Resolve/Condemn, Hide Cancel
-        if (btnResolve) btnResolve.style.display = 'flex';
-        if (btnCondemn) btnCondemn.style.display = 'flex';
-        if (btnCancel) btnCancel.style.display = 'none';
-        
-        // Save Data Sync
-        document.querySelectorAll('.detail-group').forEach(group => {
-            // 1. Status Toggles
-            const toggleGroup = group.querySelector('.status-toggle-group.edit-mode');
-            const viewPill = group.querySelector('.status-pill.view-mode');
-            if (toggleGroup && viewPill) {
-                const activeBtn = toggleGroup.querySelector('.status-btn.active');
-                if (activeBtn) {
-                    const statusText = activeBtn.innerText;
-                    viewPill.innerText = statusText;
-                    viewPill.className = 'status-pill view-mode'; 
-                    if (statusText === 'Working') viewPill.classList.add('green');
-                    else if (statusText === 'For Repair') viewPill.classList.add('orange');
-                    else viewPill.classList.add('red');
-                }
-            }
-
-            // 2. Text Inputs
-            const inputField = group.querySelector('.edit-input.edit-mode');
-            const viewBox = group.querySelector('.detail-box.view-mode');
-            if (inputField && viewBox) {
-                if (inputField.parentElement.innerText.includes("Years")) {
-                    viewBox.innerText = inputField.value + " Years";
-                } else {
-                    viewBox.innerText = inputField.value;
-                }
-            }
-        });
-
-        viewModes.forEach(el => el.style.display = 'block');
-        editModes.forEach(el => el.style.display = 'none');
-    }
-}
-
-// Cancels the edit without saving changes
-function cancelEditMode() {
-    isEditMode = false;
-    
-    const btn = document.getElementById('editToggleButton');
-    const btnResolve = document.getElementById('btnResolve');
-    const btnCondemn = document.getElementById('btnCondemn');
-    const btnCancel = document.getElementById('btnCancelEdit');
-
-    const viewModes = document.querySelectorAll('.specs-content-box .view-mode');
-    const editModes = document.querySelectorAll('.specs-content-box .edit-mode');
-
-    // Revert Buttons
-    btn.innerHTML = '<i class="fas fa-pen"></i> <span id="editText">Edit</span>';
-    btn.classList.remove('btn-save-active');
-    if (btnResolve) btnResolve.style.display = 'flex';
-    if (btnCondemn) btnCondemn.style.display = 'flex';
-    if (btnCancel) btnCancel.style.display = 'none';
-
-    // Discard input changes by resetting inputs to the original view text
-    document.querySelectorAll('.detail-group').forEach(group => {
-        const inputField = group.querySelector('.edit-input.edit-mode');
-        const viewBox = group.querySelector('.detail-box.view-mode');
-        
-        if (inputField && viewBox) {
-            let originalText = viewBox.innerText.replace(' Years', '').trim();
-            inputField.value = originalText;
-        }
-
-        const toggleGroup = group.querySelector('.status-toggle-group.edit-mode');
-        const viewPill = group.querySelector('.status-pill.view-mode');
-        
-        if (toggleGroup && viewPill) {
-            const btns = toggleGroup.querySelectorAll('.status-btn');
-            btns.forEach(b => b.classList.remove('active'));
-            const originalBtn = Array.from(btns).find(b => b.innerText === viewPill.innerText);
-            if (originalBtn) originalBtn.classList.add('active');
-        }
-    });
-
-    // Hide inputs, show text
-    viewModes.forEach(el => el.style.display = 'block');
-    editModes.forEach(el => el.style.display = 'none');
-=======
 
 // Variable to store which PC is currently active
 let currentSelectedUnitId = '';
 
-function selectUnit(element, setId) {
-    currentSelectedUnitId = setId;
+function selectFacilityAsset(element, assetId) {
+    currentSelectedFAId = assetId;
+    currentEditingSetId = null; // Clear Computer ID
+
+    document.querySelectorAll('#facilityListContainer .asset-item').forEach(item => item.classList.remove('active'));
+    if (element) element.classList.add('active');
 
     // 1. Remove the 'active' class from all items in the list
     const allItems = document.querySelectorAll('.asset-item');
@@ -465,7 +592,7 @@ function selectUnit(element, setId) {
 }
 
 /**
- * Detects the first available unit number by scanning the existing list
+ * Detects the first available unit number by scanning the existing list.
  */
 function calculateNextUnitNumber() {
     const unitElements = document.querySelectorAll('#assetListContainer .item-name');
@@ -495,12 +622,18 @@ function calculateNextUnitNumber() {
     updateBulkUnitNumbers();
 }
 
+/**
+ * Opens the add computer modal with default settings.
+ */
 function openAddModal() {
     document.getElementById('bulk_count').value = 2;
     toggleAddMode('single'); 
     document.getElementById('addComputerModal').style.display = 'flex';
 }
 
+/**
+ * Calculates the computer age based on the purchase date in the add modal.
+ */
 function calculateComputerAge() {
     const dateInput = document.getElementById('purchase_date_input');
     const displayInput = document.getElementById('computer_age_display');
@@ -707,6 +840,9 @@ function selectUnit(element, setId) {
     const unitName = element ? element.querySelector('.item-name').innerText : 'Unit';
     document.querySelector('.right-panel .section-header-row h3').innerHTML = `${unitName} Details`;
 
+    // Enable the tabs now that a unit is selected
+    setTabsDisabled(false);
+
     fetch(`includes/get_unit_details.php?set_id=${setId}`)
     .then(response => response.json())
     .then(data => {
@@ -839,67 +975,12 @@ function resetUIToViewMode() {
 }
 
 // ==========================================
-// 6. CONDEMN UNIT LOGIC
+// RIGHT PANEL AGE CALCULATOR
 // ==========================================
 
-function openCondemnModal() {
-    if (!currentEditingSetId) {
-        alert("Please select a unit from the list first.");
-        return;
-    }
-
-    // Get the active unit's name from the list
-    const activeItem = document.querySelector('#assetListContainer .asset-item.active .item-name');
-    const setTag = activeItem ? activeItem.innerText : 'Unknown Unit';
-
-    // Populate the modal fields
-    document.getElementById('condemn_display_name').innerText = setTag;
-    document.getElementById('condemn_set_tag').value = setTag;
-    document.getElementById('condemn_set_id').value = currentEditingSetId;
-
-    // Reset the checkboxes and remarks
-    document.querySelectorAll('input[name="condemn_reason"]').forEach(cb => cb.checked = false);
-    document.getElementById('condemn_remarks').value = '';
-
-    openModal('condemnModal');
-}
-
-function submitCondemn() {
-    const setId = document.getElementById('condemn_set_id').value;
-    let reasons = [];
-    document.querySelectorAll('input[name="condemn_reason"]:checked').forEach(cb => reasons.push(cb.value));
-    const remarks = document.getElementById('condemn_remarks').value;
-
-    // Validation using the new Toast system
-    if (reasons.length === 0 && remarks.trim() === "") {
-        showNotification('Validation Error', 'Please select a reason or provide remarks before condemning.', 'error');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('set_id', setId);
-    formData.append('reasons', JSON.stringify(reasons));
-    formData.append('remarks', remarks);
-
-    fetch('includes/condemn_unit.php', { method: 'POST', body: formData })
-    .then(res => res.json())
-.then(data => {
-        if (data.success) {
-            closeModal('condemnModal');
-            reloadWithToast('Unit Condemned', 'Unit has been permanently marked as Condemned.', 'success');
-        } else {
-            showNotification('Database Error', data.error, 'error');
-        }
-    })
-    .catch(err => {
-        console.error("Fetch error:", err);
-        showNotification('Connection Error', 'Failed to connect to the server.', 'error');
-    });
-}
-
-// ==========================================
-// 7. RIGHT PANEL AGE CALCULATOR
-// ==========================================
+/**
+ * Calculates the computer age for the edit mode based on the purchase date.
+ */
 function calculateEditComputerAge() {
     const dateInput = document.getElementById('edit_specs_purchase');
     const ageInput = document.getElementById('edit_com_age');
@@ -935,7 +1016,119 @@ function calculateEditComputerAge() {
 }
 
 // ==========================================
-// 8. FINALIZE DEPLOYMENT LOGIC (Missing IDs)
+// 6. CONDEMN UNIT LOGIC
+// ==========================================
+
+// Global variables to track which item is selected
+
+function openCondemnModal() {
+    let activeId = null;
+    let assetTag = 'Unknown Item';
+
+    // 1. Reliable View Detection
+    const viewFacility = document.getElementById('view-facility');
+    const viewComputer = document.getElementById('view-computer');
+    
+    // offsetParent is null if the element or any parent is display:none
+    const isFacilityView = viewFacility && viewFacility.offsetParent !== null;
+    const isComputerView = viewComputer && viewComputer.offsetParent !== null;
+
+    // 2. Assign ID based on the VISIBLE view
+    if (isFacilityView) {
+        activeId = currentSelectedFAId;
+        // Find the active name in the facility list
+        const activeItem = document.querySelector('#view-facility .asset-item.active .item-name');
+        if (activeItem) assetTag = activeItem.innerText;
+    } else if (isComputerView) {
+        activeId = currentEditingSetId;
+        // Find the active name in the computer list
+        const activeItem = document.querySelector('#view-computer .asset-item.active .item-name');
+        if (activeItem) assetTag = activeItem.innerText;
+    }
+
+    // 3. Validation
+    if (!activeId) {
+        showNotification('Selection Required', 'Please select an item from the current list first.', 'error');
+        return;
+    }
+
+    // 4. Populate Modal Fields
+    document.getElementById('condemn_display_name').innerText = assetTag;
+    document.getElementById('condemn_set_tag').value = assetTag;
+    document.getElementById('condemn_set_id').value = activeId;
+
+    // 5. Update Labels
+    const modalTitle = document.getElementById('condemn_modal_title');
+    const tagLabel = document.getElementById('condemn_tag_label');
+    const idLabel = document.getElementById('condemn_id_label');
+
+    if (isFacilityView) {
+        modalTitle.innerText = 'Condemn this Asset?';
+        tagLabel.innerText = 'Asset Tag:';
+        idLabel.innerText = 'Asset ID:';
+    } else {
+        modalTitle.innerText = 'Condemn this Unit?';
+        tagLabel.innerText = 'Set Tag:';
+        idLabel.innerText = 'Set ID:';
+    }
+
+    // 6. Reset fields
+    document.querySelectorAll('input[name="condemn_reason"]').forEach(cb => cb.checked = false);
+    document.getElementById('condemn_remarks').value = '';
+
+    openModal('condemnModal');
+}
+function submitCondemnAction() {
+    // 1. Get the ID from the modal input (where we just stored it in openCondemnModal)
+    const setId = document.getElementById('condemn_set_id').value;
+    const remarks = document.getElementById('condemn_remarks').value;
+    
+    // 2. Collect reasons
+    const reasons = [];
+    document.querySelectorAll('input[name="condemn_reason"]:checked').forEach(cb => {
+        reasons.push(cb.value);
+    });
+
+    // 3. Validation
+    if (reasons.length === 0 && remarks.trim() === "") {
+        showNotification('Validation Error', 'Please select a reason or provide remarks.', 'error');
+        return;
+    }
+
+    // 4. Determine Target
+    const isFacilityView = document.getElementById('view-facility').offsetParent !== null;
+    const targetUrl = isFacilityView ? 'includes/condemn_facility_asset.php' : 'includes/condemn_unit.php';
+
+    // 5. Build Form Data
+    const formData = new FormData();
+    if (isFacilityView) {
+        formData.append('asset_id', setId); // PHP expects asset_id
+    } else {
+        formData.append('set_id', setId);   // PHP expects set_id
+    }
+    formData.append('reasons', JSON.stringify(reasons));
+    formData.append('remarks', remarks);
+
+    // 6. Execution
+    fetch(targetUrl, { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            closeModal('condemnModal');
+            // Using location.reload() to refresh the lists
+            location.reload(); 
+        } else {
+            showNotification('Database Error', data.error || 'Update failed', 'error');
+        }
+    })
+    .catch(err => {
+        console.error("Fetch error:", err);
+        showNotification('Connection Error', 'Failed to reach server.', 'error');
+    });
+}
+
+// ==========================================
+// 7. FINALIZE DEPLOYMENT LOGIC (Missing IDs)
 // ==========================================
 
 function openMissingIdModal(roomNumber) {
@@ -1108,28 +1301,61 @@ function submitFacilityAsset() {
     
     // Grab elements
     const nameEl = document.getElementById('fa_asset_name');
+    const propertyEl = document.getElementById('fa_asset_property');
     const brandEl = document.getElementById('fa_brand');
     const statusEl = document.getElementById('fa_status');
     const tagEl = document.getElementById('fa_set_tag');
 
-    // Validation check
+    // --- COMPREHENSIVE ERROR HANDLING ---
+    
+    // 1. Check Device Name
     if (!nameEl.value.trim()) {
-        showNotification('Input Required', 'Please enter a Device Name', 'error');
+        showNotification('Input Required', 'Please enter a Device Name (e.g., Printer).', 'error');
+        nameEl.focus();
         return;
     }
 
+    // 2. Check Property ID
+    if (!propertyEl.value.trim()) {
+        showNotification('Input Required', 'Please enter the Property ID or Serial Number.', 'error');
+        propertyEl.focus();
+        return;
+    }
+
+    // 3. Check Brand
+    if (!brandEl.value.trim()) {
+        showNotification('Input Required', 'Please enter a Brand (use "N/A" if unknown).', 'error');
+        brandEl.focus();
+        return;
+    }
+
+    // 4. Check Lab ID (System check)
+    if (!labId) {
+        showNotification('System Error', 'Laboratory context lost. Please refresh the page.', 'error');
+        return;
+    }
+
+    // 5. Check generated ID
     if (!window.currentPendingFAId) {
-        showNotification('System Error', 'Asset ID not generated. Re-open modal.', 'error');
+        showNotification('System Error', 'Asset ID not generated. Please re-open the modal.', 'error');
         return;
     }
 
+    // --- PREPARE DATA ---
     const formData = new FormData();
     formData.append('asset_id', window.currentPendingFAId); 
     formData.append('asset_tag', tagEl.value); 
-    formData.append('asset_name', nameEl.value);
-    formData.append('asset_brand', brandEl.value);
+    formData.append('asset_name', nameEl.value.trim());
+    formData.append('asset_property', propertyEl.value.trim());
+    formData.append('asset_brand', brandEl.value.trim());
     formData.append('asset_status', statusEl.value);
     formData.append('lab_id', labId);
+
+    // Visual feedback: Disable button to prevent double submission
+    const submitBtn = document.querySelector('.btn-finalize');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
     fetch('includes/add_facility_asset.php', {
         method: 'POST',
@@ -1139,62 +1365,72 @@ function submitFacilityAsset() {
     .then(data => {
         if(data.success) {
             closeModal('addFacilityAssetModal');
+            // Clear fields for next use
+            nameEl.value = '';
+            propertyEl.value = '';
+            brandEl.value = '';
             reloadWithToast('Asset Added', 'New asset successfully created.', 'success');
         } else {
-            showNotification('Database Error', data.message, 'error');
+            // Error from PHP (e.g., duplicate property ID)
+            showNotification('Database Error', data.error || 'Failed to save asset.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         }
     })
     .catch(err => {
         console.error(err);
-        showNotification('Connection Error', 'Failed to reach server.', 'error');
+        showNotification('Connection Error', 'Failed to reach server. Check your connection.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     });
 }
 
-let currentSelectedFAId = null;
-
 function selectFacilityAsset(element, assetId) {
-    // 1. Manage Active Class in the Left List
-    document.querySelectorAll('#facilityListContainer .asset-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    if (element) {
-        element.classList.add('active');
-    }
+    // 1. Update Global ID immediately
+    currentSelectedFAId = assetId; 
+    currentEditingSetId = null; 
 
-    // 2. Show the Right Panel
+    // 2. UI: Active List Item
+    document.querySelectorAll('.asset-item').forEach(item => item.classList.remove('active'));
+    if (element) element.classList.add('active');
+
+    // 3. Show Right Panel
     const rightPanel = document.getElementById('view-facility-right');
     rightPanel.style.display = 'block';
 
-    // 3. Fetch data from your PHP file
+    // 4. Fetch Details
     fetch(`includes/get_facility_asset_details.php?asset_id=${assetId}`)
     .then(res => res.json())
     .then(data => {
         if (data.success) {
             const asset = data.data;
 
-            // Update Text Placeholders
-            // Format: FA-01 - Television
-            document.getElementById('view_fa_header_title').innerText = `FA-${asset.asset_tag} - ${asset.asset_name}`;
-            document.getElementById('view_fa_tag').innerText = `FA-${asset.asset_tag}`;
+            // Update Labels
+            document.getElementById('view_fa_header_title').innerText = `FA-${asset.asset_tag} - ${asset.asset_name} Details`;
+            document.getElementById('view_fa_tag').innerText = asset.asset_property || 'N/A';
             document.getElementById('view_fa_brand').innerText = asset.asset_brand || 'N/A';
             document.getElementById('view_fa_status').innerText = asset.asset_status;
 
-            // Update Status Colors Dynamically
+            // 5. Update Status Box Colors
             const statusBox = document.getElementById('view_fa_status_box');
-            
-            // Remove existing status classes first
-            statusBox.className = 'detail-box'; 
+            // Remove all possible status classes first
+            statusBox.classList.remove('status-box-green', 'status-box-yellow', 'status-box-red');
+            statusBox.classList.add('detail-box'); 
 
+            // Matching logic
             if (asset.asset_status === 'Working') {
                 statusBox.classList.add('status-box-green');
             } else if (asset.asset_status === 'For Repair') {
-                statusBox.classList.add('status-box-yellow');
+                statusBox.classList.add('status-box-yellow'); // This links to your CSS
             } else {
                 statusBox.classList.add('status-box-red');
             }
 
+            // Optional: Reload Activity Log Table here if you have that function
+            // fetchFAActivityLog(assetId);
+
         } else {
-            console.error('Error:', data.error);
+            showNotification('Error', data.error, 'error');
         }
     })
     .catch(err => console.error('Fetch error:', err));
@@ -1227,5 +1463,228 @@ function cancelFAEditMode() {
     }
     const cancelBtn = document.getElementById('cancelFAEditBtn');
     if(cancelBtn) cancelBtn.style.display = 'none';
->>>>>>> 191663f4747009d9b11937c3ca41bc8c13a68dd5
+}
+
+async function processTransfer() {
+    // 1. Get Form Values
+    const targetLabId = document.getElementById('transfer_target_lab').value;
+    const remarks = document.getElementById('transfer_remarks').value;
+    
+    // 2. Collect Checked Units (matches the tbody id in your HTML)
+    const selectedUnits = Array.from(document.querySelectorAll('.transfer-unit-checkbox:checked'))
+                               .map(cb => cb.value);
+                               
+    // 3. Collect Checked Assets
+    const selectedAssets = Array.from(document.querySelectorAll('.transfer-asset-checkbox:checked'))
+                                .map(cb => cb.value);
+
+    // 4. Collect Actions/Reasons (matches id="transfer_actions" in your HTML)
+    const actions = Array.from(document.querySelectorAll('#transfer_actions input[type="checkbox"]:checked'))
+                         .map(cb => cb.value);
+
+    // 5. Validation
+    if (!targetLabId) {
+        showNotification('Required', 'Please select a target laboratory.', 'error');
+        return;
+    }
+    if (selectedUnits.length === 0 && selectedAssets.length === 0) {
+        showNotification('Selection Empty', 'Please select at least one item to transfer.', 'error');
+        return;
+    }
+
+    // 6. Data Preparation
+    const formData = new FormData();
+    formData.append('target_lab_id', targetLabId);
+    formData.append('remarks', remarks);
+    formData.append('actions', JSON.stringify(actions));
+    formData.append('units', JSON.stringify(selectedUnits));
+    formData.append('assets', JSON.stringify(selectedAssets));
+
+    try {
+        const response = await fetch('includes/process_transfer.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+
+        if (result.success) {
+            closeModal('transferModal');
+            if (typeof reloadWithToast === "function") {
+                reloadWithToast('Success', 'Transfer completed and history logged.', 'success');
+            } else {
+                location.reload();
+            }
+        } else {
+            showNotification('Error', result.error || 'Transfer failed.', 'error');
+        }
+    } catch (error) {
+        console.error('Transfer Error:', error);
+        showNotification('Server Error', 'Failed to connect to the server.', 'error');
+    }
+}
+
+// 1. Open Edit Mode
+function openFAEditMode() {
+    if (!currentSelectedFAId) return; // Ensure an asset is selected
+
+    // Toggle visibility
+    document.getElementById('fa-view-mode').style.display = 'none';
+    document.getElementById('fa-edit-mode').style.display = 'block';
+
+    // 1. Get the text from the View Header (e.g., "FA-01 - Television Details")
+    const fullHeader = document.getElementById('view_fa_header_title').innerText;
+
+    // 2. Set the Edit Mode Header to match exactly
+    document.getElementById('edit_fa_header_title').innerText = fullHeader;
+
+    // 3. Extract ONLY the asset name for the input field
+    let assetName = fullHeader.includes(' - ') ? fullHeader.split(' - ')[1] : fullHeader;
+    assetName = assetName.replace(' Details', '').trim();
+
+    // 4. Populate the text inputs
+    document.getElementById('edit_fa_name').value = assetName;
+    document.getElementById('edit_fa_property').value = document.getElementById('view_fa_tag').innerText;
+    document.getElementById('edit_fa_brand').value = document.getElementById('view_fa_brand').innerText;
+
+    // 5. Handle Status Button UI
+    const currentStatus = document.getElementById('view_fa_status').innerText.trim();
+    
+    // First, remove 'active' class from both buttons
+    const buttons = document.querySelectorAll('#fa-edit-mode .status-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+
+    // Find the button that matches the current status and activate it
+    buttons.forEach(btn => {
+        if (btn.getAttribute('data-type') === currentStatus) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+// 2. Close Edit Mode (Cancel)
+function closeFAEditMode() {
+    document.getElementById('fa-view-mode').style.display = 'block';
+    document.getElementById('fa-edit-mode').style.display = 'none';
+}
+
+
+
+function toggleStatusFA(element) {
+    // 1. Remove 'active' from all buttons in this specific group
+    const parent = element.parentElement;
+    parent.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+
+    // 2. Add 'active' to the clicked button
+    element.classList.add('active');
+    
+    // Note: In your saveFAChanges(), you should now pull the value from 
+    // the button that has the .active class.
+}
+
+function showFacilityAssets() {
+    // 1. Hide other sections (e.g., Computer Units)
+    document.getElementById('computer-units-section').style.display = 'none';
+    
+    // 2. Show the Facility section
+    document.getElementById('facility-assets-section').style.display = 'block';
+
+    // 3. THE MISSING PIECE: Actually go get the data!
+    loadFacilityAssets(); 
+}
+async function saveFAChanges() {
+    const saveBtn = document.querySelector('#fa-edit-mode .btn-edit');
+    const name = document.getElementById('edit_fa_name').value.trim();
+    const property = document.getElementById('edit_fa_property').value.trim();
+    const brand = document.getElementById('edit_fa_brand').value.trim();
+    
+    // Get status from the active toggle button
+    const activeBtn = document.querySelector('#fa-edit-mode .status-btn.active');
+    const status = activeBtn ? activeBtn.getAttribute('data-type') : 'Working';
+
+    if (!name || !property) {
+        showNotification('Required', 'Device Name and Property ID cannot be empty.', 'error');
+        return;
+    }
+
+    // Start Loading State
+    const originalBtnHTML = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    const formData = new FormData();
+    formData.append('asset_id', currentSelectedFAId);
+    formData.append('asset_name', name);
+    formData.append('asset_property', property);
+    formData.append('asset_brand', brand);
+    formData.append('asset_status', status);
+
+    try {
+        const response = await fetch('includes/update_facility_asset.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+
+        if (result.success) {
+            reloadWithToast('Updated', 'Asset details saved.', 'success');
+        } else {
+            showNotification('Error', result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Save Error:', error);
+        showNotification('Error', 'Could not reach server.', 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalBtnHTML;
+    }
+}
+
+async function loadFacilityAssets(idToSelect = null) {
+    try {
+        // 1. Get the lab_id from the URL so we query the right room
+        const urlParams = new URLSearchParams(window.location.search);
+        const labId = urlParams.get('lab_id') || 0;
+
+        // 2. Fetch fresh data using the lab_id
+        const response = await fetch(`includes/get_facility_assets_list.php?lab_id=${labId}&t=${Date.now()}`);
+        const data = await response.json();
+
+        if (data.success) {
+            // 3. Target the EXACT ID from your HTML
+            const listContainer = document.getElementById('facilityListContainer');
+            if (!listContainer) return;
+
+            listContainer.innerHTML = ''; // Wipe the old list
+
+            if (data.assets.length === 0) {
+                listContainer.innerHTML = "<div style='padding: 20px; text-align: center; color: #666;'>No facility assets found for this lab.</div>";
+                return;
+            }
+
+            data.assets.forEach(asset => {
+                const isActive = (idToSelect && asset.asset_id == idToSelect) ? 'active' : '';
+                
+                // 4. Match the Badge classes perfectly to your PHP
+                let badgeClass = 'green';
+                if (asset.asset_status === 'For Repair') badgeClass = 'yellow';
+                if (asset.asset_status === 'Condemned' || asset.asset_status === 'For Condemn') badgeClass = 'red';
+
+                // 5. Build the exact HTML layout used in your PHP loop
+                listContainer.innerHTML += `
+                    <div class="asset-item ${isActive}" data-asset-id="${asset.asset_id}" onclick="selectFacilityAsset(this, '${asset.asset_id}')">
+                        <div class="asset-info">
+                            <div class="item-name">FA-${asset.asset_tag}</div>
+                        </div>
+                        <div class="asset-status">
+                            <span class="badge ${badgeClass}">${asset.asset_status}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    } catch (error) {
+        console.error('Error refreshing list:', error);
+    }
 }

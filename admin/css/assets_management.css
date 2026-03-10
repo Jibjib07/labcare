@@ -214,6 +214,8 @@ body {
 .asset-list {
   display: flex;
   flex-direction: column;
+  max-height: 550px;
+  overflow-y: auto;
 }
 
 .asset-item {
@@ -398,27 +400,17 @@ body {
 }
 
 .detail-box {
-<<<<<<< HEAD
-  background: white;
-  border: 1px solid #f0f0f0;
-  padding: 10px 15px;
-  border-radius: 6px;
-=======
   background: #efefef; /* Light grey background from your image */
   border: none; /* Remove the border */
   padding: 10px 15px;
   border-radius: 10px; /* Rounded pill look */
->>>>>>> 191663f4747009d9b11937c3ca41bc8c13a68dd5
   font-size: 13px;
   color: #333;
   width: 100%;
   box-sizing: border-box;
-<<<<<<< HEAD
-=======
   min-height: 38px;
   display: flex;
   align-items: center;
->>>>>>> 191663f4747009d9b11937c3ca41bc8c13a68dd5
 }
 
 .status-box-green {
@@ -1155,8 +1147,6 @@ body {
 .btn-cancel-edit:hover {
   background: #f5f5f5;
 }
-<<<<<<< HEAD
-=======
 
 /* --- DEPLOYMENT ASSIGNMENT MODAL --- */
 .assignment-modal {
@@ -1371,4 +1361,46 @@ body {
   align-items: center;
   gap: 8px;
 }
->>>>>>> 191663f4747009d9b11937c3ca41bc8c13a68dd5
+
+#fa-edit-mode .modal-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+#fa-edit-mode .detail-grid-row {
+  margin-bottom: 15px;
+}
+
+/* Base style for the status buttons */
+.status-btn {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: 0.3s;
+}
+
+/* Green highlight for Working */
+.status-btn.active[data-type="Working"] {
+  background: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+
+/* Yellow/Orange highlight for For Repair */
+.status-btn.active[data-type="For Repair"] {
+  background: #fff4e5;
+  color: #e65100;
+  border: 1px solid #ffeeba !important;
+}
+
+/* Color for the Status Box in View Mode */
+.status-box-yellow {
+  background: #fff4e5;
+  color: #e65100;
+}

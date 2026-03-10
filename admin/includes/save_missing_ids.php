@@ -4,6 +4,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 try {
     require_once __DIR__ . '/../../includes/db.php';
+    require_once __DIR__ . '/update_unit_status.php';
 
     $payload_json = $_POST['payload'] ?? '';
     $data = json_decode($payload_json, true);
@@ -89,6 +90,15 @@ try {
 
         $stmt_specs->close();
         $stmt_peripherals->close();
+
+        // =========================================================
+        // 3. UPDATE EACH UNIT'S STATUS BASED ON NEW PROPERTY IDs
+        // =========================================================
+        foreach ($data as $unit) {
+            $set_id = $unit['set_id'];
+            // Since property IDs are now filled, determine status based on repairs/age only
+            updateUnitStatus($conn, $set_id);
+        }
 
         echo json_encode(['success' => true]);
     } else {
