@@ -27,38 +27,47 @@ if (!$room) {
 $stats = [
     'working' => 0,
     'repair' => 0,
-    'condemn' => 0, // This will ONLY track "For Condemn"
+    'condemn' => 0, // This is now an age-based warning metric
     'total_units' => 0,
     'total_assets' => 0,
     'schedule' => null
 ];
 
-// 2. Fetch Units
-$unit_query = "SELECT set_status, COUNT(*) as count FROM units WHERE lab_room = '$room' GROUP BY set_status";
+// 2. Fetch Units (Filtering out items that are already permanently disposed/Condemned)
+$unit_query = "SELECT set_status, purchase_date FROM units WHERE lab_room = '$room' AND set_status != 'Condemned'";
 $unit_result = $conn->query($unit_query);
 
 if ($unit_result) {
+    $today = new DateTime(); // Get current date
+
     while ($row = $unit_result->fetch_assoc()) {
-        // Standardize string to lowercase for safe matching
         $status = strtolower(trim($row['set_status']));
+        $purchase_date = $row['purchase_date'];
 
-        // Strictly separate the statuses
+        // --- A. AGE CHECK (For Condemn Warning) ---
+        if (!empty($purchase_date)) {
+            $purchase_time = new DateTime($purchase_date);
+            $age = $today->diff($purchase_time)->y; // Get difference in exact years
+
+            if ($age >= 5) {
+                // It is 5+ years old, flag it as For Condemn (+1)
+                $stats['condemn']++;
+            }
+        }
+
+        // --- B. PHYSICAL STATUS CHECK (The Donut Chart Slices) ---
         if ($status === 'working') {
-            $stats['working'] = $row['count'];
+            $stats['working']++;
         } elseif ($status === 'for repair') {
-            $stats['repair'] = $row['count'];
-        } elseif ($status === 'for condemn') {
-            $stats['condemn'] = $row['count'];
+            $stats['repair']++;
         }
 
-        // Total units calculation: Count everything EXCEPT "Condemned"
-        if ($status !== 'condemned') {
-            $stats['total_units'] += $row['count'];
-        }
+        // --- C. TOTAL COUNT ---
+        $stats['total_units']++;
     }
 }
 
-// 3. Fetch Assets
+// 3. Fetch Assets (Excluding permanently Condemned assets)
 $asset_query = "SELECT COUNT(*) as count FROM assets WHERE lab_room = '$room' AND asset_status != 'Condemned'";
 $asset_result = $conn->query($asset_query);
 if ($asset_result && $row = $asset_result->fetch_assoc()) {

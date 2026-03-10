@@ -396,12 +396,13 @@ if ($roomsResult) {
             const chart = document.getElementById('dashboardDonutChart');
             if (!chart) return;
 
-            // Convert strings to integers just to be safe
+            // Convert to integers
             const w = parseInt(working) || 0;
             const r = parseInt(repair) || 0;
-            const c = parseInt(condemn) || 0;
 
-            const total = w + r + c;
+            // IMPORTANT: 'Condemn' is excluded from the total to prevent breaking 100%
+            // since those units are already counted inside 'w' or 'r'
+            const total = w + r;
 
             if (total === 0) {
                 // If room is completely empty, make the chart solid gray
@@ -409,23 +410,18 @@ if ($roomsResult) {
                 return;
             }
 
-            // Calculate percentages
+            // Calculate percentages for the two physical states
             const workPct = (w / total) * 100;
-            const repPct = (r / total) * 100;
 
             // Exact colors from your CSS
-            const colorGreen = '#4caf50';
-            const colorYellow = '#ffc107';
-            const colorRed = '#ff0400';
+            const colorGreen = '#4caf50'; // Working
+            const colorYellow = '#ffc107'; // For Repair
 
-            const point1 = workPct;
-            const point2 = workPct + repPct;
-
-            // Inject the new gradient
+            // Inject the new 2-color gradient
+            // 0% to workPct is Green. workPct to 100% is Yellow.
             chart.style.background = `conic-gradient(
-        ${colorGreen} 0% ${point1}%, 
-        ${colorYellow} ${point1}% ${point2}%, 
-        ${colorRed} ${point2}% 100%
+        ${colorGreen} 0% ${workPct}%, 
+        ${colorYellow} ${workPct}% 100%
     )`;
         }
 

@@ -2,7 +2,7 @@
 session_start();
 
 // Include the database connection (Since both files are in 'includes/', we just use 'db.php')
-require 'db.php'; 
+require 'db.php';
 
 if (isset($_POST['login_btn'])) {
     $email = $_POST['email'];
@@ -20,8 +20,8 @@ if (isset($_POST['login_btn'])) {
         $row = $result->fetch_assoc();
 
         // Verify password (plain text for now based on your DB insert)
-        if (password_verify($password, $row['user_password'])) {
-            
+        if ($password === $row['user_password']) {
+
             // Check if the account is active
             if (strtolower($row['user_status']) !== 'active') {
                 header("Location: ../login.php?error=inactive");
@@ -40,7 +40,6 @@ if (isset($_POST['login_btn'])) {
                 header("Location: ../user/dashboard.php");
             }
             exit();
-
         } else {
             // Incorrect password
             header("Location: ../login.php?error=invalid_password");
@@ -56,4 +55,3 @@ if (isset($_POST['login_btn'])) {
     header("Location: ../login.php");
     exit();
 }
-?>

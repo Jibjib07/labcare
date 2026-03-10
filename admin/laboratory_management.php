@@ -354,7 +354,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
         </div>
     </div>
 
-    <div id="qrModal" class="modal-overlay" style="display: none;">
+    <!-- <div id="qrModal" class="modal-overlay" style="display: none;">
         <div class="modal-container" style="text-align: center; max-width: 400px;">
             <div class="modal-header" style="justify-content: center;">
                 <h3 id="qrModalTitle">Room - QR Code</h3>
@@ -374,21 +374,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 </button>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <div id="editLabModal" class="modal-overlay">
         <div class="modal-container">
             <div class="modal-header header-with-actions">
                 <h3>View Computer Laboratory</h3>
                 <div class="header-actions">
-
-                    <button class="action-btn icon-btn-purple"
-                        data-room="<?= htmlspecialchars($row['lab_room']) ?>"
-                        data-id="<?= htmlspecialchars($row['lab_id']) ?>"
-                        onclick="event.stopPropagation(); openQrModal(this)">
-                        <i class="fas fa-qrcode"></i>
-
-                    </button>
 
                 </div>
             </div>
@@ -503,7 +495,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
 
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/laboratory_management.js?v=<?php echo time(); ?>"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // If Add failed, open the Add modal automatically
