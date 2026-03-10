@@ -1688,4 +1688,3 @@ async function loadFacilityAssets(idToSelect = null) {
         console.error('Error refreshing list:', error);
     }
 }
-

@@ -507,7 +507,6 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
