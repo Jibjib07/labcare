@@ -34,7 +34,12 @@ $stats = [
 ];
 
 // 2. Fetch Units (Filtering out items that are already permanently disposed/Condemned)
-$unit_query = "SELECT set_status, purchase_date FROM units WHERE lab_room = '$room' AND set_status != 'Condemned'";
+$unit_query = "
+    SELECT u.set_status, s.specs_purchase 
+    FROM units u
+    LEFT JOIN specs s ON u.set_id = s.set_id
+    WHERE u.lab_room = '$room' AND u.set_status != 'Condemned'
+";
 $unit_result = $conn->query($unit_query);
 
 if ($unit_result) {
@@ -42,15 +47,14 @@ if ($unit_result) {
 
     while ($row = $unit_result->fetch_assoc()) {
         $status = strtolower(trim($row['set_status']));
-        $purchase_date = $row['purchase_date'];
+        $purchase_date = $row['specs_purchase']; // Now grabbing from the joined specs table
 
         // --- A. AGE CHECK (For Condemn Warning) ---
         if (!empty($purchase_date)) {
             $purchase_time = new DateTime($purchase_date);
-            $age = $today->diff($purchase_time)->y; // Get difference in exact years
+            $age = $today->diff($purchase_time)->y;
 
             if ($age >= 5) {
-                // It is 5+ years old, flag it as For Condemn (+1)
                 $stats['condemn']++;
             }
         }

@@ -48,16 +48,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </a>
             </li>
             <li>
-                <a href="report_generation.php" class="<?= $current_page == 'report_generation.php' ? 'active' : '' ?>">
-                    <i class="fas fa-chart-pie"></i> <span>Report Generation</span>
-                </a>
-            </li>
-            <li>
-                <a href="user_management.php" class="<?= $current_page == 'user_management.php' ? 'active' : '' ?>">
-                    <i class="fas fa-users-cog"></i> <span>User Management</span>
-                </a>
-            </li>
-            <li>
                 <a href="troubleshooting.php" class="<?= $current_page == 'troubleshooting.php' ? 'active' : '' ?>">
                     <i class="fas fa-tools"></i> <span>Troubleshooting</span>
                 </a>

@@ -37,7 +37,7 @@ if (isset($_POST['login_btn'])) {
             if (strtolower($row['user_role']) === 'admin') {
                 header("Location: ../admin/dashboard.php");
             } else {
-                header("Location: ../user/dashboard.php");
+                header("Location: ../staff/dashboard.php");
             }
             exit();
         } else {

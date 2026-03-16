@@ -100,9 +100,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                     <i class="fas fa-search"></i>
                     <input type="text" placeholder="Search room..." id="mobileLabSearchInput" onkeyup="searchLaboratories()">
                 </div>
-                <button class="btn-green-add mobile-add-btn" onclick="openModal('addLabModal')">
-                    <i class="fas fa-plus"></i>
-                </button>
             </div>
 
             <div class="mobile-stats-grid">
@@ -170,26 +167,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                             </div>
 
                             <div class="m-room-actions">
-                                <button class="action-btn edit-btn"
+                                <!-- <button class="action-btn edit-btn"
                                     data-id="<?= htmlspecialchars($row['lab_id']) ?>"
                                     data-name="<?= htmlspecialchars($row['lab_name']) ?>"
                                     data-room="<?= htmlspecialchars($row['lab_room']) ?>"
                                     data-units="<?= $units ?>"
                                     onclick="event.stopPropagation(); openEditModal(this)">
                                     <i class="fas fa-pen"></i>
-                                </button>
+                                </button> -->
 
                                 <button type="button" class="action-btn view-btn"
                                     onclick="event.stopPropagation(); window.location.href='assets_management.php?lab_id=<?= htmlspecialchars($row['lab_id']) ?>'">
                                     <i class="fas fa-hand-pointer"></i>
                                 </button>
 
-                                <button type="button" class="action-btn delete-btn" onclick="event.stopPropagation(); requestArchiveLab(
+                                <!-- <button type="button" class="action-btn delete-btn" onclick="event.stopPropagation(); requestArchiveLab(
             '<?= isset($row['lab_id']) ? $row['lab_id'] : 0 ?>', 
             '<?= addslashes(htmlspecialchars($row['lab_name'] ?? 'Unknown')) ?>', 
             '<?= addslashes(htmlspecialchars($row['lab_room'] ?? 'Unknown')) ?>'
         )">
-                                    <i class="fas fa-archive"></i>
+                                    <i class="fas fa-archive"></i> -->
                                 </button>
                             </div>
                         </div>
@@ -210,9 +207,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 <div class="panel white-panel room-panel">
                     <div class="panel-header">
                         <h3>Computer Laboratory Room List</h3>
-                        <button class="btn-green-add" onclick="openModal('addLabModal')">
-                            <i class="fas fa-plus-circle"></i> Add
-                        </button>
                     </div>
 
                     <div class="search-wrapper">
@@ -256,26 +250,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                                     </div>
 
                                     <div class="room-actions">
-                                        <button class="action-btn edit-btn"
+                                        <!-- <button class="action-btn edit-btn"
                                             data-id="<?= htmlspecialchars($row['lab_id']) ?>" data-name="<?= htmlspecialchars($row['lab_name']) ?>"
                                             data-room="<?= htmlspecialchars($row['lab_room']) ?>"
                                             data-units="<?= $units ?>"
                                             onclick="event.stopPropagation(); openEditModal(this)">
                                             <i class="fas fa-pen"></i>
-                                        </button>
+                                        </button> -->
 
                                         <button type="button" class="action-btn view-btn"
                                             onclick="event.stopPropagation(); window.location.href='assets_management.php?lab_id=<?php echo htmlspecialchars($row['lab_id']); ?>'">
                                             <i class="fas fa-hand-pointer"></i>
                                         </button>
 
-                                        <button class="action-btn delete-btn" onclick="requestArchiveLab(
+                                        <!-- <button class="action-btn delete-btn" onclick="requestArchiveLab(
                 '<?php echo isset($row['lab_id']) ? $row['lab_id'] : 0; ?>', 
                 '<?php echo addslashes(htmlspecialchars($row['lab_name'] ?? 'Unknown')); ?>', 
                 '<?php echo addslashes(htmlspecialchars($row['lab_room'] ?? 'Unknown')); ?>'
             )">
                                             <i class="fas fa-archive"></i>
-                                        </button>
+                                        </button> -->
                                     </div>
                                 </div>
                             <?php
@@ -325,7 +319,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                     <div class="panel white-panel schedule-panel">
                         <div class="panel-header">
                             <h3 id="schedule-title">Select a Room</h3>
-                            <button class="btn-green-solid" onclick="document.getElementById('scheduleInput').click()">Upload</button>
+                            <!-- <button class="btn-green-solid" onclick="document.getElementById('scheduleInput').click()">Upload</button> -->
                             <input type="file" id="scheduleInput" accept="image/*" style="display: none;">
                         </div>
 

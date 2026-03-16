@@ -2,20 +2,18 @@
 
 /**
  * UPDATE UNIT STATUS UTILITY
- * 
  * Determines and updates unit status based on:
- * 1. For Repair components -> "For Repair"
- * 2. Age >= 5 years -> "For Condemn"
- * 3. Otherwise -> "Working"
- * 
- * Note: "No Property ID" status is determined by frontend based on missing property IDs
+ * 1. For Repair/Poor components -> "For Repair"
+ * 2. Otherwise -> "Working"
+ * Note: "No Property ID" and "For Condemn" (age-based) statuses 
+ * are determined dynamically by the frontend UI.
  */
 
 function updateUnitStatus($conn, $set_id)
 {
     try {
         // =========================================================
-        // 1. CHECK FOR ANY "For Repair" STATUS IN KEY TABLES
+        // 1. CHECK FOR ANY BROKEN STATUS IN KEY TABLES
         // =========================================================
         $has_repair = false;
 
@@ -58,20 +56,22 @@ function updateUnitStatus($conn, $set_id)
             $peripherals_status_check->close();
         }
 
-        // Check health table
+        // Check health table (UPDATED TO CHECK FOR "Poor" DISK HEALTH)
         if (!$has_repair) {
             $health_check = $conn->prepare("SELECT disk_health, power_health FROM health WHERE set_id = ?");
             $health_check->bind_param("s", $set_id);
             $health_check->execute();
             $health_result = $health_check->get_result();
             if ($health_row = $health_result->fetch_assoc()) {
-                if ($health_row['disk_health'] === 'For Repair' || $health_row['power_health'] === 'For Repair') {
+                // FIX: Look for 'Poor' instead of 'For Repair' for the disk!
+                if ($health_row['disk_health'] === 'Poor' || $health_row['power_health'] === 'For Repair') {
                     $has_repair = true;
                 }
             }
             $health_check->close();
         }
 
+        // If ANY component is broken, mark the whole unit as "For Repair"
         if ($has_repair) {
             $new_status = "For Repair";
             $stmt = $conn->prepare("UPDATE units SET set_status = ? WHERE set_id = ?");
@@ -82,35 +82,7 @@ function updateUnitStatus($conn, $set_id)
         }
 
         // =========================================================
-        // 2. CHECK IF UNIT AGE >= 5 YEARS
-        // =========================================================
-        $age_check = $conn->prepare("
-            SELECT s.specs_purchase
-            FROM specs s
-            WHERE s.set_id = ?
-        ");
-        $age_check->bind_param("s", $set_id);
-        $age_check->execute();
-        $age_result = $age_check->get_result();
-        if ($age_row = $age_result->fetch_assoc()) {
-            $purchase_date = new DateTime($age_row['specs_purchase']);
-            $today = new DateTime();
-            $age_years = $today->diff($purchase_date)->y;
-
-            if ($age_years >= 5) {
-                $new_status = "For Condemn";
-                $stmt = $conn->prepare("UPDATE units SET set_status = ? WHERE set_id = ?");
-                $stmt->bind_param("ss", $new_status, $set_id);
-                $stmt->execute();
-                $stmt->close();
-                $age_check->close();
-                return $new_status;
-            }
-        }
-        $age_check->close();
-
-        // =========================================================
-        // 3. ELSE, STATUS IS "Working"
+        // 2. ELSE, STATUS IS "Working"
         // =========================================================
         $new_status = "Working";
         $stmt = $conn->prepare("UPDATE units SET set_status = ? WHERE set_id = ?");

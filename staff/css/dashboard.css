@@ -68,8 +68,8 @@
 /* --- Top Grid (3 Columns) --- */
 .dashboard-top-grid {
   display: grid;
-  /* Ratio: Left(320px) | Middle(Flexible) | Right(280px) */
-  grid-template-columns: 320px 1fr 280px;
+  /* Left gets 1.3 parts of the space, Middle gets 0.8 parts, Right gets 1.3 parts */
+  grid-template-columns: 0.8fr 1fr 1fr;
   gap: 20px;
   margin-bottom: 25px;
   align-items: stretch;
@@ -401,7 +401,6 @@
 .view-details-link a:hover {
   text-decoration: underline;
 }
-
 /* =========================================================
    RECENT REPORT CARDS & TOGGLES
    ========================================================= */
@@ -455,7 +454,6 @@
   font-size: 13px;
   color: #666;
 }
-
 /* =========================================================
    DASHBOARD MOBILE RESPONSIVENESS (Max Width: 768px)
    ========================================================= */
