@@ -1,14 +1,6 @@
 <?php
 include '../includes/db.php';
 
-$auto_condemn_query = "
-    UPDATE units u
-    JOIN specs s ON u.set_id = s.set_id
-    SET u.set_status = 'For Condemn'
-    WHERE TIMESTAMPDIFF(YEAR, s.specs_purchase, CURDATE()) >= 5 
-    AND u.set_status NOT IN ('Condemned', 'For Condemn')
-";
-$conn->query($auto_condemn_query);
 
 // Also, dynamically update the `com_age` in the health table so the numbers always match
 $auto_age_query = "
@@ -170,53 +162,61 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                         <?php
                         $room_filter = $conn->real_escape_string($current_room);
 
+                        // Added s.specs_purchase to the SELECT statement
                         $units_query = "
-                            SELECT u.*, s.specs_property, p.monitor_property
-                            FROM units u 
-                            LEFT JOIN specs s ON u.set_id = s.set_id 
-                            LEFT JOIN peripherals p ON u.set_id = p.set_id
-                            WHERE u.lab_room = '$room_filter' AND (u.set_status != 'Condemned' OR u.set_status IS NULL)
-                            GROUP BY u.set_id 
-                            ORDER BY CAST(u.set_tag AS UNSIGNED) ASC
-                        ";
+    SELECT u.*, s.specs_property, s.specs_purchase, p.monitor_property
+    FROM units u 
+    LEFT JOIN specs s ON u.set_id = s.set_id 
+    LEFT JOIN peripherals p ON u.set_id = p.set_id
+    WHERE u.lab_room = '$room_filter' AND (u.set_status != 'Condemned' OR u.set_status IS NULL)
+    GROUP BY u.set_id 
+    ORDER BY CAST(u.set_tag AS UNSIGNED) ASC
+";
 
                         $units_result = $conn->query($units_query);
 
                         if ($units_result && $units_result->num_rows > 0):
+                            $today = new DateTime(); // Initialize date checker
                             while ($unit = $units_result->fetch_assoc()):
                                 $display_name = "PC-" . htmlspecialchars($unit['set_tag']);
-
-                                // Get the database status
                                 $db_status = !empty($unit['set_status']) ? $unit['set_status'] : 'Working';
+                                $purchase_date = $unit['specs_purchase'];
 
-                                // Determine display status and behavior based on property ID completeness
+                                // --- 1. AGE CHECK LOGIC ---
+                                $is_for_condemn = false;
+                                if (!empty($purchase_date)) {
+                                    $age = $today->diff(new DateTime($purchase_date))->y;
+                                    if ($age >= 5) {
+                                        $is_for_condemn = true;
+                                    }
+                                }
+
+                                // --- 2. PROPERTY ID CHECK ---
                                 $isMissingId = empty($unit['specs_property']) || empty($unit['monitor_property']);
 
                                 if ($isMissingId) {
                                     $display_status = 'No Property ID';
-                                    // Route click to the bulk assignment modal
                                     $onclick = "openMissingIdModal('" . htmlspecialchars($current_room) . "')";
                                     $row_class = 'asset-item gray-row missing-id';
+                                    $badge_html = "<span class='badge purple'>No Property ID</span>";
                                 } else {
-                                    $display_status = $db_status; // Use actual database status
-                                    // Route click to the normal right panel
+                                    $display_status = $db_status;
                                     $set_id = htmlspecialchars($unit['set_id']);
                                     $row_class = 'asset-item';
+
+                                    // ONLY generate the base physical status
+                                    if ($display_status === 'Working') {
+                                        $badge_html = "<span class='badge green'>Working</span>";
+                                    } elseif ($display_status === 'For Repair') {
+                                        $badge_html = "<span class='badge yellow'>For Repair</span>";
+                                    } else {
+                                        $badge_html = "<span class='badge gray'>$display_status</span>";
+                                    }
                                 }
-
-                                $status_map = [
-                                    'Working'        => 'badge green',
-                                    'Condemned'      => 'badge red',
-                                    'For Condemn'    => 'badge red',
-                                    'For Repair'     => 'badge yellow',
-                                    'No Property ID' => 'badge purple'
-                                ];
-
-                                $badge_class = isset($status_map[$display_status]) ? $status_map[$display_status] : 'badge gray';
                         ?>
-                                <div class="<?= $row_class ?>" <?php if ($isMissingId) echo "onclick=\"$onclick\""; ?> data-set-id="<?= htmlspecialchars($unit['set_id']) ?>" data-specs-property="<?= htmlspecialchars($unit['specs_property'] ?? '') ?>" data-monitor-property="<?= htmlspecialchars($unit['monitor_property'] ?? '') ?>" data-db-status="<?= htmlspecialchars($db_status) ?>">
+                                <div class="<?= $row_class ?>" <?php if ($isMissingId) echo "onclick=\"$onclick\""; ?> data-set-id="<?= htmlspecialchars($unit['set_id']) ?>" data-specs-property="<?= htmlspecialchars($unit['specs_property'] ?? '') ?>" data-monitor-property="<?= htmlspecialchars($unit['monitor_property'] ?? '') ?>" data-db-status="<?= htmlspecialchars($db_status) ?>" data-is-condemn="<?= $is_for_condemn ? 'true' : 'false' ?>">
                                     <span class="item-name"><?= $display_name ?></span>
-                                    <span class="<?= $badge_class ?>"><?= htmlspecialchars($display_status) ?></span>
+                                    <?= $badge_html ?>
                                 </div>
                             <?php
                             endwhile;
@@ -230,27 +230,47 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                 </div>
 
                 <div class="panel white-panel right-panel">
-                    <div class="section-header-row">
-                        <h3>Select a PC to view details</h3>
-                        <div class="action-buttons">
-                            <button class="btn-edit" id="editToggleButton" onclick="toggleEditMode()">
-                                <i class="fas fa-pen"></i> <span id="editText">Edit</span>
+                    <div class="section-header-row details-header-mobile">
+                        <button type="button" class="mobile-back-btn" onclick="closeMobileDetails()">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+
+                        <h3 style="flex: 1; margin: 0; font-size: 18px;">Select a PC</h3>
+
+                        <div class="action-buttons" style="display: flex; gap: 8px;">
+                            <button class="btn-cancel" id="btnCancelEdit" onclick="cancelEditMode()" style="display: none;">
+                                <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
                             </button>
 
-                            <button class="btn-resolve" id="btnResolve"><i class="fas fa-history"></i> Resolve</button>
-                            <button class="btn-condemn" id="btnCondemn" onclick="openCondemnModal()">
-                                <i class="fas fa-trash-alt"></i> Condemn
+                            <button class="action-btn edit-btn" id="editToggleButton" onclick="toggleEditMode()">
+                                <i class="fas fa-pen"></i> <span class="btn-text" id="editText">Edit</span>
                             </button>
 
-                            <button class="btn-cancel-edit" id="btnCancelEdit" onclick="cancelEditMode()" style="display: none;">Cancel</button>
+                            <button class="btn-resolve" id="btnResolve" style="display: none;" onclick="openResolveModal('pc')">
+                                <i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>
+                            </button>
+
+                            <button class="btn-delete" id="btnCondemn" onclick="openCondemnModal()">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </div>
                     </div>
 
                     <div class="specs-tabs">
-                        <button class="spec-tab active" onclick="switchTab('identity', this)">Identity & Specifications</button>
-                        <button class="spec-tab" onclick="switchTab('external', this)">External I/O Ports</button>
-                        <button class="spec-tab" onclick="switchTab('health', this)">Health & Maintenance Summary</button>
-                        <button class="spec-tab" onclick="switchTab('peripherals', this)">Peripherals</button>
+                        <button class="spec-tab active" onclick="switchTab('identity', this)">
+                            <span class="desktop-tab-text">Identity & Specifications</span>
+                            <span class="mobile-tab-text">Specs</span>
+                        </button>
+                        <button class="spec-tab" onclick="switchTab('external', this)">
+                            <span class="desktop-tab-text">External I/O Ports</span>
+                            <span class="mobile-tab-text">Ports</span>
+                        </button>
+                        <button class="spec-tab" onclick="switchTab('health', this)">
+                            <span class="desktop-tab-text">Health & Maintenance Summary</span>
+                            <span class="mobile-tab-text">Health</span>
+                        </button>
+                        <button class="spec-tab" onclick="switchTab('peripherals', this)">
+                            Peripherals </button>
                     </div>
 
                     <div class="specs-content-box">
@@ -355,9 +375,12 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>Computer Age</label>
-                                    <div class="sub-detail-row">
+                                    <div class="sub-detail-row" style="align-items: center;">
                                         <span>Total:</span>
                                         <div id="view_com_age" class="detail-box small-box view-mode"></div>
+
+                                        <div id="view_condemn_badge" class="view-mode" style="margin-left: 10px;"></div>
+
                                         <div class="edit-mode" style="display:none; align-items: center; gap: 5px;">
                                             <input type="number" id="edit_com_age" class="edit-input small-edit-box">
                                         </div>
@@ -369,8 +392,8 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                                         <span>Status:</span>
                                         <div id="pill_disk_health" class="status-pill green view-mode"></div>
                                         <div id="toggle_disk_health" class="status-toggle-group edit-mode" style="display:none;">
-                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                            <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Healthy</button>
+                                            <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Poor</button>
                                         </div>
                                     </div>
                                 </div>
@@ -386,7 +409,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                                     </div>
                                 </div>
                                 <div class="detail-group">
-                                    <label>Power Supply Health</label>
+                                    <label>Power Supply</label>
                                     <div class="status-row">
                                         <span>Status:</span>
                                         <div id="pill_power_health" class="status-pill green view-mode"></div>
@@ -403,22 +426,10 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                                     <h4>Recent Activity</h4>
                                     <a href="#" class="view-history-link">View Full Maintenance History</a>
                                 </div>
-                                <table class="activity-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Reported by</th>
-                                            <th>Affected</th>
-                                            <th>Remarks</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td colspan="5" style="text-align:center; color:#888;">Activity logs will appear here.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+
+                                <div id="pc_activity_log_body" style="border: 1px solid #eaeaea; border-radius: 8px; background: #fafafa; max-height: 300px; overflow-y: auto;">
+                                    <div style="text-align:center; color:#888; padding: 20px;">Activity logs will appear here.</div>
+                                </div>
                             </div>
                         </div>
 
@@ -589,17 +600,32 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                 <div class="panel white-panel right-panel" id="view-facility-right">
 
                     <div id="fa-view-mode">
-                        <div class="section-header-row">
-                            <h3 id="view_fa_header_title">Select an Asset</h3>
-                            <div class="action-buttons">
-                                <button class="btn-edit" onclick="openFAEditMode()">
-                                    <i class="fas fa-pen"></i> Edit
+                        <div class="section-header-row details-header-mobile">
+                            <button type="button" class="mobile-back-btn" onclick="closeMobileDetails()">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+
+                            <h3 id="view_fa_header_title" style="flex: 1; margin: 0; font-size: 18px;">Select an Asset</h3>
+
+                            <div class="action-buttons" style="display: flex; gap: 8px;">
+                                <button class="btn-cancel" id="btnCancelEdit" onclick="cancelEditMode()" style="display: none;">
+                                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
                                 </button>
-                                <button class="btn-condemn" id="condemnFABtn" onclick="openCondemnModal()">
-                                    <i class="fas fa-trash-alt"></i> Condemn
+
+                                <button class="action-btn edit-btn" id="editToggleButton" onclick="toggleEditMode()">
+                                    <i class="fas fa-pen"></i> <span class="btn-text" id="editText">Edit</span>
+                                </button>
+
+                                <button class="btn-resolve" id="btnResolve" style="display: none;" onclick="openResolveModal('pc')">
+                                    <i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>
+                                </button>
+
+                                <button class="btn-delete" id="btnCondemn" onclick="openCondemnModal()">
+                                    <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
                         </div>
+
                         <div class="detail-content">
                             <div class="detail-grid-row">
                                 <div class="detail-group"><label>Property ID:</label>
@@ -625,21 +651,10 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                                 <h4>Recent Activity</h4>
                                 <a href="#" class="view-history-link">View Full Maintenance History</a>
                             </div>
-                            <table class="activity-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Reported by</th>
-                                        <th>Remarks</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fa_activity_log_body">
-                                    <tr>
-                                        <td colspan="5" style="text-align:center; color:#888;">Activity logs will appear here.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+
+                            <div id="fa_activity_log_body" style="border: 1px solid #eaeaea; border-radius: 8px; background: #fafafa; max-height: 300px; overflow-y: auto;">
+                                <div style="text-align:center; color:#888; padding: 20px;">Activity logs will appear here.</div>
+                            </div>
                         </div>
                     </div>
 
@@ -674,15 +689,12 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                             <div class="detail-grid-row">
                                 <div class="detail-group">
                                     <label>Status:</label>
-                                    <div class="status-button-group">
-                                        <input type="hidden" id="edit_fa_status" value="Working">
 
-                                        <div class="status-btn-container">
-                                            <button type="button" class="status-btn" data-type="Working" onclick="toggleStatusFA(this)">Working</button>
-                                            <button type="button" class="status-btn" data-type="For Repair" onclick="toggleStatusFA(this)">For Repair</button>
-                                        </div>
-
+                                    <div class="detail-box" id="edit_fa_status_box" style="cursor: not-allowed; opacity: 0.8;">
+                                        <span id="edit_fa_status_display">---</span>
                                     </div>
+
+                                    <input type="hidden" id="edit_fa_status">
                                 </div>
                             </div>
                         </div>
@@ -829,8 +841,8 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                             <div class="form-group">
                                 <label>Disk Health (SMART Status)</label>
                                 <div class="status-toggle-group" id="disk_toggle">
-                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Healthy</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Poor</button>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -1065,17 +1077,8 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                 </div>
 
                 <div class="modal-body" style="padding: 0;">
-                    <table class="assignment-table">
-                        <thead>
-                            <tr>
-                                <th>Set Name</th>
-                                <th>System Unit's Property ID</th>
-                                <th>Monitor's Property ID</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="missingIdsTableBody">
-                        </tbody>
+                    <table class="dashboard-table" id="missingIdsTable">
+                        <div id="missingIdsTableBody"></div>
                     </table>
                 </div>
 
@@ -1126,6 +1129,59 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                 <div class="modal-footer" style="padding: 15px 20px;">
                     <button class="btn-cancel" onclick="closeModal('addFacilityAssetModal')">Cancel</button>
                     <button class="btn-finalize" onclick="submitFacilityAsset()" style="background-color: #4caf50; padding: 8px 25px;"><i class="fas fa-plus-circle"></i> Create</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="logStatusModal" class="modal-overlay" style="display: none;">
+            <div class="modal-container" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2>Log Status Change</h2>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
+                        You are updating the status of one or more components for <strong id="logStatusUnitName">[PC-00]</strong>. Please provide a brief remark for the maintenance log.
+                    </p>
+
+                    <div class="log-status-grid">
+                        <div class="log-col-left">
+                            <label>Change Summary List:</label>
+                            <div id="logStatusChangeList" class="change-summary-list">
+                            </div>
+                        </div>
+
+                        <div class="log-col-right">
+                            <label>Remarks:</label>
+                            <textarea id="logStatusRemarks" placeholder="Provide specific details for this status update..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal('logStatusModal')">Cancel</button>
+                    <button type="button" class="btn-confirm" onclick="confirmLogStatus()">
+                        <i class="fas fa-check-circle"></i> Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="resolveModal" class="modal-overlay" style="display: none;">
+            <div class="modal-container assignment-modal" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h2>Resolve Maintenance Issue</h2>
+                    <p style="font-size: 13px; color: #666; margin-top: 5px;">Resolving issues for <strong id="resolveUnitName">[PC-00]</strong>.</p>
+                </div>
+
+                <div class="modal-body" style="padding: 20px; overflow-y: auto; max-height: 50vh; background: #fdfdfd;">
+                    <div id="resolveTableBody">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal('resolveModal')">Cancel</button>
+                    <button type="button" class="btn-confirm" onclick="submitResolve()">
+                        <i class="fas fa-check-circle"></i> Submit
+                    </button>
                 </div>
             </div>
         </div>

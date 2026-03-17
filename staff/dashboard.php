@@ -1,5 +1,4 @@
 <?php
-include '../includes/admin_auth.php';
 include '../includes/db.php';
 $workingCount = 0;
 $repairCount = 0;
@@ -65,7 +64,7 @@ $totalLabsFormatted = str_pad($totalLabs, 2, '0', STR_PAD_LEFT);
 $totalAssetsFormatted = str_pad($totalAssets, 2, '0', STR_PAD_LEFT);
 $totalUsersFormatted = str_pad($totalUsers, 2, '0', STR_PAD_LEFT);
 
-$roomsQuery = "SELECT lab_id, lab_room FROM laboratories WHERE lab_status != 'Archived' ORDER BY lab_room ASC";
+$roomsQuery = "SELECT lab_id, lab_room FROM laboratories ORDER BY lab_room ASC";
 $roomsResult = $conn->query($roomsQuery);
 $dropdownRooms = [];
 if ($roomsResult) {
@@ -182,26 +181,19 @@ if ($roomsResult) {
                     </div>
                 </div>
 
-                <div class="panel white-panel">
-                    <h3 class="section-title">Resource Summary</h3>
-                    <hr class="divider">
-                    <div class="resource-grid">
-                        <div class="res-item">
-                            <i class="fas fa-desktop"></i>
-                            <h2><?php echo $totalUnits; ?></h2><span>Total Computer Units</span>
-                        </div>
-                        <div class="res-item">
-                            <i class="fas fa-print"></i>
-                            <h2><?php echo $totalAssetsFormatted; ?></h2><span>Total Facility Assets</span>
-                        </div>
-                        <div class="res-item">
-                            <i class="fas fa-warehouse"></i>
-                            <h2><?php echo $totalLabsFormatted; ?></h2><span>Total Computer Labs</span>
-                        </div>
-                        <div class="res-item">
-                            <i class="fas fa-users"></i>
-                            <h2><?php echo $totalUsersFormatted; ?></h2><span>Total Active Users</span>
-                        </div>
+                <div class="panel white-panel search-panel" style="display: flex; flex-direction: column;">
+                    <h3 class="section-title">Device Quick Search</h3>
+
+                    <div class="search-container" style="margin-top: 35px; display: flex; flex-direction: column; flex: 1; justify-content: flex-start;">
+                        <label for="quickSearchInput" style="display: block; font-size: 13px; font-weight: 700; color: #000; margin-bottom: 8px;">Enter Property ID:</label>
+
+                        <input type="text" id="quickSearchInput" placeholder="e.g., 24841218452128"
+                            style="width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #eaeaea; background-color: #f4f4f4; margin-bottom: 20px; box-sizing: border-box; font-size: 14px; color: #333; outline: none;">
+
+                        <button onclick="performQuickSearch()"
+                            style="width: 100%; padding: 14px; border-radius: 8px; background-color: #4caf50; color: white; border: none; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;">
+                            <i class="fas fa-search"></i> Search
+                        </button>
                     </div>
                 </div>
 
@@ -436,6 +428,27 @@ if ($roomsResult) {
             console.log("Dashboard loaded, initializing chart...");
             if (document.getElementById('dashboardRoomSelect')) {
                 updateDashboardLabStats();
+            }
+        });
+
+        // --- NEW: QUICK SEARCH FUNCTIONALITY ---
+        function performQuickSearch() {
+            const searchInput = document.getElementById('quickSearchInput');
+            const query = searchInput.value.trim();
+
+            if (query) {
+                // Pass the search term to the assets page via URL parameters
+                window.location.href = 'assets_management.php?search=' + encodeURIComponent(query);
+            } else {
+                alert("Please enter a Property ID first.");
+                searchInput.focus();
+            }
+        }
+
+        // Allow pressing "Enter" inside the input to trigger the search
+        document.getElementById('quickSearchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performQuickSearch();
             }
         });
     </script>

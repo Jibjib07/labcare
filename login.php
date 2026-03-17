@@ -11,7 +11,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'logout') {
 
 // Role-based redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    if (strtolower($_SESSION['user_role']) === 'admin') {
+    if (isset($_SESSION['user_role']) && strtolower($_SESSION['user_role']) === 'admin') {
         header("Location: admin/dashboard.php");
     } else {
         header("Location: user/dashboard.php");
@@ -22,6 +22,7 @@ if (isset($_SESSION['user_id'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,8 +43,14 @@ if (isset($_SESSION['user_id'])) {
             <h2>Welcome Back!</h2>
             <p class="subtitle">Enter your email below to login to your account</p>
 
+            <?php if (isset($_GET['reset']) && $_GET['reset'] == 'success'): ?>
+                <div class="success-msg" style="color: #2e7d32; background: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
+                    <i class="fas fa-check-circle"></i> Password updated successfully! Please login.
+                </div>
+            <?php endif; ?>
+
             <?php if (isset($_GET['error'])): ?>
-                <div class="error-msg">
+                <div class="error-msg" style="color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;">
                     <i class="fas fa-exclamation-circle"></i>
                     <?php
                     if ($_GET['error'] == 'invalid_password') echo "Incorrect password.";
@@ -93,4 +100,5 @@ if (isset($_SESSION['user_id'])) {
         });
     </script>
 </body>
+
 </html>

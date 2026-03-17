@@ -1,4 +1,5 @@
 <?php
+session_start(); // Required to get the Admin's name for the history log
 header('Content-Type: application/json');
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
@@ -63,40 +64,64 @@ try {
     // =========================================================
     // 3. SAFELY PARSE NUMBERS
     // =========================================================
-    $com_age = !empty($_POST['com_age']) ? (int)$_POST['com_age'] : 0;
-    $num_repair = !empty($_POST['num_repair']) ? (int)$_POST['num_repair'] : 0;
     $usb_ports = !empty($_POST['usb_ports']) ? (int)$_POST['usb_ports'] : 0;
 
     // =========================================================
-    // 4. UPDATE MAIN UNIT TABLE (Only if NOT Condemned)
+    // 4. UPDATE DATABASE (Inside a Transaction for Safety)
     // =========================================================
     if ($current_status !== 'Condemned') {
-        // Update all other tables first, then let updateUnitStatus() determine the final status
+
+        $conn->begin_transaction(); // Start safety transaction
+
+        // Update Specs
         $stmt_specs = $conn->prepare("UPDATE specs SET specs_property=?, specs_brand=?, specs_purchase=?, specs_cpu=?, specs_os=?, specs_gpu=?, specs_ram=?, specs_storage=?, specs_capacity=? WHERE set_id=?");
         $stmt_specs->bind_param("ssssssssss", $_POST['specs_property'], $_POST['specs_brand'], $_POST['specs_purchase'], $_POST['specs_cpu'], $_POST['specs_os'], $_POST['specs_gpu'], $_POST['specs_ram'], $_POST['specs_storage'], $_POST['specs_capacity'], $set_id);
         $stmt_specs->execute();
         $stmt_specs->close();
 
-        $stmt_ports = $conn->prepare("UPDATE ports SET usb_status=?, usb_ports=?, mic_status=?, headphone_status=?, inline_status=?, wifi_status=?, hdmi_status=?, display_status=?, ethernet_status=? WHERE set_id=?");
-        $stmt_ports->bind_param("sissssssss", $_POST['usb_status'], $usb_ports, $_POST['mic_status'], $_POST['headphone_status'], $_POST['inline_status'], $_POST['wifi_status'], $_POST['hdmi_status'], $_POST['display_status'], $_POST['ethernet_status'], $set_id);
+        // Update Ports (ONLY usb_ports integer is editable)
+        $stmt_ports = $conn->prepare("UPDATE ports SET usb_ports=? WHERE set_id=?");
+        $stmt_ports->bind_param("is", $usb_ports, $set_id);
         $stmt_ports->execute();
         $stmt_ports->close();
 
-        $stmt_health = $conn->prepare("UPDATE health SET com_age=?, num_repair=?, disk_health=?, power_health=? WHERE set_id=?");
-        $stmt_health->bind_param("iisss", $com_age, $num_repair, $_POST['disk_health'], $_POST['power_health'], $set_id);
-        $stmt_health->execute();
-        $stmt_health->close();
+        // NOTE: The "UPDATE health" query has been completely removed! 
+        // Computer Age auto-updates based on Purchase Date, and Num Repairs tracks via logs.
 
-        $stmt_peripherals = $conn->prepare("UPDATE peripherals SET monitor_property=?, monitor_brand=?, monitor_status=?, keyboard_brand=?, keyboard_status=?, mouse_brand=?, mouse_status=?, avr_brand=?, avr_status=? WHERE set_id=?");
-        $stmt_peripherals->bind_param("ssssssssss", $_POST['monitor_property'], $_POST['monitor_brand'], $_POST['monitor_status'], $_POST['keyboard_brand'], $_POST['keyboard_status'], $_POST['mouse_brand'], $_POST['mouse_status'], $_POST['avr_brand'], $_POST['avr_status'], $set_id);
+        // Update Peripherals (ONLY text fields are editable)
+        $stmt_peripherals = $conn->prepare("UPDATE peripherals SET monitor_property=?, monitor_brand=?, keyboard_brand=?, mouse_brand=?, avr_brand=? WHERE set_id=?");
+        $stmt_peripherals->bind_param("ssssss", $_POST['monitor_property'], $_POST['monitor_brand'], $_POST['keyboard_brand'], $_POST['mouse_brand'], $_POST['avr_brand'], $set_id);
         $stmt_peripherals->execute();
         $stmt_peripherals->close();
 
-        // NOW call the status update function to determine correct status
+        // Let updateUnitStatus() determine the final status
         updateUnitStatus($conn, $set_id);
+
+        // =========================================================
+        // 5. INSERT HISTORY LOG
+        // =========================================================
+        $remarks = $_POST['remarks'] ?? '';
+        $report_affected = $_POST['report_affected'] ?? 'Specs/Details';
+        $actor = $_SESSION['user_name'] ?? 'Admin';
+        $action = "Admin Edit/Update";
+
+        // Locked to 'Updated' since Admins can no longer trigger 'For Repair' from Edit mode
+        $log_status = "Updated";
+
+        $stmt_hist = $conn->prepare("INSERT INTO unit_history (set_id, report_date, report_actor, report_affected, report_action, report_remarks, report_status) VALUES (?, NOW(), ?, ?, ?, ?, ?)");
+        $stmt_hist->bind_param("ssssss", $set_id, $actor, $report_affected, $action, $remarks, $log_status);
+        $stmt_hist->execute();
+        $stmt_hist->close();
+
+        // Lock in the changes
+        $conn->commit();
     }
 
     echo json_encode(['success' => true]);
 } catch (Exception $e) {
+    // If ANY of the updates fail (or a uniqueness validation fails), rollback the entire process!
+    if (isset($conn) && $conn->ping()) {
+        $conn->rollback();
+    }
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }

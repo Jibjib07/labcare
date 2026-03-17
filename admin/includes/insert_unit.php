@@ -5,6 +5,9 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 try {
     require_once __DIR__ . '/../../includes/db.php';
 
+    // 1. NEW: Include the status updater!
+    require_once __DIR__ . '/update_unit_status.php';
+
     // =========================================================
     // 1. UNIQUENESS VALIDATION (ADDING) - IGNORING CONDEMNED
     // =========================================================
@@ -78,8 +81,12 @@ try {
     // Health Data
     $com_age = isset($_POST['com_age']) ? intval($_POST['com_age']) : 0;
     $num_repair = isset($_POST['num_repair']) ? intval($_POST['num_repair']) : 0;
-    $disk_health = $_POST['disk_health'] ?? 'Working';
     $power_health = $_POST['power_health'] ?? 'Working';
+
+    // 2. NEW: Force the correct naming convention for Disk Health!
+    $disk_health = $_POST['disk_health'] ?? 'Healthy';
+    if ($disk_health === 'Working') $disk_health = 'Healthy';
+    if ($disk_health === 'For Repair') $disk_health = 'Poor';
 
     // Peripherals Data
     $monitor_property = $_POST['monitor_property'] ?? '';
@@ -104,6 +111,7 @@ try {
         $unit_tags = [$_POST['unit_no']];
     }
 
+    // Initial status guess (will be overwritten if wrong!)
     $set_status = in_array('repair', $statuses) ? 'For Repair' : 'Working';
 
     $year = date("Y");
@@ -125,12 +133,12 @@ try {
     foreach ($unit_tags as $tag) {
         $new_set_id = "SET_" . str_pad($num, 4, '0', STR_PAD_LEFT) . "_" . $year;
 
-        // A. Insert into `units` table (FIXED: Using $tag instead of $unit_tag)
+        // A. Insert into `units` table
         $stmt = $conn->prepare("INSERT INTO units (set_id, set_tag, set_status, lab_id, latest_maintenance, lab_room) VALUES (?, ?, ?, ?, NULL, ?)");
         $stmt->bind_param("sssis", $new_set_id, $tag, $set_status, $lab_id, $lab_room);
 
         if ($stmt->execute()) {
-            // B. Insert into `specs` table (FIXED: Using $tag instead of $unit_tag)
+            // B. Insert into `specs` table
             $stmt_specs = $conn->prepare("INSERT INTO specs (specs_property, specs_brand, specs_purchase, specs_cpu, specs_os, specs_gpu, specs_ram, specs_storage, specs_capacity, lab_room, set_tag, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt_specs->bind_param("ssssssssssss", $prop_id, $brand, $purchase_date, $cpu, $os, $gpu, $ram, $storage, $capacity, $lab_room, $tag, $new_set_id);
             $stmt_specs->execute();
@@ -149,15 +157,16 @@ try {
             $stmt_peripherals = $conn->prepare("INSERT INTO peripherals (monitor_property, monitor_brand, monitor_status, keyboard_brand, keyboard_status, mouse_brand, mouse_status, avr_brand, avr_status, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt_peripherals->bind_param("ssssssssss", $monitor_property, $monitor_brand, $monitor_status, $keyboard_brand, $keyboard_status, $mouse_brand, $mouse_status, $avr_brand, $avr_status, $new_set_id);
             $stmt_peripherals->execute();
+
+            // 3. NEW: Force the system to scan the new PC for broken parts instantly!
+            updateUnitStatus($conn, $new_set_id);
         }
 
-        // FIXED: Increment the ID number for the next loop!
         $num++;
-    } // <-- FIXED: Added the missing closing bracket for the foreach loop!
+    }
 
     // ---------------------------------------------------------
     // STEP 4: SEND SUCCESS MESSAGE BACK TO JS 
-    // (FIXED: Moved outside the loop so it only sends once!)
     // ---------------------------------------------------------
     echo json_encode(['success' => true, 'message' => 'Units added successfully']);
 } catch (Exception $e) {

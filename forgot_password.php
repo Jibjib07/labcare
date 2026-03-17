@@ -1,5 +1,4 @@
-
- <?php
+<?php
 require 'includes/db.php';
 require 'vendor/autoload.php'; // PHPMailer autoload
 
@@ -76,7 +75,8 @@ if (isset($_POST['send_link_btn'])) {
         $stmt->execute();
 
         // --- STEP 6: Build reset link ---
-        $resetLink = "http://localhost/labcare-main/password_resets.php?token=" . $rawToken;
+        // Uses the BASE_URL defined in includes/db.php!
+        $resetLink = BASE_URL . "password_resets.php?token=" . $rawToken;
 
         // --- STEP 7: Send email via PHPMailer ---
         try {
@@ -85,12 +85,12 @@ if (isset($_POST['send_link_btn'])) {
             $mail->SMTPDebug = 0; // 2 for debug
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'your-email@gmail.com';  // Labcare Email 
-            $mail->Password = 'your-16-char-code';       // Gmail App Password or Your secret 16-char code from Labcare Email
+            $mail->Username = 'cvsuccclabcare26@gmail.com';
+            $mail->Password = 'ftla jdqz yifw jejl';  // <-- Don't forget to generate a new app password and put it here!
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
 
-            $mail->setFrom('your-email@gmail.com', 'LabCare');
+            $mail->setFrom('cvsuccclabcare26@gmail.com', 'LabCare');
             $mail->addAddress($email, $user['user_name']);
 
             $mail->Subject = 'LabCare Password Reset';
@@ -134,25 +134,24 @@ if (isset($_POST['send_link_btn'])) {
             <span class="brand-name">LAB<span class="bname2">CARE</span></span>
         </div>
 
-            <div class="login-box reset-card">
-                <h2 class="auth-title-large">Reset Password</h2>
-                <p class="auth-subtitle-gray">Enter the email address associated with your account and we'll send you a link to reset your password.</p>
+        <div class="login-box reset-card">
+            <h2 class="auth-title-large">Reset Password</h2>
+            <p class="auth-subtitle-gray">Enter the email address associated with your account and we'll send you a link to reset your password.</p>
 
-                <form method="POST">
-                    <div class="input-group">
-                        <label>Email</label>
-                        <div class="input-wrapper">
-                            <input type="email" name="email" placeholder="Ex. JohnDoe@gmail.com" required>
-                            <i class="fas fa-at"></i>
-                        </div>
+            <form method="POST">
+                <div class="input-group">
+                    <label>Email</label>
+                    <div class="input-wrapper">
+                        <input type="email" name="email" placeholder="Ex. JohnDoe@gmail.com" required>
+                        <i class="fas fa-at"></i>
                     </div>
-                    <button type="submit" name="send_link_btn" class="btn-login btn-dark-green">Send Reset Link</button>
-                </form>
-                <div class="login-footer">
-                    <a href="login.php" class="return-link">Return to Login</a>
                 </div>
+                <button type="submit" name="send_link_btn" class="btn-login btn-dark-green">Send Reset Link</button>
+            </form>
+            <div class="login-footer">
+                <a href="login.php" class="return-link">Return to Login</a>
             </div>
-
+        </div>
 
         <p class="disclaimer"><strong>Disclaimer:</strong> For Computer Laboratory Use Only</p>
     </div>
@@ -165,7 +164,6 @@ if (isset($_POST['send_link_btn'])) {
                 toast.classList.remove('active');
             }, 5000);
         }
-
     </script>
 </body>
 
