@@ -5,25 +5,24 @@ session_start();
 require 'db.php';
 
 if (isset($_POST['login_btn'])) {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+    // trim() removes accidental spaces the user might have copied/pasted
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
 
-    // Prevent SQL Injection
-    $email = $conn->real_escape_string($email);
-    $password = $conn->real_escape_string($password);
-
-    // Query the database for the user
-    $query = "SELECT * FROM users WHERE user_email = '$email'";
-    $result = $conn->query($query);
+    // Query the database for the user using Prepared Statements (Maximum Security)
+    $stmt = $conn->prepare("SELECT * FROM users WHERE user_email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
     if ($result && $result->num_rows > 0) {
         $row = $result->fetch_assoc();
 
-        // Verify password (plain text for now based on your DB insert)
-        if ($password === $row['user_password']) {
+        // SECURE CHECK: Verify the typed password against the hashed password in the DB
+        if (password_verify($password, $row['user_password'])) {
 
             // Check if the account is active
-            if (strtolower($row['user_status']) !== 'active') {
+            if (isset($row['user_status']) && strtolower($row['user_status']) !== 'active') {
                 header("Location: ../login.php?error=inactive");
                 exit();
             }

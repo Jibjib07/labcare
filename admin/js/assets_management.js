@@ -1155,30 +1155,28 @@ function toggleEditMode() {
   const btnResolve = document.getElementById("btnResolve");
   const backArrow = document.querySelector("#view-computer .mobile-back-btn");
 
-  if (textSpan.innerText === "Edit") {
-    textSpan.innerText = "Save";
-    btn.innerHTML = `<i class="fas fa-save"></i> <span id="editText">Save</span>`;
+  // FIX: Use textContent.trim() instead of innerText so it doesn't break on mobile!
+  if (textSpan.textContent.trim() === "Edit") {
+    // Switch to Save
+    btn.innerHTML = `<i class="fas fa-save"></i> <span class="btn-text" id="editText">Save</span>`;
     btn.style.backgroundColor = "#4caf50";
-    if (btnCancel) btnCancel.style.display = "inline-block";
 
+    if (btnCancel) btnCancel.classList.add("show-cancel");
     if (btnCondemn) btnCondemn.style.display = "none";
     if (btnResolve) btnResolve.style.display = "none";
     if (backArrow) backArrow.style.display = "none";
 
-    // HIDE TEXT VIEWS (But keep Status Pills, Computer Age, and Num Repairs visible!)
     document
       .querySelectorAll(
         ".specs-content-box .view-mode:not(.status-pill):not(#view_com_age):not(#view_num_repair)",
       )
       .forEach((el) => (el.style.display = "none"));
 
-    // SHOW TEXT INPUTS (Ignore Toggles, Computer Age, and Num Repairs)
     document
       .querySelectorAll(
         ".specs-content-box .edit-mode:not(.status-toggle-group)",
       )
       .forEach((el) => {
-        // Prevent the input boxes for Age and Repairs from appearing
         if (
           el.id !== "edit_com_age" &&
           el.id !== "edit_num_repair" &&
@@ -1189,6 +1187,7 @@ function toggleEditMode() {
         }
       });
   } else {
+    // They clicked Save
     openAdminLogModal("pc");
   }
 }
@@ -1249,19 +1248,16 @@ function saveUnitDetails() {
 function resetUIToViewMode() {
   const btn = document.getElementById("editToggleButton");
   const btnCancel = document.getElementById("btnCancelEdit");
-
-  // Grab the buttons we hid earlier
   const btnCondemn = document.getElementById("btnCondemn");
   const btnResolve = document.getElementById("btnResolve");
   const backArrow = document.querySelector("#view-computer .mobile-back-btn");
 
   if (btn) {
-    btn.innerHTML = `<i class="fas fa-pen"></i> <span id="editText">Edit</span>`;
+    // Put Edit back, keeping the span classes
+    btn.innerHTML = `<i class="fas fa-pen"></i> <span class="btn-text" id="editText">Edit</span>`;
     btn.style.backgroundColor = "";
   }
-  if (btnCancel) btnCancel.style.display = "none";
-
-  // --- NEW: BRING BACK CONDEMN, RESOLVE, AND BACK ARROW ---
+  if (btnCancel) btnCancel.classList.remove("show-cancel");
   if (btnCondemn) btnCondemn.style.display = "";
   if (btnResolve) btnResolve.style.display = "";
   if (backArrow) backArrow.style.display = "";
