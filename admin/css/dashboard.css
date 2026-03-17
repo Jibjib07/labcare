@@ -308,8 +308,8 @@
   color: white;
   display: inline-block;
 }
-.badge.purple {
-  background-color: #9c27b0; /* Matches Image */
+.badge.yellow {
+  background: #ffb300;
 }
 
 /* Chart Section */

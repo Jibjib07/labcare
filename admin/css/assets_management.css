@@ -214,6 +214,8 @@ body {
 .asset-list {
   display: flex;
   flex-direction: column;
+  max-height: 550px;
+  overflow-y: auto;
 }
 
 .asset-item {
@@ -398,14 +400,17 @@ body {
 }
 
 .detail-box {
-  background: white;
-  border: 1px solid #f0f0f0;
+  background: #efefef; /* Light grey background from your image */
+  border: none; /* Remove the border */
   padding: 10px 15px;
-  border-radius: 6px;
+  border-radius: 10px; /* Rounded pill look */
   font-size: 13px;
   color: #333;
   width: 100%;
   box-sizing: border-box;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
 }
 
 .status-box-green {
@@ -1141,4 +1146,261 @@ body {
 
 .btn-cancel-edit:hover {
   background: #f5f5f5;
+}
+
+/* --- DEPLOYMENT ASSIGNMENT MODAL --- */
+.assignment-modal {
+  width: 800px;
+}
+.assignment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.assignment-table th {
+  background-color: #1b4d3e;
+  color: white;
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+}
+.assignment-table td {
+  padding: 15px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.serial-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.serial-input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+.badge.pending {
+  background-color: #8b5cf6; /* Match the purple pending badge */
+}
+.btn-finalize {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-finalize:hover {
+  background: #43a047;
+}
+
+/* =========================================
+   TOAST NOTIFICATIONS (Upper Right Bubble)
+   ========================================= */
+.toast-container {
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.toast {
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 300px;
+  animation: slideInRight 0.3s ease-out forwards;
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+}
+
+.toast.fade-out {
+  opacity: 0;
+}
+
+.toast-icon {
+  font-size: 26px;
+}
+
+/* Green icon for success, Red for errors */
+.toast-success .toast-icon {
+  color: #4caf50;
+}
+.toast-error .toast-icon {
+  color: #f44336;
+}
+
+.toast-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+}
+
+.toast-content p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Container and Header */
+.details-panel {
+  padding: 30px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.section-header-row h3 {
+  font-size: 20px;
+  color: #000;
+}
+
+/* Pill Inputs */
+.pill-input-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.pill-input-container label {
+  width: 100px;
+  font-size: 14px;
+  color: #333;
+}
+
+.pill-field {
+  flex: 1;
+  background-color: #efefef; /* Light grey pill background */
+  border: none;
+  border-radius: 10px;
+  padding: 10px 15px;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+}
+
+/* Status Toggles */
+.status-toggle-group {
+  display: flex;
+  gap: 8px;
+}
+
+.status-pill {
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  color: #666;
+  padding: 8px 25px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+/* Active Working State (Green) */
+.status-pill.active-working {
+  background-color: #5cb85c !important;
+  color: white !important;
+  border-color: #5cb85c !important;
+}
+
+/* Active For Repair State (Neutral/Grey) */
+.status-pill.active-repair {
+  background-color: #eeeeee !important;
+  color: #333 !important;
+  border-color: #ccc !important;
+}
+
+/* Buttons */
+.btn-edit-action {
+  background-color: #5cb85c;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-condemn-action {
+  background: white;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#fa-edit-mode .modal-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+#fa-edit-mode .detail-grid-row {
+  margin-bottom: 15px;
+}
+
+/* Base style for the status buttons */
+.status-btn {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: 0.3s;
+}
+
+/* Green highlight for Working */
+.status-btn.active[data-type="Working"] {
+  background: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+
+/* Yellow/Orange highlight for For Repair */
+.status-btn.active[data-type="For Repair"] {
+  background: #fff4e5;
+  color: #e65100;
+  border: 1px solid #ffeeba !important;
+}
+
+/* Color for the Status Box in View Mode */
+.status-box-yellow {
+  background: #fff4e5;
+  color: #e65100;
 }

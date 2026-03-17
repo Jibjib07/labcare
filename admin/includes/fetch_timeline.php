@@ -1,5 +1,5 @@
 <?php
-include 'includes/db.php';
+include '/../../includes/db.php';
 
 $id = $_GET['id'] ?? '';
 $type = $_GET['type'] ?? 'maintenance';
@@ -23,16 +23,16 @@ if ($type === 'maintenance' || $type === 'retired') {
         $foundData = true;
         while ($row = $res_unit->fetch_assoc()) {
             $badgeClass = ($row['report_status'] == 'Resolved') ? 'green' : (($row['report_status'] == 'Condemned') ? 'red' : 'orange');
-            
+
             echo "<tr>";
             echo "<td>" . htmlspecialchars(date('m/d/Y', strtotime($row['report_date']))) . "</td>";
             echo "<td>" . htmlspecialchars($row['report_actor']) . "</td>";
-            
+
             if ($type === 'maintenance') {
                 echo "<td>" . htmlspecialchars($row['report_affected']) . "</td>";
                 echo "<td>" . htmlspecialchars($row['report_action']) . "</td>";
             }
-            
+
             echo "<td>" . htmlspecialchars($row['report_remarks']) . "</td>";
             echo "<td><span class='badge {$badgeClass}'>" . htmlspecialchars($row['report_status']) . "</span></td>";
             echo "</tr>";
@@ -50,16 +50,16 @@ if ($type === 'maintenance' || $type === 'retired') {
             $foundData = true;
             while ($row = $res_asset->fetch_assoc()) {
                 $badgeClass = ($row['report_status'] == 'Resolved') ? 'green' : (($row['report_status'] == 'Condemned') ? 'red' : 'orange');
-                
+
                 echo "<tr>";
                 echo "<td>" . htmlspecialchars(date('m/d/Y', strtotime($row['report_date']))) . "</td>";
                 echo "<td>" . htmlspecialchars($row['report_actor']) . "</td>";
-                
+
                 if ($type === 'maintenance') {
                     echo "<td>-</td>";
                     echo "<td>-</td>";
                 }
-                
+
                 echo "<td>" . htmlspecialchars($row['report_remarks']) . "</td>";
                 echo "<td><span class='badge {$badgeClass}'>" . htmlspecialchars($row['report_status']) . "</span></td>";
                 echo "</tr>";
@@ -70,7 +70,6 @@ if ($type === 'maintenance' || $type === 'retired') {
     if (!$foundData) {
         echo "<tr><td colspan='{$colSpan}' style='text-align:center; padding: 20px; color: #757575;'>No history found for this item.</td></tr>";
     }
-
 } elseif ($type === 'archive') {
     // 3. FETCH ARCHIVE DETAILS
     // Querying the laboratories table for the status
@@ -93,4 +92,3 @@ if ($type === 'maintenance' || $type === 'retired') {
         ]);
     }
 }
-?>

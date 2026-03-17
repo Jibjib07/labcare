@@ -20,7 +20,7 @@ if (isset($_POST['login_btn'])) {
         $row = $result->fetch_assoc();
 
         // Verify password (plain text for now based on your DB insert)
-        if ($password === $row['user_password']) {
+        if (password_verify($password, $row['user_password'])) {
             
             // Check if the account is active
             if (strtolower($row['user_status']) !== 'active') {
