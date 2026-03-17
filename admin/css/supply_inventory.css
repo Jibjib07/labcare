@@ -1,467 +1,269 @@
 /* =========================================
-   1. SHARED UTILITIES
+   1. SHARED UTILITIES & LAYOUT
    ========================================= */
-.page-header {
-  margin-bottom: 25px;
-}
-.page-header h1 {
-  font-size: 24px;
-  color: #000;
-  margin-bottom: 5px;
-  font-weight: 800;
-}
-.page-header p {
-  color: #555;
-  font-size: 14px;
-}
+.page-header { margin-bottom: 25px; }
+.page-header h1 { font-size: 24px; color: #000; margin-bottom: 5px; font-weight: 800; }
+.page-header p { color: #555; font-size: 14px; }
 
-/* Panels */
 .white-panel {
-  background: white;
-  border-radius: 8px;
-  padding: 25px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
 }
 
 .supply-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 20px;
-  align-items: start;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 20px;
+    align-items: stretch;
 }
 
 .panel-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0; 
 }
-.panel-header-row h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: #222;
+.panel-header-row h3 { margin: 0; font-size: 15px; font-weight: 700; color: #222; }
+
+/* =========================================
+   2. SCROLLBARS & PANEL SIZES
+   ========================================= */
+.left-list-panel, .right-detail-panel {
+    height: 650px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
 }
 
-/* Buttons */
-.btn-green-add {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.btn-mark-stock {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+/* Custom Scrollbar Styles */
+.table-container::-webkit-scrollbar,
+.activity-table-container::-webkit-scrollbar { width: 5px; }
+.table-container::-webkit-scrollbar-thumb,
+.activity-table-container::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+.table-container::-webkit-scrollbar-thumb:hover { background: #ccc; }
+
+.table-container, .activity-table-container {
+    scrollbar-width: thin;
+    scrollbar-color: #ddd transparent;
 }
 
 /* =========================================
-   2. LEFT PANEL: SUPPLY LIST
+   3. LEFT PANEL: SUPPLY LIST & FILTERS
    ========================================= */
-.search-filter-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+.switch-filter-container { margin-bottom: 15px; flex-shrink: 0; }
+.switch-filter { display: flex; background-color: #eee; padding: 4px; border-radius: 8px; width: 100%; }
+
+.switch-btn {
+    flex: 1; border: none; background: none; padding: 10px;
+    font-size: 13px; font-weight: 700; color: #666;
+    cursor: pointer; border-radius: 6px; transition: all 0.3s ease;
 }
-.search-input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-}
-.filter-btn {
-  background: white;
-  border: 1px solid #ddd;
-  padding: 0 15px;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #555;
+.switch-btn.active { background-color: #4caf50; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+.search-filter-row { display: flex; gap: 10px; margin-bottom: 20px; flex-shrink: 0; }
+.search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+.filter-dropdown { flex: 0.5; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; color: #555; background-color: #fff; cursor: pointer; }
+.hidden-filter { display: none !important; }
+
+.table-container { flex: 1; overflow-y: auto; margin-bottom: 5px; border-top: 1px solid #f9f9f9; }
+.supply-table { width: 100%; border-collapse: collapse; }
+.supply-table thead { display: none; }
+
+/* UPDATED: Combined cells into one row for space-between layout */
+.supply-table td { 
+    padding: 12px 15px; 
+    border-bottom: 1px solid #f8f8f8; 
+    font-size: 14px; 
+    color: #333; 
+    vertical-align: middle;
+    display: flex; /* Move items to opposite ends */
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* Radio Group (Replacing Checkboxes) */
-.radio-group {
-  display: flex;
-  justify-content: flex-start;
-  gap: 20px;
-  margin-bottom: 20px;
-  padding-left: 2px;
-}
+.supply-table tbody tr:hover { background-color: #fafafa; }
+.supply-table tbody tr.active-row { background-color: #f0f9f0 !important; border-left: 4px solid #4caf50; }
 
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #555;
-  cursor: pointer;
+.badge { 
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
 }
-
-.radio-label input[type="radio"] {
-  accent-color: #666;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-/* Table */
-.table-container {
-  overflow-x: auto;
-  margin-bottom: 15px;
-}
-.supply-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.supply-table th {
-  background: #1b4d3e;
-  color: white;
-  padding: 12px 15px;
-  text-align: left;
-  font-size: 12px;
-}
-
-.supply-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 13px;
-  color: #333;
-}
-
-.supply-table tbody tr {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.supply-table tbody tr.active-row {
-  background-color: #e8f5e9 !important;
-}
-
-/* Badges */
-.badge {
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 700;
-  color: white;
-  display: inline-block;
-  text-align: center;
-  min-width: 80px;
-}
-
-.badge.green {
-  background-color: #4caf50;
-}
-.badge.red {
-  background-color: #b71c1c;
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  gap: 5px;
-  font-size: 12px;
-  color: #666;
-  align-items: center;
-}
-.page-num {
-  padding: 4px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.page-num.active {
-  background: #f0f0f0;
-  font-weight: bold;
-  border-color: #ccc;
-  color: #000;
-}
-.page-nav {
-  cursor: pointer;
-  padding: 0 5px;
-}
+.badge.green { background-color: #4caf50; }
+.badge.red { background-color: #b71c1c; }
 
 /* =========================================
-   3. RIGHT PANEL: SUPPLY DETAILS
+   4. RIGHT PANEL: DETAILS & EDIT MODE
    ========================================= */
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  margin-bottom: 40px;
+#view-mode, #edit-mode { 
+    display: flex; 
+    flex-direction: column; 
+    height: 100%; 
+    overflow: hidden;
+    animation: slideUpFade 0.3s ease-out;
 }
 
-.detail-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 8px;
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 25px; flex-shrink: 0; }
+.detail-group label { display: block; font-size: 13px; font-weight: 700; color: #333; margin-bottom: 8px; }
 
 .detail-input {
-  background: #fcfcfc;
-  border: 1px solid #eee;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
+    background: #fcfcfc; border: 1px solid #eee; padding: 12px;
+    border-radius: 6px; font-size: 13px; color: #333;
+    width: 100%; box-sizing: border-box;
+    transition: all 0.2s ease;
 }
 
 /* Activity Table */
-.activity-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 15px;
-}
+.activity-title { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 15px; flex-shrink: 0; }
+.activity-table-container { flex: 1; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 4px; min-height: 0; }
+.activity-table { width: 100%; border-collapse: collapse; }
+.activity-table th { background: #1b4d3e; color: white; padding: 12px 15px; text-align: left; font-size: 12px; position: sticky; top: 0; z-index: 5; }
+.activity-table td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #555; vertical-align: top; }
 
-.activity-table-container {
-  overflow-x: auto;
+/* Status Toggle Buttons (Edit Mode) */
+.status-toggle-buttons { display: flex; gap: 10px; margin-top: 5px; }
+.status-option-btn {
+    flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd;
+    background: white; font-weight: 700; font-size: 14px; color: #555;
+    cursor: pointer; transition: all 0.2s ease;
 }
-.activity-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.activity-table th {
-  background: #1b4d3e;
-  color: white;
-  padding: 12px 15px;
-  text-align: left;
-  font-size: 12px;
-}
-
-.activity-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 13px;
-  color: #555;
-  vertical-align: top;
-}
-.activity-table td strong {
-  color: #222;
-  font-weight: 600;
-}
+/* Active States */
+.status-option-btn[data-value="In Stock"].active { background-color: #4caf50; color: white; border-color: #4caf50; }
+.status-option-btn[data-value="Out of Stock"].active { background-color: #f44336; color: white; border-color: #f44336; }
 
 /* =========================================
-   4. RESPONSIVENESS
+   5. ACTION BUTTONS (Green, Orange, Blue, White)
    ========================================= */
-@media (max-width: 900px) {
-  .supply-layout {
-    grid-template-columns: 1fr; /* Stack vertically */
-  }
+.header-actions { display: flex; gap: 10px; align-items: center; }
+
+.btn-green-edit, .btn-green-add {
+    background: #4caf50; color: white; border: none;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;
 }
 
+.btn-orange-archive {
+    background: #ff5722; color: white; border: none;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;
+}
+
+.btn-blue-restore {
+    background: #2196F3; color: white; border: none;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;
+}
+
+.btn-cancel, .btn-modal-cancel {
+    background: white; border: 1px solid #ddd; color: #666;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-green-edit:hover, .btn-green-add:hover, 
+.btn-orange-archive:hover, .btn-blue-restore:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-cancel:hover, .btn-modal-cancel:hover { background: #f5f5f5; color: #333; border-color: #ccc; }
+
 /* =========================================
-   5. MODAL STYLES 
+   6. MODAL STYLES
    ========================================= */
 .modal-overlay {
-  display: none; /* Hidden by default - JS will change this to 'flex' */
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-  align-items: center;
-  justify-content: center;
+    display: none !important; position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5); justify-content: center;
+    align-items: center; z-index: 10000;
 }
 
 .wide-modal {
-  background: white;
-  width: 90%;
-  max-width: 600px;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    background: white; width: 500px; max-width: 90%;
+    max-height: 90vh; padding: 30px; border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease; overflow-y: auto;
 }
 
-.modal-header-simple h3 {
-  font-size: 18px;
-  font-weight: 800;
-  margin-bottom: 25px;
-  color: #222;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.modal-body-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 20px;
-}
+.modal-header-simple h3 { font-size: 20px; font-weight: 800; margin-bottom: 10px; color: #111; text-align: left; }
+.modal-header-simple p { color: #666; font-size: 13px; font-weight: 400; margin-top: 5px; }
 
-.modal-label {
-  display: block;
-  font-weight: 700;
-  font-size: 13px;
-  margin-bottom: 8px;
-}
+.modal-body-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+.modal-label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #333; }
 
 .modal-input {
-  background: #f4f4f4;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  width: 100%;
-  font-size: 13px;
+    background: #fcfcfc; border: 1px solid #ddd;
+    padding: 12px; border-radius: 6px; width: 100%;
+    font-size: 14px; color: #444; box-sizing: border-box;
+}
+.modal-input:focus { outline: none; border-color: #4caf50; background: #fff; }
+
+.uneditable-confirm {
+    background: #f9f9f9; color: #555; border: 1px solid #eee;
+    padding: 12px; border-radius: 6px; font-size: 13px;
 }
 
-.category-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.category-grid label {
-  font-size: 11px;
-  color: #555;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-}
-
-.full-width {
-  grid-column: span 2;
-  margin-top: 15px;
-}
-
-/* Modal Footer Buttons */
-.modal-footer-styled {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 30px;
-}
-
-.btn-modal-cancel {
-  background: white;
-  border: 1px solid #ddd;
-  padding: 10px 40px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-}
+.modal-footer-styled { display: flex; justify-content: flex-end; gap: 12px; margin-top: 30px; }
 
 .btn-modal-create {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 10px 40px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    background: #4caf50; color: white; border: none;
+    padding: 10px 30px; border-radius: 8px;
+    cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all 0.2s ease;
 }
+.btn-modal-create:hover { opacity: 0.9; }
 
 /* =========================================
-    EDIT BUTTON
+   7. NOTIFICATION (TOAST) STYLES
    ========================================= */
+.toast-container { position: fixed; top: 25px; right: 25px; z-index: 99999; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
 
-/* Header Actions & Edit Button */
-.header-actions {
-  display: flex;
-  gap: 10px;
+.toast {
+    background: #ffffff; min-width: 320px; padding: 16px 20px;
+    border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    display: flex; align-items: center; gap: 15px;
+    pointer-events: auto;
+    animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
 
-.btn-edit-outline {
-  background: white;
-  border: 1px solid #ddd;
-  padding: 8px 15px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.toast-icon { 
+    font-size: 18px; min-width: 36px; height: 36px; 
+    display: flex; align-items: center; justify-content: center; 
+    border-radius: 8px; border: 2px solid currentColor; 
 }
 
-/* Ensure the select dropdown looks like the search input */
-select.filter-btn {
-  padding: 0 10px;
-  height: 40px;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #555;
-  cursor: pointer;
-  outline: none;
-}
+.toast-success .toast-icon { color: #4caf50; background: #f1f8f1; }
+.toast-success .toast-title { color: #2e7d32; }
 
-/* Custom Square Radio Toggles */
-.status-toggle-container {
-  display: flex;
-  gap: 20px;
-  margin-top: 5px;
-}
+.toast-danger .toast-icon { color: #f44336; background: #fef2f2; }
+.toast-danger .toast-title { color: #c62828; }
 
-.custom-radio {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  cursor: pointer;
-  position: relative;
-}
+.toast-content { display: flex; flex-direction: column; }
+.toast-title { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
+.toast-sub { font-size: 12px; color: #666666; line-height: 1.4; }
 
-/* Hide the default radio input */
-.custom-radio input {
-  display: none;
-}
+@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(40px); opacity: 0; } }
 
-.checkmark {
-  height: 18px;
-  width: 18px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  background-color: #fff;
-  display: inline-block;
-  transition: all 0.2s ease;
-}
-
-/* INTERACTIVE STATES */
-.custom-radio input:checked + .checkmark {
-  background-color: #4caf50;
-  border-color: #4caf50;
-}
-
-.custom-radio input:checked + .checkmark::after {
-  content: "\f00c";
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
-  color: white;
-  font-size: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+/* =========================================
+   8. RESPONSIVENESS
+   ========================================= */
+@media (max-width: 900px) {
+    .supply-layout { grid-template-columns: 1fr; }
+    .right-detail-panel, .left-list-panel { height: auto; max-height: none; }
 }

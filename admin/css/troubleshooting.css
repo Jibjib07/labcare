@@ -1,19 +1,9 @@
 /* =========================================
    1. SHARED UTILITIES
    ========================================= */
-.page-header {
-  margin-bottom: 25px;
-}
-.page-header h1 {
-  font-size: 24px;
-  color: #000;
-  margin-bottom: 5px;
-  font-weight: 800;
-}
-.page-header p {
-  color: #555;
-  font-size: 14px;
-}
+.page-header { margin-bottom: 25px; }
+.page-header h1 { font-size: 24px; color: #000; margin-bottom: 5px; font-weight: 800; }
+.page-header p { color: #555; font-size: 14px; }
 
 .white-panel {
   background: white;
@@ -35,213 +25,216 @@
   align-items: center;
   margin-bottom: 20px;
 }
-.panel-header-row h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: #222;
-}
-
-/* Buttons */
-.btn-green-add {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.btn-edit {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.btn-archive {
-  background: #ff5722;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
+.panel-header-row h3 { margin: 0; font-size: 15px; font-weight: 700; color: #222; }
 
 /* =========================================
-   2. LEFT PANEL: GUIDE LIST
-   ========================================= */
-.search-filter-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-.search-input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-}
-.filter-dropdown {
-  background: white;
-  border: 1px solid #ddd;
-  padding: 0 15px;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #555;
-  min-width: 80px;
-  justify-content: space-between;
-}
-
-/* Status Toggles (Radio Buttons) */
-.status-toggle-row {
-  display: flex;
-  justify-content: flex-start; /* Align left */
-  gap: 20px;
-  margin-bottom: 15px;
-  padding-left: 5px;
-}
-
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #555;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.radio-label input[type="radio"] {
-  accent-color: #555; /* Gray color when selected */
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  cursor: pointer;
-}
-
-/* Table */
-.table-container {
-  overflow-x: auto;
-  margin-bottom: 15px;
-}
-.guide-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.guide-table th {
-  background: #1b4d3e;
-  color: white;
-  padding: 12px 15px;
-  text-align: left;
-  font-size: 12px;
-}
-
-.guide-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 13px;
-  color: #333;
-}
-
-.active-row {
-  background-color: #e8f5e9;
-  font-weight: 600;
-} /* Light Green Highlight */
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  gap: 5px;
-  font-size: 12px;
-  color: #666;
-  align-items: center;
-}
-.page-num {
-  padding: 4px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.page-num.active {
-  background: #f0f0f0;
-  font-weight: bold;
-  border-color: #ccc;
-  color: #000;
-}
-.page-nav {
-  cursor: pointer;
-  padding: 0 5px;
-}
-
-/* =========================================
-   3. RIGHT PANEL: FULL DETAILS
+   2. BUTTONS & ACTIONS
    ========================================= */
 .action-buttons {
   display: flex;
-  gap: 10px;
+  gap: 15px;
+  align-items: center;
 }
 
-.detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.detail-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 5px;
-}
-
-/* Detail Text (Clean Style) */
-.detail-box {
-  background: transparent;
+.btn-green-add, .btn-edit, .btn-save, .btn-restore {
   border: none;
-  padding: 0;
+  padding: 8px 15px;
+  border-radius: 4px;
   font-size: 13px;
-  color: #555;
-  line-height: 1.6;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
-/* Bullet Lists in Details */
-.bullet-list {
-  margin: 0;
-  padding-left: 18px;
-}
-.bullet-list li {
-  margin-bottom: 3px;
+.btn-green-add, .btn-edit, .btn-save, .btn-restore { background: #4caf50; color: white; }
+.btn-archive { background: #ff5722; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;}
+.btn-cancel { background: transparent; border: none; color: #666; cursor: pointer; font-size: 13px; font-weight: 600; }
+
+.btn-edit:hover, .btn-archive:hover, .btn-save:hover, .btn-restore:hover { opacity: 0.9; }
+
+.btn-save:disabled, .btn-edit:disabled, .btn-archive:disabled, .btn-restore:disabled, .btn-green-add:disabled {
+    background-color: #ccc !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
 }
 
 /* =========================================
-   4. RESPONSIVENESS
+   3. LEFT PANEL: FIXED HEIGHT & SCROLL
    ========================================= */
-@media (max-width: 900px) {
-  .troubleshoot-layout {
-    grid-template-columns: 1fr; /* Stack vertically */
-  }
+.left-list-panel {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+}
+
+.search-filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
+.search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+.filter-dropdown { padding: 0 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; color: #555; min-width: 140px; }
+
+/* TOGGLE BUTTON STYLES */
+.status-toggle-row { 
+    display: flex; 
+    margin-bottom: 15px; 
+}
+
+.toggle-group {
+    display: flex;
+    background-color: #f0f0f0;
+    padding: 4px;
+    border-radius: 8px;
+    gap: 0;
+    width: 100%;
+}
+
+.status-toggle-btn {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: #555;
+    font-family: inherit;
+}
+
+.status-toggle-btn.active {
+    background-color: #4caf50;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* =========================================
+   NEW TABLE ROW STYLING (Supply List Style)
+   ========================================= */
+.guide-table { width: 100%; border-collapse: collapse; }
+
+.guide-info-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.guide-title-text {
+    flex: 1;             /* Takes up the first half of the space */
+    font-weight: 700;
+    color: #333;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Container that holds the text in the 'middle column' */
+.badge-container {
+    flex: 1; 
+    display: flex;
+    justify-content: center; /* This keeps the text centered horizontally */
+}
+
+/* Updated Category: Plain Text without the Pill */
+.guide-category-badge {
+    background-color: transparent; /* Removed the gray background */
+    padding: 0;                    /* Removed the padding */
+    border-radius: 0;              /* Removed the curves */
+    color: #666;                   /* Dark gray for professional look */
+    font-size: 13px;               /* Slightly larger since the pill is gone */
+    font-weight: 500;              /* Medium weight for readability */
+    white-space: nowrap;
+}
+
+.guide-table td { 
+    padding: 15px; 
+    border-bottom: 1px solid #f0f0f0; 
+    cursor: pointer; 
+}
+
+.guide-row:hover { background-color: #fafafa; }
+
+/* Green indicator on the left for active selection */
+.active-row { 
+    background-color: #f1f8f1 !important; 
+    border-left: 4px solid #4caf50; 
+}
+
+/* TABLE INTERNAL SCROLL */
+.table-container {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+/* CUSTOM SCROLLBAR */
+.table-container::-webkit-scrollbar { width: 6px; }
+.table-container::-webkit-scrollbar-track { background: transparent; }
+.table-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+.table-container { scrollbar-width: thin; scrollbar-color: #ccc transparent; }
+
+/* =========================================
+   4. MODAL & DETAIL STYLES (UNCHANGED)
+   ========================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    width: 600px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: fadeIn 0.3s ease;
+    padding: 30px;
+}
+
+.modal-divider { border: 0; border-top: 1px solid #eee; margin: 15px 0 25px 0; }
+.modal-form { display: flex; flex-direction: column; gap: 20px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group label { font-size: 14px; font-weight: 700; color: #333; }
+.form-group input, .form-group select, .form-group textarea {
+    padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; color: #444;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-content { display: flex; flex-direction: column; gap: 15px; }
+.detail-group label {
+    display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: #1b4d3e; margin-bottom: 8px; font-weight: 800;
+}
+
+.detail-input, .detail-textarea, .detail-select {
+    width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 6px;
+    background-color: #fcfcfc; color: #444; font-size: 14px; font-family: inherit;
+}
+
+/* NOTIFICATION STYLES */
+.notification-container {
+    position: fixed; top: 25px; right: 25px; z-index: 99999; display: flex; flex-direction: column; gap: 12px;
+}
+
+.toast {
+    background: #ffffff; min-width: 320px; padding: 16px 20px; border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 15px;
+    animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
