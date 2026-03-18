@@ -1378,6 +1378,22 @@ body {
   gap: 8px;
 }
 
+#fa-edit-mode .action-buttons {
+  display: flex;
+  flex-direction: row; /* Forces horizontal */
+  gap: 8px;
+}
+
+/* Ensure the Save button in FA mode looks identical to the PC one */
+#fa-edit-mode .save-active-state {
+  background-color: #4caf50 !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
 #fa-edit-mode .modal-input {
   width: 100%;
   padding: 8px 12px;

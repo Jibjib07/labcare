@@ -211,8 +211,11 @@ if ($roomsResult) {
                         <?php
                         // Query the supplies table.
                         // The ORDER BY CASE statement forces "Out of Stock" items to appear at the top of the list
-                        $supplyQuery = "SELECT supply_name, supply_status FROM supply 
-                        ORDER BY CASE WHEN supply_status = 'Out of Stock' THEN 1 ELSE 2 END, supply_name ASC";
+                        $supplyQuery = "SELECT supply_name, supply_status 
+                FROM supply 
+                WHERE supply_avail = 'Current'
+                ORDER BY CASE WHEN supply_status = 'Out of Stock' THEN 1 ELSE 2 END, 
+                         supply_name ASC";
 
                         $supplyResult = $conn->query($supplyQuery);
 

@@ -1,3 +1,18 @@
+function saveCurrentState() {
+  const isFacilityView =
+    document.getElementById("view-facility").style.display === "block";
+  const state = {
+    view: isFacilityView ? "facility" : "computer",
+    id: isFacilityView ? currentSelectedFAId : currentEditingSetId,
+  };
+  localStorage.setItem("assets_state", JSON.stringify(state));
+}
+
+// CLEAR STATE: Call this if you want to reset everything manually
+function clearCurrentState() {
+  localStorage.removeItem("assets_state");
+}
+
 let currentEditingSetId = null; // For Computer Units
 let currentSelectedFAId = null; // For Facility Assets
 
@@ -21,16 +36,67 @@ if (urlParams.get("auto_open") === "transfer") {
 // TOAST NOTIFICATION SYSTEM
 // ==========================================
 
-// Check for pending toasts when the page loads
 document.addEventListener("DOMContentLoaded", () => {
+  // 1. Check for saved state (The "Memory")
+  const savedState = JSON.parse(localStorage.getItem("assets_state"));
+
+  if (savedState) {
+    // Just show the view, don't let switchView auto-select yet
+    const computerView = document.getElementById("view-computer");
+    const facilityView = document.getElementById("view-facility");
+
+    if (savedState.view === "computer") {
+      computerView.style.display = "block";
+      facilityView.style.display = "none";
+
+      // Try to find the specific saved item
+      const item = document.querySelector(
+        `.asset-item[data-set-id="${savedState.id}"]`,
+      );
+      if (item) {
+        selectUnit(item, savedState.id);
+      } else {
+        // Fallback to first if saved item is gone (e.g. was deleted)
+        const first = document.querySelector("#assetListContainer .asset-item");
+        if (first) selectUnit(first, first.getAttribute("data-set-id"));
+      }
+    } else {
+      computerView.style.display = "none";
+      facilityView.style.display = "block";
+
+      const item = document.querySelector(
+        `.asset-item[data-asset-id="${savedState.id}"]`,
+      );
+      if (item) {
+        selectFacilityAsset(item, savedState.id);
+      } else {
+        const first = document.querySelector(
+          "#facilityListContainer .asset-item",
+        );
+        if (first)
+          selectFacilityAsset(first, first.getAttribute("data-asset-id"));
+      }
+    }
+    localStorage.removeItem("assets_state");
+  } else {
+    // 2. Default startup (No memory found)
+    switchView("computer");
+  }
+
+  // 3. Keep your Toast logic (Don't delete this!)
   const pendingToast = sessionStorage.getItem("pendingToast");
   if (pendingToast) {
     const toastData = JSON.parse(pendingToast);
     showNotification(toastData.title, toastData.message, toastData.type);
-    sessionStorage.removeItem("pendingToast"); // Clear it so it only shows once
+    sessionStorage.removeItem("pendingToast");
   }
 
-  // Add event listeners for asset items
+  // 4. Re-attach click listeners (Needed for the items in the list)
+  attachAssetClickListeners();
+});
+
+// Helper to keep the DOMContentLoaded clean
+function attachAssetClickListeners() {
   document
     .querySelectorAll("#assetListContainer .asset-item:not(.missing-id)")
     .forEach((item) => {
@@ -48,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (assetId) selectFacilityAsset(this, assetId);
       });
     });
-});
+}
 
 function showNotification(title, message, type = "success") {
   const container = document.getElementById("toast-container");
@@ -75,8 +141,10 @@ function showNotification(title, message, type = "success") {
   }, 3000);
 }
 
-// Helper function to trigger a reload and show a toast afterward
 function reloadWithToast(title, message, type = "success") {
+  // Save where we are before we die (refresh)
+  saveCurrentState();
+
   sessionStorage.setItem(
     "pendingToast",
     JSON.stringify({ title, message, type }),
@@ -173,26 +241,44 @@ function switchView(viewName) {
   const computerView = document.getElementById("view-computer");
   const facilityView = document.getElementById("view-facility");
 
-  // --- NEW: Reset selections so the modal doesn't get confused ---
+  // 1. Reset current selection variables
   currentEditingSetId = null;
   currentSelectedFAId = null;
 
-  // Remove 'active' class from ALL list items in both sections
+  // 2. Clear all "active" highlights from both lists
   document
     .querySelectorAll(".asset-item")
     .forEach((item) => item.classList.remove("active"));
 
-  // --- ensure the facility right panel remains visible when the section is shown ---
-  // we used to hide it here; removing that keeps the panel present with the default header text
-
+  // 3. Handle Visibility
   if (viewName === "computer") {
     computerView.style.display = "block";
     facilityView.style.display = "none";
+
+    // AUTO-SELECT FIRST COMPUTER
+    const firstUnit = document.querySelector(
+      "#assetListContainer .asset-item:not([style*='display: none'])",
+    );
+    if (firstUnit) {
+      const setId = firstUnit.getAttribute("data-set-id");
+      selectUnit(firstUnit, setId);
+    }
   } else if (viewName === "facility") {
     computerView.style.display = "none";
     facilityView.style.display = "block";
+
+    // Ensure the facility right panel is visible
     const right = document.getElementById("view-facility-right");
     if (right) right.style.display = "block";
+
+    // AUTO-SELECT FIRST FACILITY ASSET
+    const firstAsset = document.querySelector(
+      "#facilityListContainer .asset-item:not([style*='display: none'])",
+    );
+    if (firstAsset) {
+      const assetId = firstAsset.getAttribute("data-asset-id");
+      selectFacilityAsset(firstAsset, assetId);
+    }
   }
 }
 
@@ -1143,11 +1229,27 @@ function populateRightPanel(data) {
   }
 }
 function toggleEditMode() {
-  if (!currentEditingSetId) {
-    alert("Please select a unit from the list first.");
+  // 1. Detect which view is currently visible
+  const viewFacility = document.getElementById("view-facility");
+  const isFacilityView = viewFacility && viewFacility.offsetParent !== null;
+
+  // 2. Determine which ID and Button to validate
+  const activeId = isFacilityView ? currentSelectedFAId : currentEditingSetId;
+  const itemType = isFacilityView ? "asset" : "unit";
+
+  if (!activeId) {
+    alert(`Please select a ${itemType} from the list first.`);
     return;
   }
 
+  // 3. FACILITY ASSET LOGIC
+  if (isFacilityView) {
+    // If you are using the toggle function we built earlier for FA
+    toggleFAEditMode();
+    return;
+  }
+
+  // 4. COMPUTER UNIT LOGIC (Your existing code)
   const btn = document.getElementById("editToggleButton");
   const textSpan = document.getElementById("editText");
   const btnCancel = document.getElementById("btnCancelEdit");
@@ -1155,17 +1257,18 @@ function toggleEditMode() {
   const btnResolve = document.getElementById("btnResolve");
   const backArrow = document.querySelector("#view-computer .mobile-back-btn");
 
-  // FIX: Use textContent.trim() instead of innerText so it doesn't break on mobile!
   if (textSpan.textContent.trim() === "Edit") {
-    // Switch to Save
+    // Switch to Save mode
     btn.innerHTML = `<i class="fas fa-save"></i> <span class="btn-text" id="editText">Save</span>`;
     btn.style.backgroundColor = "#4caf50";
+    btn.style.color = "white";
 
     if (btnCancel) btnCancel.classList.add("show-cancel");
     if (btnCondemn) btnCondemn.style.display = "none";
     if (btnResolve) btnResolve.style.display = "none";
     if (backArrow) backArrow.style.display = "none";
 
+    // Toggle Visibility of Inputs
     document
       .querySelectorAll(
         ".specs-content-box .view-mode:not(.status-pill):not(#view_com_age):not(#view_num_repair)",
@@ -1187,7 +1290,7 @@ function toggleEditMode() {
         }
       });
   } else {
-    // They clicked Save
+    // Already in Save mode
     openAdminLogModal("pc");
   }
 }
@@ -1256,6 +1359,7 @@ function resetUIToViewMode() {
     // Put Edit back, keeping the span classes
     btn.innerHTML = `<i class="fas fa-pen"></i> <span class="btn-text" id="editText">Edit</span>`;
     btn.style.backgroundColor = "";
+    btn.style.color = "black";
   }
   if (btnCancel) btnCancel.classList.remove("show-cancel");
   if (btnCondemn) btnCondemn.style.display = "";
@@ -1433,7 +1537,7 @@ function submitCondemnAction() {
     .then((data) => {
       if (data.success) {
         closeModal("condemnModal");
-        // Using location.reload() to refresh the lists
+        saveCurrentState(); // ADD THIS
         location.reload();
       } else {
         showNotification(
@@ -1452,9 +1556,6 @@ function submitCondemnAction() {
 // ==========================================
 // ADMIN LOG STATUS CHANGE WORKFLOW
 // ==========================================
-let currentReportType = "pc";
-let pendingAffectedString = "";
-
 function openAdminLogModal(type) {
   currentReportType = type;
   const changes = [];
@@ -1469,29 +1570,28 @@ function openAdminLogModal(type) {
     specs_ram: "RAM",
     specs_storage: "Storage Type",
     specs_capacity: "Storage Capacity",
-    com_age: "Computer Age",
-    num_repair: "Num Repairs",
     monitor_property: "Monitor Prop ID",
     monitor_brand: "Monitor Brand",
     mouse_brand: "Mouse Brand",
     keyboard_brand: "Keyboard Brand",
     avr_brand: "AVR Brand",
     usb_ports: "Available USB Ports",
+    // Note: com_age and num_repair are deliberately excluded from mapping to skip them
   };
 
   if (type === "pc") {
-    // ONLY Scan TEXT inputs (Status toggles are ignored)
     document
       .querySelectorAll('.specs-content-box input[id^="edit_"]')
       .forEach((input) => {
         const dbColumn = input.id.replace("edit_", "");
-        const viewEl = document.getElementById("view_" + dbColumn);
 
+        // --- REVISION: Skip automated/calculated fields ---
+        if (dbColumn === "com_age" || dbColumn === "num_repair") return;
+
+        const viewEl = document.getElementById("view_" + dbColumn);
         if (viewEl) {
           let oldVal = viewEl.innerText.trim();
-          if (oldVal === "N/A") oldVal = "";
-          if (dbColumn === "com_age")
-            oldVal = oldVal.replace(" Years", "").replace(" Year", "").trim();
+          if (oldVal === "N/A" || oldVal === "---") oldVal = "";
 
           let newVal = input.value.trim();
 
@@ -1516,25 +1616,32 @@ function openAdminLogModal(type) {
     ];
 
     fields.forEach((field) => {
-      const oldVal = document
-        .getElementById("view_" + field.id)
-        .innerText.trim();
-      const newVal = document.getElementById("edit_" + field.id).value.trim();
-      if (oldVal !== newVal && oldVal !== "---") {
-        changes.push(`${field.label}: ${newVal || "(Cleared)"}`);
-        affectedNames.push(field.label);
+      const viewEl = document.getElementById("view_" + field.id);
+      if (viewEl) {
+        let oldVal = viewEl.innerText.trim();
+        if (oldVal === "---" || oldVal === "N/A") oldVal = "";
+
+        const newVal = document.getElementById("edit_" + field.id).value.trim();
+
+        if (oldVal !== newVal) {
+          changes.push(`${field.label}: ${newVal || "(Cleared)"}`);
+          affectedNames.push(field.label);
+        }
       }
     });
 
-    const headerTitle = document.getElementById(
-      "view_fa_header_title",
-    ).innerText;
-    document.getElementById("logStatusUnitName").innerText =
-      `[${headerTitle.replace(" Details", "").trim()}]`;
+    let headerTitle = document.getElementById("view_fa_header_title").innerText;
+    headerTitle = headerTitle
+      .replace(" Details", "")
+      .replace(" Edit", "")
+      .trim();
+    document.getElementById("logStatusUnitName").innerText = `[${headerTitle}]`;
   }
 
-  if (changes.length === 0)
-    changes.push("No changes detected. (General Update)");
+  // Final validation: If no changes, show a neutral message
+  if (changes.length === 0) {
+    changes.push("General Update (No specific field changes)");
+  }
 
   affectedNames.sort();
   pendingAffectedString =
@@ -1542,9 +1649,23 @@ function openAdminLogModal(type) {
 
   const listContainer = document.getElementById("logStatusChangeList");
   listContainer.innerHTML = changes
-    .map((c) => `<div class="log-change-item">${c}</div>`)
+    .map(
+      (c) =>
+        `<div class="log-change-item" style="border-left: 3px solid #4caf50; margin-bottom: 5px; padding-left: 10px;">${c}</div>`,
+    )
     .join("");
+
+  // Clear remarks and open the modal
   document.getElementById("logStatusRemarks").value = "";
+
+  // Update Placeholder based on type
+  const remarksInput = document.getElementById("logStatusRemarks");
+  if (type === "pc") {
+    remarksInput.placeholder =
+      "Required: Explain why these specs were updated...";
+  } else {
+    remarksInput.placeholder = "Optional: Provide details for this update...";
+  }
 
   openModal("logStatusModal");
 }
