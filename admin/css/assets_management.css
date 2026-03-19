@@ -301,9 +301,9 @@ body {
    4. RIGHT PANEL: DETAILS & TABS
    ========================================= */
 .action-buttons {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
 
 .action-buttons button {
@@ -327,6 +327,14 @@ body {
 }
 .action-buttons .edit-btn:hover {
   background-color: #eee;
+}
+
+.action-buttons .action-btn,
+.action-buttons .btn-confirm,
+.action-buttons .btn-resolve,
+.action-buttons .edit-btn,
+.action-buttons .btn-delete {
+  margin: 0 !important;
 }
 
 /* Resolve Button (Desktop - Active) */
@@ -359,7 +367,26 @@ body {
   border: 1px solid #ddd;
   color: #666;
 }
+/* Matching the 'Disabled' look from your CU section */
+.btn-resolve {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0; /* This adds that missing border */
+  color: #333; /* Icon/Text color */
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
 
+/* Ensure the resolve button has standard spacing */
+#btnResolveFA {
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
 .specs-tabs {
   display: flex;
   gap: 10px;
@@ -1224,50 +1251,50 @@ body {
   position: fixed;
   top: 25px;
   right: 25px;
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
+  pointer-events: none; /* Allows clicking through the container */
 }
 
 .toast {
   background: #fff;
   border: 1px solid #eaeaea;
   border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   padding: 15px 20px;
   display: flex;
   align-items: center;
   gap: 15px;
-  min-width: 300px;
-  animation: slideInRight 0.3s ease-out forwards;
-  opacity: 1;
-  transition: opacity 0.3s ease-out;
+  min-width: 320px;
+  pointer-events: auto;
+  /* Default entry animation */
+  animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
 
 .toast.fade-out {
-  opacity: 0;
+  animation: fadeOut 0.5s ease forwards !important;
 }
 
 .toast-icon {
-  font-size: 26px;
+  font-size: 24px;
+  flex-shrink: 0;
 }
-
-/* Green icon for success, Red for errors */
 .toast-success .toast-icon {
   color: #4caf50;
 }
-.toast-error .toast-icon {
+.toast-error .toast-icon,
+.toast-danger .toast-icon {
   color: #f44336;
 }
 
 .toast-content h4 {
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
   font-size: 14px;
   font-weight: 700;
   color: #000;
 }
-
 .toast-content p {
   margin: 0;
   font-size: 12px;
@@ -1282,6 +1309,17 @@ body {
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(40px);
+    opacity: 0;
   }
 }
 
@@ -1618,6 +1656,14 @@ body {
   #view-computer .split-layout.mobile-show-details .left-panel,
   #view-facility .split-layout.mobile-show-details .left-panel {
     display: none !important;
+  }
+
+  #view_fa_header_title {
+    white-space: nowrap; /* Prevents text from wrapping to a new line */
+    overflow: hidden; /* Hides the text that overflows the container */
+    text-overflow: ellipsis; /* Adds the "..." at the end */
+    max-width: 250px; /* Adjust this number based on your layout */
+    display: block; /* Necessary for truncation to work on some elements */
   }
 
   #view-computer .split-layout.mobile-show-details .right-panel,

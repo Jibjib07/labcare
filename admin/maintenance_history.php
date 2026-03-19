@@ -69,12 +69,12 @@
                                         <th>Room Number</th>
                                         <th>Set Tag</th>
                                         <th>Set ID</th>
-                                        <th>Latest Maintenance Date</th>
+                                        <th>Latest Activity</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php
-                                    $query_units = "SELECT lab_room, set_tag, set_id, latest_maintenance FROM units WHERE set_status != 'Condemned' OR set_status IS NULL ORDER BY latest_maintenance DESC";
+                                    $query_units = "SELECT lab_room, set_tag, set_id, latest_activity FROM units WHERE set_status != 'Condemned' OR set_status IS NULL ORDER BY latest_activity DESC";
                                     $result_units = $conn->query($query_units);
 
                                     if ($result_units && $result_units->num_rows > 0) {
@@ -83,7 +83,7 @@
                                             echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['set_id']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['latest_maintenance']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
                                             echo "</tr>";
                                         }
                                     } else {
@@ -108,7 +108,7 @@
                                 </thead>
                                 <tbody>
                                     <?php
-                                    $query_assets = "SELECT lab_room, asset_tag, asset_id, latest_maintenance FROM assets WHERE asset_status != 'Condemned' OR asset_status IS NULL ORDER BY latest_maintenance DESC";
+                                    $query_assets = "SELECT lab_room, asset_tag, asset_id, latest_activity FROM assets WHERE asset_status != 'Condemned' OR asset_status IS NULL ORDER BY latest_activity DESC";
                                     $result_assets = $conn->query($query_assets);
 
                                     if ($result_assets && $result_assets->num_rows > 0) {
@@ -117,7 +117,7 @@
                                             echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['asset_id']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['latest_maintenance']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
                                             echo "</tr>";
                                         }
                                     } else {
@@ -175,7 +175,7 @@
                                 </thead>
                                 <tbody>
                                     <?php
-                                    $query_ret_units = "SELECT set_id, set_tag, latest_maintenance, lab_room, set_status FROM units WHERE set_status = 'Condemned' ORDER BY latest_maintenance DESC";
+                                    $query_ret_units = "SELECT set_id, set_tag, latest_activity, lab_room, set_status FROM units WHERE set_status = 'Condemned' ORDER BY latest_activity DESC";
                                     $result_ret_units = $conn->query($query_ret_units);
 
                                     if ($result_ret_units && $result_ret_units->num_rows > 0) {
@@ -183,7 +183,7 @@
                                             echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['set_tag']) . "' data-id='" . htmlspecialchars($row['set_id']) . "'>";
                                             echo "<td>" . htmlspecialchars($row['set_id']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['latest_maintenance']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
                                             echo "<td><span class='badge red'>" . htmlspecialchars($row['set_status']) . "</span></td>";
                                             echo "</tr>";
@@ -211,7 +211,7 @@
                                 </thead>
                                 <tbody>
                                     <?php
-                                    $query_ret_assets = "SELECT asset_id, asset_tag, latest_maintenance, lab_room, asset_status FROM assets WHERE asset_status = 'Condemned' ORDER BY latest_maintenance DESC";
+                                    $query_ret_assets = "SELECT asset_id, asset_tag, latest_activity, lab_room, asset_status FROM assets WHERE asset_status = 'Condemned' ORDER BY latest_activity DESC";
                                     $result_ret_assets = $conn->query($query_ret_assets);
 
                                     if ($result_ret_assets && $result_ret_assets->num_rows > 0) {
@@ -219,7 +219,7 @@
                                             echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['asset_tag']) . "' data-prop-id='" . htmlspecialchars($row['asset_id']) . "'>";
                                             echo "<td>" . htmlspecialchars($row['asset_id']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['latest_maintenance']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
                                             echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
                                             echo "<td><span class='badge red'>" . htmlspecialchars($row['asset_status']) . "</span></td>";
                                             echo "</tr>";

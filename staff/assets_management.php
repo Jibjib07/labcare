@@ -124,14 +124,14 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                         $room_filter = $conn->real_escape_string($current_room);
 
                         $units_query = "
-                            SELECT u.*, s.specs_property, s.specs_purchase, p.monitor_property
-                            FROM units u 
-                            LEFT JOIN specs s ON u.set_id = s.set_id 
-                            LEFT JOIN peripherals p ON u.set_id = p.set_id
-                            WHERE u.lab_room = '$room_filter' AND (u.set_status != 'Condemned' OR u.set_status IS NULL)
-                            GROUP BY u.set_id 
-                            ORDER BY CAST(u.set_tag AS UNSIGNED) ASC
-                        ";
+        SELECT u.*, s.specs_property, s.specs_purchase, p.monitor_property
+        FROM units u 
+        LEFT JOIN specs s ON u.set_id = s.set_id 
+        LEFT JOIN peripherals p ON u.set_id = p.set_id
+        WHERE u.lab_room = '$room_filter' AND (u.set_status != 'Condemned' OR u.set_status IS NULL)
+        GROUP BY u.set_id 
+        ORDER BY CAST(u.set_tag AS UNSIGNED) ASC
+    ";
 
                         $units_result = $conn->query($units_query);
 
@@ -142,24 +142,21 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                                 $db_status = !empty($unit['set_status']) ? $unit['set_status'] : 'Working';
                                 $purchase_date = $unit['specs_purchase'];
 
-                                $is_for_condemn = false;
-                                if (!empty($purchase_date)) {
-                                    $age = $today->diff(new DateTime($purchase_date))->y;
-                                    if ($age >= 5) {
-                                        $is_for_condemn = true;
-                                    }
-                                }
-
+                                // 1. Check for Missing IDs
                                 $isMissingId = empty($unit['specs_property']) || empty($unit['monitor_property']);
 
-                                if ($isMissingId) {
-                                    $display_status = 'No Property ID';
-                                    $row_class = 'asset-item gray-row missing-id';
-                                    $badge_html = "<span class='badge purple'>No Property ID</span>";
-                                } else {
-                                    $display_status = $db_status;
-                                    $row_class = 'asset-item';
+                                // 2. ONLY proceed if the unit has both Property IDs
+                                if (!$isMissingId):
+                                    $is_for_condemn = false;
+                                    if (!empty($purchase_date)) {
+                                        $age = $today->diff(new DateTime($purchase_date))->y;
+                                        if ($age >= 5) {
+                                            $is_for_condemn = true;
+                                        }
+                                    }
 
+                                    // Determine Badge HTML
+                                    $display_status = $db_status;
                                     if ($display_status === 'Working') {
                                         $badge_html = "<span class='badge green'>Working</span>";
                                     } elseif ($display_status === 'For Repair') {
@@ -167,13 +164,16 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                                     } else {
                                         $badge_html = "<span class='badge gray'>$display_status</span>";
                                     }
-                                }
                         ?>
-                                <div class="<?= $row_class ?>" data-set-id="<?= htmlspecialchars($unit['set_id']) ?>" data-db-status="<?= htmlspecialchars($db_status) ?>" data-is-condemn="<?= $is_for_condemn ? 'true' : 'false' ?>">
-                                    <span class="item-name"><?= $display_name ?></span>
-                                    <?= $badge_html ?>
-                                </div>
+                                    <div class="asset-item"
+                                        data-set-id="<?= htmlspecialchars($unit['set_id']) ?>"
+                                        data-db-status="<?= htmlspecialchars($db_status) ?>"
+                                        data-is-condemn="<?= $is_for_condemn ? 'true' : 'false' ?>">
+                                        <span class="item-name"><?= $display_name ?></span>
+                                        <?= $badge_html ?>
+                                    </div>
                             <?php
+                                endif; // End of !$isMissingId check
                             endwhile;
                         else:
                             ?>

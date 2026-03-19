@@ -1,269 +1,876 @@
 /* =========================================
    1. SHARED UTILITIES & LAYOUT
    ========================================= */
-.page-header { margin-bottom: 25px; }
-.page-header h1 { font-size: 24px; color: #000; margin-bottom: 5px; font-weight: 800; }
-.page-header p { color: #555; font-size: 14px; }
+.page-header {
+  margin-bottom: 25px;
+}
+.page-header h1 {
+  font-size: 24px;
+  color: #000;
+  margin-bottom: 5px;
+  font-weight: 800;
+}
+.page-header p {
+  color: #555;
+  font-size: 14px;
+}
 
 .white-panel {
-    background: white;
-    border-radius: 8px;
-    padding: 25px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  height: 100%;
 }
 
 .supply-layout {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    gap: 20px;
-    align-items: stretch;
+  display: grid !important;
+  grid-template-columns: 40% 1fr !important;
+  gap: 20px;
+  align-items: stretch !important;
 }
 
 .panel-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-shrink: 0; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
-.panel-header-row h3 { margin: 0; font-size: 15px; font-weight: 700; color: #222; }
+.panel-header-row h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+}
 
 /* =========================================
    2. SCROLLBARS & PANEL SIZES
    ========================================= */
-.left-list-panel, .right-detail-panel {
-    height: 650px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; 
+.left-list-panel,
+.right-detail-panel {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 25px;
 }
 
-/* Custom Scrollbar Styles */
-.table-container::-webkit-scrollbar,
-.activity-table-container::-webkit-scrollbar { width: 5px; }
-.table-container::-webkit-scrollbar-thumb,
-.activity-table-container::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
-.table-container::-webkit-scrollbar-thumb:hover { background: #ccc; }
-
-.table-container, .activity-table-container {
-    scrollbar-width: thin;
-    scrollbar-color: #ddd transparent;
+#view-mode {
+  width: 100%;
 }
 
 /* =========================================
    3. LEFT PANEL: SUPPLY LIST & FILTERS
    ========================================= */
-.switch-filter-container { margin-bottom: 15px; flex-shrink: 0; }
-.switch-filter { display: flex; background-color: #eee; padding: 4px; border-radius: 8px; width: 100%; }
+.switch-filter-container {
+  margin-bottom: 15px;
+  flex-shrink: 0;
+}
+.switch-filter {
+  display: flex;
+  background-color: #eee;
+  padding: 4px;
+  border-radius: 8px;
+  width: 100%;
+}
 
 .switch-btn {
-    flex: 1; border: none; background: none; padding: 10px;
-    font-size: 13px; font-weight: 700; color: #666;
-    cursor: pointer; border-radius: 6px; transition: all 0.3s ease;
+  flex: 1;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+  transition: all 0.2s;
+  border-radius: 4px;
 }
-.switch-btn.active { background-color: #4caf50; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-
-.search-filter-row { display: flex; gap: 10px; margin-bottom: 20px; flex-shrink: 0; }
-.search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
-.filter-dropdown { flex: 0.5; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; color: #555; background-color: #fff; cursor: pointer; }
-.hidden-filter { display: none !important; }
-
-.table-container { flex: 1; overflow-y: auto; margin-bottom: 5px; border-top: 1px solid #f9f9f9; }
-.supply-table { width: 100%; border-collapse: collapse; }
-.supply-table thead { display: none; }
-
-/* UPDATED: Combined cells into one row for space-between layout */
-.supply-table td { 
-    padding: 12px 15px; 
-    border-bottom: 1px solid #f8f8f8; 
-    font-size: 14px; 
-    color: #333; 
-    vertical-align: middle;
-    display: flex; /* Move items to opposite ends */
-    justify-content: space-between;
-    align-items: center;
+.switch-btn.active {
+  background: #4caf50;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.supply-table tbody tr:hover { background-color: #fafafa; }
-.supply-table tbody tr.active-row { background-color: #f0f9f0 !important; border-left: 4px solid #4caf50; }
-
-.badge { 
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 700;
-    color: white;
+.search-filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
-.badge.green { background-color: #4caf50; }
-.badge.red { background-color: #b71c1c; }
+.search-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.filter-dropdown {
+  flex: 0.5;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #555;
+  background-color: #fff;
+  cursor: pointer;
+}
+.hidden-filter {
+  display: none !important;
+}
+
+.supply-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  /* Remove any fixed width or flex: 1 here if it blocks the badge */
+}
+
+.supply-status-cell {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0; /* Prevents the badge from squishing */
+}
+.supply-row:hover {
+  background-color: #fafafa;
+}
+
+/* SELECTED STATE: Matches CU/FA logic */
+.supply-row.active-row {
+  background-color: #f1f8f5 !important;
+  border-left: 4px solid #4caf50;
+  padding-left: 16px; /* Compensate for border */
+}
+
+/* Text Hierarchy */
+.item-name {
+  font-size: 13px !important;
+  font-weight: 700;
+  color: #000;
+}
+
+.supply-status-cell {
+  display: block;
+}
+.list-scroll-container::-webkit-scrollbar,
+.activity-feed-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.list-scroll-container::-webkit-scrollbar-track,
+.activity-feed-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.list-scroll-container::-webkit-scrollbar-thumb,
+.activity-feed-container::-webkit-scrollbar-thumb {
+  background: #d1d1d1;
+  border-radius: 10px;
+}
+
+.list-scroll-container::-webkit-scrollbar-thumb:hover,
+.activity-feed-container::-webkit-scrollbar-thumb:hover {
+  background: #4caf50;
+}
+
+/* --- 2. INTERNAL SCROLL CONTAINERS --- */
+.list-scroll-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 550px; /* Locked for 11 items */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d1d1 transparent;
+  padding-right: 5px;
+}
+
+.activity-feed-container {
+  max-height: 550px; /* Lock height to roughly 5 activity items */
+  min-height: 200px; /* Prevents panel from collapsing when empty */
+  overflow-y: auto; /* Enable the unlimited scroll */
+  overflow-x: hidden;
+  background: #ffffff;
+  border: 1px solid #f2f2f2;
+  border-radius: 8px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  padding-right: 2px; /* Small gap for the custom scrollbar */
+}
+
+/* --- 3. THE ITEM ROW (Crucial for Math) --- */
+.supply-row.asset-item {
+  height: 50px;
+  min-height: 50px; /* Forces exactly 50px so 11 fit in 550px */
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+/* Base Badge Style - Matches Assets */
+.badge {
+  display: inline-block;
+  padding: 4px 12px !important;
+  border-radius: 12px !important; /* Full pill shape */
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  width: fit-content;
+  text-align: center;
+}
+
+/* In Stock = Working style */
+.badge.green {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+}
+
+/* Out of Stock = Condemned style */
+.badge.red {
+  background-color: #f44336 !important;
+  color: #ffffff !important;
+}
 
 /* =========================================
    4. RIGHT PANEL: DETAILS & EDIT MODE
    ========================================= */
-#view-mode, #edit-mode { 
-    display: flex; 
-    flex-direction: column; 
-    height: 100%; 
-    overflow: hidden;
-    animation: slideUpFade 0.3s ease-out;
+#view-mode,
+#edit-mode {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  animation: slideUpFade 0.3s ease-out;
 }
 
 @keyframes slideUpFade {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 25px; flex-shrink: 0; }
-.detail-group label { display: block; font-size: 13px; font-weight: 700; color: #333; margin-bottom: 8px; }
-
-.detail-input {
-    background: #fcfcfc; border: 1px solid #eee; padding: 12px;
-    border-radius: 6px; font-size: 13px; color: #333;
-    width: 100%; box-sizing: border-box;
-    transition: all 0.2s ease;
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 25px;
+  flex-shrink: 0;
+}
+.detail-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
 }
 
 /* Activity Table */
-.activity-title { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 15px; flex-shrink: 0; }
-.activity-table-container { flex: 1; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 4px; min-height: 0; }
-.activity-table { width: 100%; border-collapse: collapse; }
-.activity-table th { background: #1b4d3e; color: white; padding: 12px 15px; text-align: left; font-size: 12px; position: sticky; top: 0; z-index: 5; }
-.activity-table td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #555; vertical-align: top; }
+.activity-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 15px;
+  flex-shrink: 0;
+}
+/* --- EMPTY STATE (Right Panel Placeholder) --- */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #bbb;
+  text-align: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.empty-state-container i {
+  font-size: 50px;
+  margin-bottom: 15px;
+  color: #eee;
+}
+
+.empty-state-container p {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* REVISE in Section 4: Change .detail-input to .detail-box */
+.detail-box {
+  background: #efefef;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+
+/* --- ACTIVITY FEED CARDS --- */
+.activity-card {
+  flex-shrink: 0;
+  padding: 15px 20px;
+  border-bottom: 1px solid #f9f9f9;
+  background: white;
+}
+
+.activity-remark-bubble {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50; /* The "Action Green" accent */
+  margin-top: 8px;
+  font-size: 12px;
+  color: #555;
+  font-style: italic;
+}
 
 /* Status Toggle Buttons (Edit Mode) */
-.status-toggle-buttons { display: flex; gap: 10px; margin-top: 5px; }
+.status-toggle-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
 .status-option-btn {
-    flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd;
-    background: white; font-weight: 700; font-size: 14px; color: #555;
-    cursor: pointer; transition: all 0.2s ease;
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: white;
+  font-weight: 700;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 /* Active States */
-.status-option-btn[data-value="In Stock"].active { background-color: #4caf50; color: white; border-color: #4caf50; }
-.status-option-btn[data-value="Out of Stock"].active { background-color: #f44336; color: white; border-color: #f44336; }
+.status-option-btn[data-value="In Stock"].active {
+  background-color: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+.status-option-btn[data-value="Out of Stock"].active {
+  background-color: #f44336;
+  color: white;
+  border-color: #f44336;
+}
 
 /* =========================================
    5. ACTION BUTTONS (Green, Orange, Blue, White)
    ========================================= */
-.header-actions { display: flex; gap: 10px; align-items: center; }
 
-.btn-green-edit, .btn-green-add {
-    background: #4caf50; color: white; border: none;
-    padding: 10px 20px; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;
+.btn-green-add {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+  border: none;
+  height: 38px; /* Matches the Save button perfectly */
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-green-add:hover {
+  background-color: #43a047 !important;
+  box-shadow: 0 2px 5px rgba(76, 175, 80, 0.2);
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-actions .btn-cancel,
+.header-actions .btn-green-edit {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  font-weight: 600;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.header-actions .btn-cancel {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  color: #555;
+}
+
+.header-actions .btn-green-edit {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+  border: none !important;
 }
 
 .btn-orange-archive {
-    background: #ff5722; color: white; border: none;
-    padding: 10px 20px; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;
+  background: white;
+  color: #f44336;
+  border: 1px solid #f44336;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-blue-restore {
-    background: #2196F3; color: white; border: none;
-    padding: 10px 20px; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;
+  background: #2196f3;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.btn-cancel, .btn-modal-cancel {
-    background: white; border: 1px solid #ddd; color: #666;
-    padding: 10px 20px; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s ease;
+.btn-cancel {
+  background: white;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
-
-.btn-green-edit:hover, .btn-green-add:hover, 
-.btn-orange-archive:hover, .btn-blue-restore:hover { opacity: 0.9; transform: translateY(-1px); }
-.btn-cancel:hover, .btn-modal-cancel:hover { background: #f5f5f5; color: #333; border-color: #ccc; }
+.btn-modal-cancel {
+  background: white;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
 
 /* =========================================
    6. MODAL STYLES
    ========================================= */
 .modal-overlay {
-    display: none !important; position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.5); justify-content: center;
-    align-items: center; z-index: 10000;
+  display: none !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
 }
 
 .wide-modal {
-    background: white; width: 500px; max-width: 90%;
-    max-height: 90vh; padding: 30px; border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-    animation: fadeIn 0.3s ease; overflow-y: auto;
+  background: white;
+  width: 500px;
+  max-width: 90%;
+  max-height: 90vh;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease;
+  overflow-y: auto;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.modal-header-simple h3 { font-size: 20px; font-weight: 800; margin-bottom: 10px; color: #111; text-align: left; }
-.modal-header-simple p { color: #666; font-size: 13px; font-weight: 400; margin-top: 5px; }
+.modal-header-simple h3 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #111;
+  text-align: left;
+}
+.modal-header-simple p {
+  color: #666;
+  font-size: 13px;
+  font-weight: 400;
+  margin-top: 5px;
+}
 
-.modal-body-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-.modal-label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #333; }
+.modal-body-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+.modal-label {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #333;
+}
 
 .modal-input {
-    background: #fcfcfc; border: 1px solid #ddd;
-    padding: 12px; border-radius: 6px; width: 100%;
-    font-size: 14px; color: #444; box-sizing: border-box;
+  background: #fcfcfc;
+  border: 1px solid #ddd;
+  padding: 12px;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 14px;
+  color: #444;
+  box-sizing: border-box;
 }
-.modal-input:focus { outline: none; border-color: #4caf50; background: #fff; }
+.modal-input:focus {
+  outline: none;
+  border-color: #4caf50;
+  background: #fff;
+}
 
 .uneditable-confirm {
-    background: #f9f9f9; color: #555; border: 1px solid #eee;
-    padding: 12px; border-radius: 6px; font-size: 13px;
+  background: #f9f9f9;
+  color: #555;
+  border: 1px solid #eee;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
-.modal-footer-styled { display: flex; justify-content: flex-end; gap: 12px; margin-top: 30px; }
+.modal-footer-styled {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 30px;
+}
 
 .btn-modal-create {
-    background: #4caf50; color: white; border: none;
-    padding: 10px 30px; border-radius: 8px;
-    cursor: pointer; font-weight: 600; font-size: 13px;
-    transition: all 0.2s ease;
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
 }
-.btn-modal-create:hover { opacity: 0.9; }
+.btn-modal-create:hover {
+  opacity: 0.9;
+}
+
+/* --- ASSET-STYLE STATUS PILLS (Detail View Only) --- */
+.status-pill {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+/* Green: In Stock / Working */
+.status-pill.green {
+  background-color: #dffbe2; /* Soft Green glow */
+  color: #2e7d32; /* Dark Green text */
+  border: 1px solid #c3e6cb;
+}
+
+/* Red: Out of Stock / Condemned */
+.status-pill.red {
+  background-color: #fce4ec; /* Soft Red glow */
+  color: #c62828; /* Dark Red text */
+  border: 1px solid #f8bbd0;
+}
+
+/* A. Container: Standardizes the grid layout/arrangement for the two buttons */
+.status-toggle-buttons {
+  display: flex;
+  gap: 12px; /* Standard spacing from Asset module */
+  margin-top: 5px; /* Alignment with label */
+  flex-wrap: nowrap; /* Prevents stacking */
+}
+
+/* B. Base Button Style: Standard "Unselected" (Gray Border) state */
+.status-toggle-buttons .status-option-btn {
+  flex: 1; /* Makes both buttons exactly equal size */
+  padding: 10px 0; /* Vertical breathing room */
+  border-radius: 8px; /* Standard rounded corner from Asset module */
+  border: 1px solid #ddd; /* Inactive grey border */
+  background: #ffffff; /* Inactive white background */
+  cursor: pointer; /* Confirms it is clickable */
+  text-align: center; /* Centers the text */
+  transition: all 0.2s ease; /* Smooth hover and active transitions */
+
+  /* Font hierarchy from Asset module */
+  font-size: 14px;
+  font-weight: 700;
+  color: #555; /* Inactive dark grey text */
+}
+
+/* Base style specifically for the red condemn button in the other list, 
+   ensuring the toggle uses the standard button look. */
+.btn-orange-archive {
+  border-radius: 8px; /* Asset style rounded corners */
+}
+
+/* =========================================================
+   D. ACTIVE HIGHLIGHTING (The Core Fix)
+   These rules apply only when the JS adds the 'active' class.
+   ========================================================= */
+
+/* --- 1. THE INACTIVE (DEFAULT) STATES --- */
+
+/* Inactive "In Stock" - Green Border/Text, No Hover */
+.status-option-btn[data-value="In Stock"] {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #4caf50;
+  background: #ffffff;
+  color: #4caf50;
+  cursor: pointer;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Inactive "Out of Stock" - Red Border/Text, No Hover */
+.status-option-btn[data-value="Out of Stock"] {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #f44336;
+  background: #ffffff;
+  color: #f44336;
+  cursor: pointer;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* --- 2. THE ACTIVE (SELECTED) STATES --- */
+
+/* Active "In Stock" - Solid Green / White Text */
+.status-option-btn[data-value="In Stock"].active {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+  border-color: #4caf50 !important;
+}
+
+/* Active "Out of Stock" - Solid Red / White Text */
+.status-option-btn[data-value="Out of Stock"].active {
+  background-color: #f44336 !important;
+  color: #ffffff !important;
+  border-color: #f44336 !important;
+}
 
 /* =========================================
    7. NOTIFICATION (TOAST) STYLES
    ========================================= */
-.toast-container { position: fixed; top: 25px; right: 25px; z-index: 99999; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+.toast-container {
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none; /* Allows clicking through the container */
+}
 
 .toast {
-    background: #ffffff; min-width: 320px; padding: 16px 20px;
-    border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    display: flex; align-items: center; gap: 15px;
-    pointer-events: auto;
-    animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 320px;
+  pointer-events: auto;
+  /* Default entry animation */
+  animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+.toast-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.toast-success .toast-icon {
+  color: #4caf50;
+}
+.toast-error .toast-icon,
+.toast-danger .toast-icon {
+  color: #f44336;
 }
 
-.toast-icon { 
-    font-size: 18px; min-width: 36px; height: 36px; 
-    display: flex; align-items: center; justify-content: center; 
-    border-radius: 8px; border: 2px solid currentColor; 
+.toast-content h4 {
+  margin: 0 0 2px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+}
+.toast-content p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
 }
 
-.toast-success .toast-icon { color: #4caf50; background: #f1f8f1; }
-.toast-success .toast-title { color: #2e7d32; }
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 
-.toast-danger .toast-icon { color: #f44336; background: #fef2f2; }
-.toast-danger .toast-title { color: #c62828; }
-
-.toast-content { display: flex; flex-direction: column; }
-.toast-title { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
-.toast-sub { font-size: 12px; color: #666666; line-height: 1.4; }
-
-@keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes fadeOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(40px); opacity: 0; } }
+@keyframes fadeOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+}
 
 /* =========================================
    8. RESPONSIVENESS
    ========================================= */
 @media (max-width: 900px) {
-    .supply-layout { grid-template-columns: 1fr; }
-    .right-detail-panel, .left-list-panel { height: auto; max-height: none; }
+  .supply-layout {
+    grid-template-columns: 1fr;
+  }
+  .right-detail-panel,
+  .left-list-panel {
+    height: auto;
+    max-height: none;
+  }
+}
+
+/* =========================================
+   8. MOBILE RESPONSIVENESS (PHASE 2)
+   ========================================= */
+@media screen and (max-width: 900px) {
+  /* 1. Layout Stacking */
+  .supply-layout {
+    display: block !important;
+    padding: 10px;
+  }
+
+  .left-list-panel {
+    display: block;
+    width: 100% !important;
+    padding: 15px;
+  }
+
+  .right-detail-panel {
+    display: none; /* Hidden by default on mobile */
+    width: 100% !important;
+    padding: 15px;
+  }
+
+  /* 2. THE TRANSITION: When list item is clicked */
+  .supply-layout.mobile-show-details .left-list-panel {
+    display: none !important;
+  }
+
+  .supply-layout.mobile-show-details .right-detail-panel {
+    display: block !important;
+  }
+
+  /* 3. Action Buttons - Icon Only for cleaner UI */
+  .header-actions .btn-text {
+    display: none !important;
+  }
+  .header-actions button {
+    width: 40px;
+    height: 40px;
+    padding: 0 !important;
+    justify-content: center;
+  }
+
+  /* 4. Detail Grid Stacking */
+  .detail-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  /* 5. List Items - Mobile Card Style */
+  .supply-row.asset-item {
+    background: #fff;
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    height: auto;
+    padding: 15px;
+  }
+
+  /* 6. Back Button - Show only on mobile detail view */
+  .mobile-back-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .mobile-back-btn {
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-right: 15px;
+    cursor: pointer;
+  }
+}
+
+/* Hide mobile-only elements on desktop */
+@media screen and (min-width: 901px) {
+  .mobile-back-row {
+    display: none;
+  }
 }

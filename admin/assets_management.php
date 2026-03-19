@@ -251,7 +251,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                             </button>
 
                             <button class="btn-delete" id="btnCondemn" onclick="openCondemnModal()">
-                                <i class="fas fa-trash-alt"></i>
+                                <i class="fas fa-archive"></i>
                             </button>
                         </div>
                     </div>
@@ -608,16 +608,16 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                             <h3 id="view_fa_header_title" style="flex: 1; margin: 0; font-size: 18px;">Select an Asset</h3>
 
                             <div class="action-buttons">
-                                <button class="btn-resolve" id="btnResolveFA" style="display: none;" onclick="openResolveModal('fa')">
-                                    <i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>
-                                </button>
 
                                 <button class="action-btn edit-btn" id="editToggleButtonFA" onclick="toggleEditMode()">
                                     <i class="fas fa-pen"></i> <span class="btn-text">Edit</span>
                                 </button>
+                                <button class="btn-disabled" id="btnResolveFA" style="display: inline-flex;" onclick="null">
+                                    <i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>
+                                </button>
 
                                 <button class="btn-delete" id="btnCondemnFA" onclick="openCondemnModal()">
-                                    <i class="fas fa-trash-alt"></i>
+                                    <i class="fas fa-archive"></i>
                                 </button>
                             </div>
                         </div>
@@ -967,7 +967,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
 
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeModal('condemnModal')">Cancel</button>
-                <button class="btn-confirm-condemn" onclick="submitCondemnAction()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                <button class="btn-confirm-condemn" onclick="submitCondemnAction()"><i class="fas fa-archive"></i> Condemn</button>
             </div>
         </div>
     </div>

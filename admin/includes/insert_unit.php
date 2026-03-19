@@ -134,7 +134,7 @@ try {
         $new_set_id = "SET_" . str_pad($num, 4, '0', STR_PAD_LEFT) . "_" . $year;
 
         // A. Insert into `units` table
-        $stmt = $conn->prepare("INSERT INTO units (set_id, set_tag, set_status, lab_id, latest_maintenance, lab_room) VALUES (?, ?, ?, ?, NULL, ?)");
+        $stmt = $conn->prepare("INSERT INTO units (set_id, set_tag, set_status, lab_id, latest_activity, lab_room) VALUES (?, ?, ?, ?, NOW(), ?)");
         $stmt->bind_param("sssis", $new_set_id, $tag, $set_status, $lab_id, $lab_room);
 
         if ($stmt->execute()) {
