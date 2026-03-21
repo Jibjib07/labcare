@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Management - LabCare</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/user_management.css?v=<?php echo time(); ?>">
 </head>
@@ -21,12 +20,94 @@
         </div>
 
         <div class="user-layout">
-            <div class="panel white-panel left-form-panel">
+            <div class="panel white-panel user-list-panel">
                 <div class="panel-header-row">
-                    <h3>Adding New User</h3>
-                    <button id="btn-add-user" class="btn-green-add"><i class="fas fa-plus-circle"></i> Add</button>
+                    <h3><span id="list-status-title">Active</span> User List</h3>
+                    <button id="btn-open-add-modal" class="btn-green-add"><i class="fas fa-plus-circle"></i> Add</button>
                 </div>
 
+                <div class="search-filter-row">
+                    <input type="text" id="search-input" class="search-input" placeholder="Type a name or search...">
+                    <select id="status-filter" class="filter-btn">
+                        <option value="All">All</option>
+                        <option value="Active">Active</option>
+                        <option value="Deactivated">Deactivated</option>
+                    </select>
+                </div>
+
+                <div class="list-container" id="user-list-container">
+                    <?php
+                    $query = "SELECT * FROM users ORDER BY user_id DESC";
+                    $result = $conn->query($query);
+
+                    if ($result && $result->num_rows > 0) {
+                        $firstRow = true;
+                        while ($row = $result->fetch_assoc()) {
+                            $rawStatus = $row['user_status'] ? $row['user_status'] : 'Active';
+                            $statusText = ucfirst(strtolower($rawStatus)); 
+                            $statusClass = ($statusText === 'Active') ? 'active' : 'deactivated';
+
+                            $rawRole = $row['user_role'] ? $row['user_role'] : 'Staff';
+                            $roleText = (strtolower($rawRole) === 'admin') ? 'Admin' : 'Staff';
+
+                            $selectedClass = $firstRow ? 'selected' : '';
+                            ?>
+                            <div class="user-list-item <?php echo $selectedClass; ?>" 
+                                 data-id="<?php echo $row['user_id']; ?>"
+                                 data-name="<?php echo htmlspecialchars($row['user_name']); ?>"
+                                 data-role="<?php echo htmlspecialchars($roleText); ?>"
+                                 data-email="<?php echo htmlspecialchars($row['user_email']); ?>"
+                                 data-status="<?php echo htmlspecialchars($statusText); ?>">
+                                
+                                <div class="user-list-info">
+                                    <span class="fw-bold"><?php echo htmlspecialchars($row['user_name']); ?></span> 
+                                    <span class="text-gray">| <?php echo htmlspecialchars($roleText); ?></span>
+                                </div>
+                                <div class="user-list-status">
+                                    <span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusText); ?></span>
+                                </div>
+                            </div>
+                            <?php
+                            $firstRow = false;
+                        }
+                    } 
+                    ?>
+                </div>
+            </div>
+
+            <div class="panel white-panel user-info-panel" id="user-info-panel">
+                <div class="panel-header-row">
+                    <h3>User Information</h3>
+                    <div class="action-buttons" id="info-action-buttons">
+                        <button id="btn-edit" class="btn-edit"><i class="fas fa-pen"></i> Edit</button>
+                        <button id="btn-deactivate-trigger" class="btn-deactivate"><i class="fas fa-user-slash"></i> Deactivate</button>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Full Name</label>
+                        <div class="info-value" id="info-name">-</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Email Address</label>
+                        <div class="info-value" id="info-email">-</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Role</label>
+                        <div class="info-value role-text" id="info-role">-</div>
+                    </div>
+                    <div class="info-item">
+                        <label>User Status</label>
+                        <div class="info-value status-bg" id="info-status">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="add-user-modal" class="modal-overlay">
+            <div class="modal-content modal-large">
+                <h2 style="font-size: 16px; margin-bottom: 20px;">Adding New User</h2>
                 <form class="user-form" id="add-user-form">
                     <div class="form-group">
                         <label>Full Name</label>
@@ -36,144 +117,60 @@
                         <label>Email Address</label>
                         <input type="email" id="add-email" class="form-input" placeholder="Ex. JuanDee@gmail.com">
                     </div>
-                    <div class="form-group">
-                        <label>Role</label>
-                        <div class="radio-group">
-                            <label class="radio-label">
-                                <input type="radio" name="add-role" value="Staff" checked> Staff
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="add-role" value="Admin"> Admin
-                            </label>
+                    
+                    <div class="form-group inline-role-group">
+                        <label style="margin-right: 15px;">Role:</label>
+                        <div class="role-toggle">
+                            <button type="button" class="role-btn" data-val="Admin">Admin</button>
+                            <button type="button" class="role-btn active" data-val="Staff">Staff</button>
+                            <input type="hidden" id="add-role" value="Staff">
                         </div>
                     </div>
+
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" class="form-input" placeholder="Enter password">
+                        <input type="password" id="add-password" class="form-input" placeholder="Enter password">
                     </div>
                     <div class="form-group">
                         <label>Confirm Password</label>
-                        <input type="password" class="form-input" placeholder="Re-enter password">
+                        <input type="password" id="add-confirm-password" class="form-input" placeholder="Re-enter password">
                     </div>
-                    <div class="form-group">
-                        <label>User Status</label>
-                        <select id="add-status" class="form-select">
-                            <option value="Active">Active</option>
-                            <option value="Deactivated">Deactivated</option>
-                        </select>
+                    
+                    <div class="modal-actions" style="margin-top: 30px;">
+                        <button type="button" id="btn-cancel-add" class="btn-cancel-new">Cancel</button>
+                        <button type="button" id="btn-confirm-add" class="btn-green-add"><i class="fas fa-plus-circle"></i> Create</button>
                     </div>
                 </form>
-            </div>
-
-            <div class="right-column-wrapper">
-                
-                <div class="panel white-panel user-list-panel">
-                    <h3>Existing User List</h3>
-                    <div class="search-filter-row">
-                        <input type="text" class="search-input" placeholder="Type a name...">
-                        <button class="filter-btn">Filter <i class="fas fa-filter"></i></button>
-                    </div>
-
-                    <div class="table-container" id="scrollable-table-container">
-                        <table class="user-table" id="user-table">
-                            <thead>
-                                <tr>
-                                    <th>Full Name</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th style="display:none;">Email</th> </tr>
-                            </thead>
-                            <tbody id="user-table-body">
-                                <tr style="cursor: pointer;" data-id="999">
-                                    <td>Jane Doe</td>
-                                    <td>Admin</td>
-                                    <td>
-                                        <span class="badge active" style="background-color:#4CAF50; padding:4px 12px; border-radius:12px; color:white; font-size:11px; font-weight:700; display:inline-block;">
-                                            Active
-                                        </span>
-                                    </td>
-                                    <td style="display:none;">janedoe@gmail.com</td>
-                                </tr>
-                                <?php
-                                $query = "SELECT * FROM users ORDER BY user_id DESC";
-                                $result = $conn->query($query);
-
-                                if ($result && $result->num_rows > 0) {
-                                    while ($row = $result->fetch_assoc()) {
-                                        $statusText = $row['user_status'] ? $row['user_status'] : 'Active';
-                                        $statusClass = ($statusText === 'Active') ? 'active' : 'deactivated';
-                                        $bgColor = ($statusText === 'Active') ? '#4CAF50' : '#9E9E9E';
-                                        ?>
-                                        <tr style="cursor: pointer;" data-id="<?php echo $row['user_id']; ?>">
-                                            <td><?php echo htmlspecialchars($row['user_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['user_role']); ?></td>
-                                            <td>
-                                                <span class="badge <?php echo $statusClass; ?>" 
-                                                    style="background-color:<?php echo $bgColor; ?>; padding:4px 12px; border-radius:12px; color:white; font-size:11px; font-weight:700; display:inline-block;">
-                                                    <?php echo htmlspecialchars($statusText); ?>
-                                                </span>
-                                            </td>
-                                            <td style="display:none;"><?php echo htmlspecialchars($row['user_email']); ?></td>
-                                        </tr>
-                                        <?php
-                                    }
-                                } 
-                                ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    </div>
-
-                <div class="panel white-panel user-info-panel" id="user-info-panel">
-                    <div class="panel-header-row">
-                        <h3>User Information</h3>
-                        <div class="action-buttons" id="info-action-buttons">
-                            <button id="btn-edit" class="btn-edit"><i class="fas fa-pen"></i> Edit</button>
-                            <button id="btn-deactivate-trigger" class="btn-deactivate"><i class="fas fa-user-slash"></i> Deactivate</button>
-                        </div>
-                    </div>
-
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <label>Full Name</label>
-                            <div class="info-value" id="info-name"></div> </div>
-                        <div class="info-item">
-                            <label>User Status</label>
-                            <div class="info-value status-bg" id="info-status"></div> </div>
-                        <div class="info-item full-width">
-                            <label>Email Address</label>
-                            <div class="info-value" id="info-email"></div> </div>
-                        <div class="info-item full-width">
-                            <label>Role</label>
-                            <div class="info-value role-text" id="info-role"></div> </div>
-                    </div>
-                </div>
             </div>
         </div>
 
         <div id="deactivate-modal" class="modal-overlay">
             <div class="modal-content">
-                <h2>Deactivate this User</h2>
-                <p>This user will no longer be able to log in, but their historical activity will be preserved in the audit logs.</p>
+                <h2 style="font-size: 1.3rem; color: #2c3e50; margin-bottom: 10px;">Deactivate this User</h2>
+                <p style="color: #666; font-size: 0.85rem; margin-bottom: 25px; line-height: 1.5;">This user will no longer be able to log in, but their historical activity will be preserved in the audit logs.</p>
                 
-                <div class="modal-inputs">
-                    <label>Full Name</label>
-                    <input type="text" id="modal-name" readonly class="form-input readonly-input">
-                    <label>Email Address</label>
-                    <input type="text" id="modal-email" readonly class="form-input readonly-input">
-                    <label>Role</label>
-                    <input type="text" id="modal-role" readonly class="form-input readonly-input">
+                <div class="form-group">
+                    <label style="font-size: 0.8rem;">Full Name</label>
+                    <input type="text" id="deact-name" class="form-input readonly-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.8rem;">Email Address</label>
+                    <input type="text" id="deact-email" class="form-input readonly-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.8rem;">Role</label>
+                    <input type="text" id="deact-role" class="form-input readonly-input" readonly>
                 </div>
 
-                <div class="modal-actions">
-                    <button id="btn-cancel-modal" class="btn-deactivate">Cancel</button>
-                    <button id="btn-confirm-deactivate" class="btn-red"><i class="fas fa-user-slash"></i> Deactivate</button>
+                <div class="modal-actions" style="margin-top: 25px;">
+                    <button id="btn-cancel-modal" class="btn-cancel-new" style="padding: 10px 20px;">Cancel</button>
+                    <button id="btn-confirm-deactivate" class="btn-red" style="padding: 10px 20px;"><i class="fas fa-user-slash"></i> Deactivate</button>
                 </div>
             </div>
         </div>
+    </div>
 
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/user_management.js?v=<?php echo time(); ?>"></script>
-
 </body>
 </html>
