@@ -1,83 +1,79 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // 0. Setup Table Layout automatically
-  const pagination = document.querySelector(".pagination");
-  if (pagination) pagination.style.display = "none";
-  const tableContainer = document.querySelector(".table-container");
-  if (tableContainer) {
-    tableContainer.style.maxHeight = "250px";
-    tableContainer.style.overflowY = "auto";
-  }
-
   // 1. Map Elements
-  const tbody = document.querySelector(".user-table tbody");
-  const btnAdd = document.querySelector(".btn-green-add");
+  const listContainer = document.getElementById("user-list-container");
+  const searchInput = document.getElementById("search-input");
+  const statusFilter = document.getElementById("status-filter");
+  const listTitle = document.getElementById("list-status-title");
 
-  const infoValues = document.querySelectorAll(".user-info-panel .info-value");
-  if (infoValues.length < 4) return;
-  const infoName = infoValues[0];
-  const infoStatus = infoValues[1];
-  const infoEmail = infoValues[2];
-  const infoRole = infoValues[3];
+  const infoName = document.getElementById("info-name");
+  const infoEmail = document.getElementById("info-email");
+  const infoRole = document.getElementById("info-role");
+  const infoStatus = document.getElementById("info-status");
 
   const btnAction1 = document.querySelector(
-    ".user-info-panel .action-buttons button:nth-child(1)",
+    "#info-action-buttons button:nth-child(1)",
   ); // Edit/Save
   const btnAction2 = document.querySelector(
-    ".user-info-panel .action-buttons button:nth-child(2)",
+    "#info-action-buttons button:nth-child(2)",
   ); // Deactivate/Cancel
 
-  let currentRow = null;
+  let currentItem = null;
   let isEditing = false;
-  let tempStatus = "";
 
-  // 2. Target the Modal from PHP
-  const modal = document.getElementById("deactivate-modal");
+  // 2. Modals Map
+  const addModal = document.getElementById("add-user-modal");
+  const deactivateModal = document.getElementById("deactivate-modal");
 
-  // 3. ROW CLICK (View Details)
-  if (tbody) {
-    tbody.querySelectorAll("tr").forEach((row) => {
-      if (row.classList.contains("empty-row")) return;
+  // Email Validator
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
-      if (row.cells.length < 4) {
-        const td = document.createElement("td");
-        td.style.display = "none";
-        td.innerText =
-          row.cells[0].innerText.replace(/[^a-zA-Z]/g, "").toLowerCase() +
-          "@gmail.com";
-        row.appendChild(td);
-      }
-    });
+  // Auto-load first item if exists
+  function loadInitialUser() {
+    const firstItem = document.querySelector(".user-list-item");
+    if (firstItem) {
+      currentItem = firstItem;
+      populateInfoPanel(currentItem);
+    }
+  }
 
-    tbody.addEventListener("click", (e) => {
-      const tr = e.target.closest("tr");
-      if (!tr) return;
-      if (tr.classList.contains("empty-row")) return;
+  function populateInfoPanel(item) {
+    infoName.innerText = item.getAttribute("data-name");
+    infoEmail.innerText = item.getAttribute("data-email");
+    infoRole.innerText = item.getAttribute("data-role");
+    infoStatus.innerText = item.getAttribute("data-status");
+    updateStatusVisuals();
+  }
 
-      if (currentRow) currentRow.classList.remove("active-row");
-      tr.classList.add("active-row");
-      currentRow = tr;
+  loadInitialUser();
+
+  // 3. LIST CLICKS
+  if (listContainer) {
+    listContainer.addEventListener("click", (e) => {
+      const item = e.target.closest(".user-list-item");
+      if (!item) return;
+
+      if (currentItem) currentItem.classList.remove("selected");
+      item.classList.add("selected");
+      currentItem = item;
 
       if (isEditing) toggleEditMode();
-
-      infoName.innerText = tr.cells[0].innerText;
-      infoRole.innerText = tr.cells[1].innerText;
-      infoStatus.innerText = tr.cells[2].innerText.trim();
-      infoEmail.innerText = tr.cells[3].innerText;
-
-      updateStatusVisuals();
+      populateInfoPanel(item);
     });
   }
 
   function updateStatusVisuals() {
-    infoStatus.style.padding = "0";
-    infoStatus.style.background = "transparent";
-
-    if (!infoStatus.innerText.trim()) return;
-
-    if (infoStatus.innerText.trim() === "Active") {
-      infoStatus.innerHTML = `<span style="background-color:#4CAF50; color:white; padding:8px 25px; border-radius:6px; font-weight:600; display:inline-block;">Active</span>`;
+    const status = infoStatus.innerText.trim();
+    if (status === "Active") {
+      infoStatus.className = "info-value status-bg";
+      btnAction2.className = "btn-deactivate";
+      btnAction2.innerHTML = `<i class="fas fa-user-slash"></i> Deactivate`;
     } else {
-      infoStatus.innerHTML = `<span style="background-color:#9E9E9E; color:white; padding:8px 25px; border-radius:6px; font-weight:600; display:inline-block;">Deactivated</span>`;
+      infoStatus.className = "info-value status-bg deact-bg";
+      btnAction2.className = "btn-green-add";
+      btnAction2.innerHTML = `<i class="fas fa-undo"></i> Re-activate`;
     }
   }
 
@@ -86,230 +82,256 @@ document.addEventListener("DOMContentLoaded", () => {
     isEditing = !isEditing;
 
     if (isEditing) {
-      [infoName, infoEmail, infoRole, infoStatus].forEach((el) => {
-        el.style.background = "transparent";
-        el.style.padding = "0";
-      });
-
       infoName.innerHTML = `<input type="text" id="edit-name" value="${infoName.dataset.val}" class="edit-gray-input">`;
       infoEmail.innerHTML = `<input type="email" id="edit-email" value="${infoEmail.dataset.val}" class="edit-gray-input">`;
-      infoRole.innerHTML = `
-                <select id="edit-role" class="edit-gray-input edit-gray-select">
-                    <option value="Staff" ${infoRole.dataset.val === "Staff" ? "selected" : ""}>Staff</option>
-                    <option value="Admin" ${infoRole.dataset.val === "Admin" ? "selected" : ""}>Admin</option>
-                </select>
-            `;
 
-      const isAct = tempStatus === "Active";
-      infoStatus.innerHTML = `
-                <div class="status-toggle-wrapper">
-                    <button type="button" id="toggle-act" class="status-btn ${isAct ? "active-green" : ""}">Activate</button>
-                    <button type="button" id="toggle-deact" class="status-btn ${!isAct ? "active-gray" : ""}">Deactivate</button>
+      const currentRole = infoRole.dataset.val;
+      infoRole.innerHTML = `
+                <div class="role-toggle" style="width: 100%; border: 1px solid #4caf50;">
+                    <button type="button" class="role-btn ${currentRole === "Admin" ? "active" : ""}" data-val="Admin" style="flex: 1;">Admin</button>
+                    <button type="button" class="role-btn ${currentRole === "Staff" ? "active" : ""}" data-val="Staff" style="flex: 1;">Staff</button>
+                    <input type="hidden" id="edit-role-val" value="${currentRole}">
                 </div>
             `;
 
-      document.getElementById("toggle-act").addEventListener("click", (e) => {
-        tempStatus = "Active";
-        e.target.classList.add("active-green");
-        document.getElementById("toggle-deact").classList.remove("active-gray");
-      });
-      document.getElementById("toggle-deact").addEventListener("click", (e) => {
-        tempStatus = "Deactivated";
-        e.target.classList.add("active-gray");
-        document.getElementById("toggle-act").classList.remove("active-green");
+      const editRoleBtns = infoRole.querySelectorAll(".role-btn");
+      const editRoleInput = document.getElementById("edit-role-val");
+
+      editRoleBtns.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          editRoleBtns.forEach((b) => b.classList.remove("active"));
+          e.target.classList.add("active");
+          editRoleInput.value = e.target.getAttribute("data-val");
+        });
       });
 
-      btnAction1.className = "btn-save-new";
+      btnAction1.className = "btn-green-add";
       btnAction1.innerHTML = `<i class="fas fa-check-circle"></i> Save`;
       btnAction2.className = "btn-cancel-new";
       btnAction2.innerHTML = `Cancel`;
     } else {
-      [infoName, infoEmail, infoRole].forEach((el) => {
-        el.style.background = "";
-        el.style.padding = "";
-      });
-
       infoName.innerText = infoName.dataset.val;
       infoEmail.innerText = infoEmail.dataset.val;
       infoRole.innerText = infoRole.dataset.val;
-      infoStatus.innerText = infoStatus.dataset.val;
-
       updateStatusVisuals();
 
       btnAction1.className = "btn-edit";
       btnAction1.innerHTML = `<i class="fas fa-pen"></i> Edit`;
-      btnAction2.className = "btn-deactivate";
-      btnAction2.innerHTML = `<i class="fas fa-user-slash"></i> Deactivate`;
     }
   }
 
   if (btnAction1) {
-    btnAction1.addEventListener("click", () => {
-      if (!currentRow)
-        return alert("Please click a user row from the list first.");
+    btnAction1.addEventListener("click", async () => {
+      if (!currentItem) return alert("Please select a user first.");
 
       if (isEditing) {
-        const userId = currentRow.getAttribute("data-id");
-        const newName = document.getElementById("edit-name").value;
-        const newEmail = document.getElementById("edit-email").value;
-        const newRole = document.getElementById("edit-role").value;
+        const newName = document.getElementById("edit-name").value.trim();
+        const newEmail = document.getElementById("edit-email").value.trim();
+        const newRole = document.getElementById("edit-role-val").value;
 
-        // ==========================================
-        // TODO: ADD UPDATE FETCH API CALL HERE
-        // fetch('api/update_user.php', { ... })
-        // ==========================================
+        // Validation
+        if (!newName) return alert("Name cannot be empty.");
+        if (!isValidEmail(newEmail))
+          return alert("Please enter a valid email address.");
 
-        currentRow.cells[0].innerText = newName;
-        currentRow.cells[1].innerText = newRole;
-        currentRow.cells[3].innerText = newEmail;
+        try {
+          // ==========================================
+          // BACKEND TODO: ADD UPDATE FETCH API CALL HERE
+          // const response = await fetch('api/update_user.php', { method: 'POST', body: ... });
+          // if (!response.ok) throw new Error('Failed to update user');
+          // ==========================================
 
-        const badgeClass = tempStatus === "Active" ? "active" : "deactivated";
-        const badgeColor = tempStatus === "Active" ? "#4CAF50" : "#9E9E9E";
-        currentRow.cells[2].innerHTML = `<span class="badge ${badgeClass}" style="background-color:${badgeColor}; padding:4px 12px; border-radius:12px; color:white; font-size:11px; font-weight:700; display:inline-block;">${tempStatus}</span>`;
+          // Only update the UI if the fetch was successful
+          currentItem.setAttribute("data-name", newName);
+          currentItem.setAttribute("data-role", newRole);
+          currentItem.setAttribute("data-email", newEmail);
+          currentItem.querySelector(".fw-bold").innerText = newName;
+          currentItem.querySelector(".text-gray").innerText = `| ${newRole}`;
 
-        infoName.dataset.val = newName;
-        infoEmail.dataset.val = newEmail;
-        infoRole.dataset.val = newRole;
-        infoStatus.dataset.val = tempStatus;
+          infoName.dataset.val = newName;
+          infoEmail.dataset.val = newEmail;
+          infoRole.dataset.val = newRole;
 
-        toggleEditMode();
+          toggleEditMode();
+        } catch (error) {
+          console.error("Update Error:", error);
+          alert("An error occurred while saving the user. Please try again.");
+        }
       } else {
-        // Enter Edit Mode
         infoName.dataset.val = infoName.innerText;
         infoEmail.dataset.val = infoEmail.innerText;
         infoRole.dataset.val = infoRole.innerText;
-        infoStatus.dataset.val = infoStatus.innerText.trim();
-        tempStatus = infoStatus.dataset.val;
         toggleEditMode();
       }
     });
   }
 
-  // 5. DEACTIVATE LOGIC
+  // 5. DEACTIVATE / RE-ACTIVATE LOGIC
   if (btnAction2) {
     btnAction2.addEventListener("click", () => {
       if (isEditing) {
         toggleEditMode();
         return;
       }
-      if (!currentRow)
-        return alert("Please click a user row from the list first.");
-      if (currentRow.cells[2].innerText.includes("Deactivated"))
-        return alert("This user is already deactivated.");
+      if (!currentItem) return alert("Please select a user first.");
 
-      document.getElementById("modal-name").value = infoName.innerText;
-      document.getElementById("modal-email").value = infoEmail.innerText;
-      document.getElementById("modal-role").value = infoRole.innerText;
-      modal.style.display = "flex";
+      const currentStatus = currentItem.getAttribute("data-status");
+
+      if (currentStatus === "Active") {
+        document.getElementById("deact-name").value = infoName.innerText;
+        document.getElementById("deact-email").value = infoEmail.innerText;
+        document.getElementById("deact-role").value = infoRole.innerText;
+        deactivateModal.style.display = "flex";
+      } else {
+        if (confirm("Are you sure you want to re-activate this user?")) {
+          changeUserStatus("Active");
+        }
+      }
     });
   }
 
   document
     .getElementById("btn-cancel-modal")
-    .addEventListener("click", () => (modal.style.display = "none"));
+    .addEventListener("click", () => (deactivateModal.style.display = "none"));
 
   document
     .getElementById("btn-confirm-deactivate")
     .addEventListener("click", () => {
-      const userId = currentRow.getAttribute("data-id");
+      changeUserStatus("Deactivated");
+    });
 
+  async function changeUserStatus(newStatus) {
+    const userId = currentItem.getAttribute("data-id");
+
+    try {
       // ==============================================
-      // TODO: ADD DEACTIVATE FETCH API CALL HERE
-      // fetch('api/deactivate_user.php', { ... })
+      // BACKEND TODO: ADD STATUS UPDATE FETCH API CALL HERE
+      // const response = await fetch('api/update_status.php', { method: 'POST', body: ... });
+      // if (!response.ok) throw new Error('Failed to update status');
       // ==============================================
 
-      currentRow.cells[2].innerHTML = `<span class="badge deactivated" style="background-color:#9E9E9E; padding:4px 12px; border-radius:12px; color:white; font-size:11px; font-weight:700; display:inline-block;">Deactivated</span>`;
-      infoStatus.innerText = "Deactivated";
+      currentItem.setAttribute("data-status", newStatus);
+      const badgeClass = newStatus === "Active" ? "active" : "deactivated";
+      currentItem.querySelector(".user-list-status").innerHTML =
+        `<span class="badge ${badgeClass}">${newStatus}</span>`;
+
+      infoStatus.innerText = newStatus;
       updateStatusVisuals();
-      modal.style.display = "none";
-    });
-
-  // 6. ADD USER
-  if (btnAdd) {
-    btnAdd.addEventListener("click", (e) => {
-      e.preventDefault();
-
-      const inputs = document.querySelectorAll(".user-form .form-input");
-      const name = inputs[0].value;
-      const email = inputs[1].value;
-      const password = inputs[2].value;
-      const confirmPassword = inputs[3].value;
-
-      const roleEl =
-        document.querySelector('input[name="role"]:checked') ||
-        document.querySelector('input[name="add-role"]:checked');
-      const role = roleEl ? roleEl.value : "Staff";
-
-      const statusSelect = document.querySelector(".user-form .form-select");
-      const status = statusSelect ? statusSelect.value : "Active";
-
-      if (!name || !email)
-        return alert("Please enter both a Name and an Email Address.");
-      if (password !== confirmPassword) return alert("Passwords do not match!");
-
-      // =======================================
-      // ADD INSERT FETCH API CALL HERE
-      // fetch('api/add_user.php', { ... })
-      // =======================================
-
-      const dummyId = Math.floor(Math.random() * 1000); // Fake DB ID for testing
-
-      const statusHTML =
-        status === "Active"
-          ? `<span class="badge active" style="background-color:#4CAF50; padding:4px 12px; border-radius:12px; color:white; font-size:11px; font-weight:700; display:inline-block;">Active</span>`
-          : `<span class="badge deactivated" style="background-color:#9E9E9E; padding:4px 12px; border-radius:12px; color:white; font-size:11px; font-weight:700; display:inline-block;">Deactivated</span>`;
-
-      const newRow = document.createElement("tr");
-      newRow.style.cursor = "pointer";
-      newRow.setAttribute("data-id", dummyId);
-      newRow.innerHTML = `<td>${name}</td><td>${role}</td><td>${statusHTML}</td><td style="display:none;">${email}</td>`;
-
-      tbody.prepend(newRow);
-
-      const emptyRow = tbody.querySelector(".empty-row");
-      if (emptyRow) emptyRow.remove();
-
-      if (tableContainer) tableContainer.scrollTop = 0;
-      document.querySelector(".user-form").reset();
-    });
-  }
-
-  // 7. FILTER LOGIC
-  const filterRow = document.querySelector(".search-filter-row");
-  if (filterRow) {
-    const oldFilterBtn = filterRow.querySelector(".filter-btn");
-    if (oldFilterBtn && oldFilterBtn.tagName === "BUTTON") {
-      oldFilterBtn.outerHTML = `
-                <select id="role-filter" class="filter-btn" style="cursor:pointer; outline:none; font-family:inherit;">
-                    <option value="All">Filter</option>
-                    <option value="Staff">Staff</option>
-                    <option value="Admin">Admin</option>
-                </select>
-            `;
+      applyFilters();
+      deactivateModal.style.display = "none";
+    } catch (error) {
+      console.error("Status Update Error:", error);
+      alert(
+        "Could not update user status. Please check your connection and try again.",
+      );
+      deactivateModal.style.display = "none";
     }
   }
 
-  const searchInput = document.querySelector(".search-input");
+  // 6. ADD USER MODAL LOGIC
+  document
+    .getElementById("btn-open-add-modal")
+    .addEventListener("click", () => (addModal.style.display = "flex"));
+  document.getElementById("btn-cancel-add").addEventListener("click", () => {
+    addModal.style.display = "none";
+    document.getElementById("add-user-form").reset();
+  });
+
+  document.querySelectorAll("#add-user-modal .role-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      document
+        .querySelectorAll("#add-user-modal .role-btn")
+        .forEach((b) => b.classList.remove("active"));
+      e.target.classList.add("active");
+      document.getElementById("add-role").value =
+        e.target.getAttribute("data-val");
+    });
+  });
+
+  document
+    .getElementById("btn-confirm-add")
+    .addEventListener("click", async () => {
+      const name = document.getElementById("add-name").value.trim();
+      const email = document.getElementById("add-email").value.trim();
+      const password = document.getElementById("add-password").value;
+      const confirmPw = document.getElementById("add-confirm-password").value;
+      const role = document.getElementById("add-role").value;
+
+      // ERROR TRAPPING: Strict Validation
+      if (!name || !email || !password)
+        return alert("Please fill out all required fields.");
+      if (!isValidEmail(email))
+        return alert("Please enter a valid email address.");
+      if (password.length < 6)
+        return alert("Password must be at least 6 characters long.");
+      if (password !== confirmPw) return alert("Passwords do not match.");
+
+      try {
+        // =======================================
+        // BACKEND TODO: ADD INSERT FETCH API CALL HERE
+        // const response = await fetch('api/add_user.php', { method: 'POST', body: ... });
+        // if (!response.ok) throw new Error('Failed to create user');
+        // const newDbId = await response.json(); // Get the real ID from database
+        // =======================================
+
+        const dummyId = Math.floor(Math.random() * 1000); // Backend: Replace with newDbId
+
+        const newItem = document.createElement("div");
+        newItem.className = "user-list-item";
+        newItem.setAttribute("data-id", dummyId);
+        newItem.setAttribute("data-name", name);
+        newItem.setAttribute("data-role", role);
+        newItem.setAttribute("data-email", email);
+        newItem.setAttribute("data-status", "Active");
+
+        newItem.innerHTML = `
+                <div class="user-list-info">
+                    <span class="fw-bold">${name}</span> <span class="text-gray">| ${role}</span>
+                </div>
+                <div class="user-list-status">
+                    <span class="badge active">Active</span>
+                </div>
+            `;
+
+        listContainer.prepend(newItem);
+        addModal.style.display = "none";
+        document.getElementById("add-user-form").reset();
+
+        // Reset Toggle UI to Staff
+        document
+          .querySelectorAll("#add-user-modal .role-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document
+          .querySelector('#add-user-modal .role-btn[data-val="Staff"]')
+          .classList.add("active");
+
+        // Auto-select newly added user
+        newItem.click();
+      } catch (error) {
+        console.error("Creation Error:", error);
+        alert("Failed to create the new user. Please try again.");
+      }
+    });
+
+  // 7. FILTER LOGIC
   function applyFilters() {
-    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-    const roleFilter = document.getElementById("role-filter");
-    const selectedRole = roleFilter ? roleFilter.value : "All";
+    const term = searchInput.value.toLowerCase();
+    const status = statusFilter.value;
 
-    tbody.querySelectorAll("tr").forEach((row) => {
-      const name = row.cells[0].innerText.toLowerCase();
-      const role = row.cells[1].innerText;
-      const email = row.cells[3] ? row.cells[3].innerText.toLowerCase() : "";
+    if (status === "All") listTitle.innerText = "All";
+    else listTitle.innerText = status;
 
-      const matchesSearch =
-        name.includes(searchTerm) || email.includes(searchTerm);
-      const matchesRole = selectedRole === "All" || role === selectedRole;
+    document.querySelectorAll(".user-list-item").forEach((item) => {
+      const name = item.getAttribute("data-name").toLowerCase();
+      const itemStatus = item.getAttribute("data-status");
 
-      row.style.display = matchesSearch && matchesRole ? "" : "none";
+      const matchSearch = name.includes(term);
+      const matchStatus = status === "All" || itemStatus === status;
+
+      item.style.display = matchSearch && matchStatus ? "flex" : "none";
     });
   }
 
-  if (searchInput) searchInput.addEventListener("input", applyFilters);
-  document.addEventListener("change", (e) => {
-    if (e.target.id === "role-filter") applyFilters();
-  });
+  searchInput.addEventListener("input", applyFilters);
+  statusFilter.addEventListener("change", applyFilters);
 });
