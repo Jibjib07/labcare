@@ -350,7 +350,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
 
                             <div class="activity-section view-mode">
                                 <div class="activity-header">
-                                    <h4>Recent Activity</h4>
+                                    <h4>Activity</h4>
                                 </div>
                                 <div id="pc_activity_log_body" style="border: 1px solid #eaeaea; border-radius: 8px; background: #fafafa; max-height: 300px; overflow-y: auto;">
                                     <div style="text-align:center; color:#888; padding: 20px;">Activity logs will appear here.</div>
@@ -552,7 +552,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
 
                         <div class="activity-section">
                             <div class="activity-header">
-                                <h4>Recent Activity</h4>
+                                <h4>Activity</h4>
                             </div>
                             <div id="fa_activity_log_body" style="border: 1px solid #eaeaea; border-radius: 8px; background: #fafafa; max-height: 300px; overflow-y: auto;">
                                 <div style="text-align:center; color:#888; padding: 20px;">Activity logs will appear here.</div>

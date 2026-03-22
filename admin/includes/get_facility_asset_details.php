@@ -20,7 +20,7 @@ if (!empty($asset_id)) {
         $history_data = [];
 
         // --- FIXED: Added 'report_affected' to the SELECT query ---
-        $hist_stmt = $conn->prepare("SELECT report_date, report_actor, report_affected, report_remarks, report_status FROM asset_history WHERE asset_id = ? ORDER BY report_id DESC LIMIT 5");
+        $hist_stmt = $conn->prepare("SELECT report_date, report_actor, report_affected, report_remarks, report_status FROM asset_history WHERE asset_id = ? ORDER BY report_id DESC");
         $hist_stmt->bind_param("s", $asset_id);
         $hist_stmt->execute();
         $hist_res = $hist_stmt->get_result();

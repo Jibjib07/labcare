@@ -8,11 +8,6 @@ function saveCurrentState() {
   localStorage.setItem("assets_state", JSON.stringify(state));
 }
 
-// CLEAR STATE: Call this if you want to reset everything manually
-function clearCurrentState() {
-  localStorage.removeItem("assets_state");
-}
-
 let currentEditingSetId = null; // For Computer Units
 let currentSelectedFAId = null; // For Facility Assets
 let isEditModeActive = false;
@@ -207,54 +202,6 @@ window.addEventListener("load", () => {
   }
 });
 
-// ==========================================
-// STATUS DETERMINATION FUNCTIONS
-// ==========================================
-
-/**
- * Determines the display status for a unit based on data completeness and repair status
- * @param {Object} unitData - Unit data object with specs_property, monitor_property, and status fields
- * @returns {string} Display status
- */
-function determineUnitDisplayStatus(unitData) {
-  // 1. Check if property IDs are missing (highest priority)
-  if (!unitData.specs_property || !unitData.monitor_property) {
-    return "No Property ID";
-  }
-
-  // 2. Check for repair status (from database)
-  if (unitData.set_status === "For Repair") {
-    return "For Repair";
-  }
-
-  // 3. Check for condemn status
-  if (
-    unitData.set_status === "For Condemn" ||
-    unitData.set_status === "Condemned"
-  ) {
-    return unitData.set_status;
-  }
-
-  // 4. Default to Working
-  return "Working";
-}
-
-/**
- * Gets the appropriate badge class for a status
- * @param {string} status - Status string
- * @returns {string} CSS class for badge
- */
-function getStatusBadgeClass(status) {
-  const statusMap = {
-    Working: "badge green",
-    Condemned: "badge red",
-    "For Condemn": "badge red",
-    "For Repair": "badge yellow",
-    "No Property ID": "badge purple",
-  };
-  return statusMap[status] || "badge gray";
-}
-
 // SINGLE, UNIFIED CLICK LISTENER
 window.addEventListener("click", function (event) {
   // 1. Close Modals
@@ -381,7 +328,6 @@ function switchTab(tabId, btnElement) {
  */
 
 // Open the Modal
-// Open the Modal
 function openModal(modalId, ...args) {
   // --- FIXED: Do NOT cancel edit mode if they are opening the Save/Log modal! ---
   if (modalId !== "logStatusModal") {
@@ -461,7 +407,7 @@ async function populateTransferModal(labId) {
                     <td>
                         <label class="check-container">
                             <input type="checkbox" class="transfer-asset-checkbox" value="${asset.asset_id}"> 
-                            <span>${asset.asset_tag}</span>
+                            <span>FA-${asset.asset_tag}</span>
                         </label>
                     </td>
                     <td>${asset.asset_id}</td>
@@ -640,12 +586,6 @@ async function submitTransfer() {
   }
 }
 
-// Helper to get status badge HTML
-function getStatusBadge(status) {
-  const badgeClass =
-    status === "Working" ? "green" : status === "For Repair" ? "yellow" : "red";
-  return `<span class="badge ${badgeClass}">${status}</span>`;
-}
 /**
  * Switch Modal Tabs
  */
@@ -846,15 +786,6 @@ function calculateNextUnitNumber() {
 
   // Always trigger the UI update immediately after calculating
   updateBulkUnitNumbers();
-}
-
-/**
- * Opens the add computer modal with default settings.
- */
-function openAddModal() {
-  document.getElementById("bulk_count").value = 2;
-  toggleAddMode("single");
-  document.getElementById("addComputerModal").style.display = "flex";
 }
 
 /**
@@ -1315,12 +1246,11 @@ function toggleEditMode() {
 
   // 3. FACILITY ASSET LOGIC
   if (isFacilityView) {
-    // If you are using the toggle function we built earlier for FA
     toggleFAEditMode();
     return;
   }
 
-  // 4. COMPUTER UNIT LOGIC (Your existing code)
+  // 4. COMPUTER UNIT LOGIC
   const btn = document.getElementById("editToggleButton");
   const textSpan = document.getElementById("editText");
   const btnCancel = document.getElementById("btnCancelEdit");
@@ -1335,12 +1265,13 @@ function toggleEditMode() {
     btn.style.backgroundColor = "#4caf50";
     btn.style.color = "white";
 
+    if (btnCancel) btnCancel.style.display = "inline-flex";
     if (btnCancel) btnCancel.classList.add("show-cancel");
     if (btnCondemn) btnCondemn.style.display = "none";
     if (btnResolve) btnResolve.style.display = "none";
     if (backArrow) backArrow.style.display = "none";
 
-    // Toggle Visibility of Inputs
+    // --- 1. HANDLE TEXT/INPUT VISIBILITY ---
     document
       .querySelectorAll(
         ".specs-content-box .view-mode:not(.status-pill):not(#view_com_age):not(#view_num_repair)",
@@ -1361,6 +1292,30 @@ function toggleEditMode() {
           el.style.display = "block";
         }
       });
+
+    // --- 2. THE REVISION: SELECTIVE STATUS TOGGLING ---
+    // We look at every status row to decide if it should be a toggle or a label
+    document
+      .querySelectorAll(".specs-content-box .status-row")
+      .forEach((row) => {
+        const pill = row.querySelector(".status-pill");
+        const toggleGroup = row.querySelector(".status-toggle-group");
+
+        if (pill && toggleGroup) {
+          const currentStatus = pill.innerText.trim();
+
+          if (currentStatus === "Working" || currentStatus === "Healthy") {
+            pill.style.display = "none";
+            toggleGroup.style.display = "flex";
+          } else {
+            pill.style.display = ""; // <--- FIX: Changed from "block" to ""
+            toggleGroup.style.display = "none";
+
+            pill.classList.remove("green");
+            pill.classList.add("yellow");
+          }
+        }
+      });
   } else {
     // Already in Save mode
     openAdminLogModal("pc");
@@ -1369,65 +1324,38 @@ function toggleEditMode() {
 
 function cancelEditMode() {
   // --- 1. TURN THE LOCK OFF FIRST! ---
-  // We must do this before selectUnit runs, otherwise our own security blocks the cancel action.
   isEditModeActive = false;
 
-  // --- 2. RELOAD THE UNIT ---
-  // Only re-fetch if the user actually clicks the "Cancel" button to wipe out unsaved typing
-  if (currentEditingSetId) {
-    const activeItem = document.querySelector(
-      "#assetListContainer .asset-item.active",
-    );
-    selectUnit(activeItem, currentEditingSetId);
+  // --- 2. DETECT ACTIVE VIEW ---
+  const viewFacility = document.getElementById("view-facility");
+  const isFacilityView = viewFacility && viewFacility.offsetParent !== null;
+
+  // --- 3. RELOAD THE CORRECT ITEM ---
+  if (isFacilityView) {
+    // Reload Facility Asset
+    if (currentSelectedFAId) {
+      const activeItem = document.querySelector(
+        "#facilityListContainer .asset-item.active",
+      );
+      selectFacilityAsset(activeItem, currentSelectedFAId); // <--- CHANGE THIS LINE
+    }
+  } else {
+    // Reload Computer Unit
+    if (currentEditingSetId) {
+      const activeItem = document.querySelector(
+        "#assetListContainer .asset-item.active",
+      );
+      selectUnit(activeItem, currentEditingSetId);
+    }
   }
+
+  // 4. Force UI Reset just in case the select functions don't do it
+  resetUIToViewMode();
 }
-
-function saveUnitDetails() {
-  const formData = new FormData();
-  formData.append("set_id", currentEditingSetId);
-
-  // Gather text from all the inputs
-  document
-    .querySelectorAll('.specs-content-box input[id^="edit_"]')
-    .forEach((input) => {
-      const dbColumn = input.id.replace("edit_", "");
-      formData.append(dbColumn, input.value);
-    });
-
-  // Gather values from all the "Working / For Repair" toggles
-  document
-    .querySelectorAll('.specs-content-box .status-toggle-group[id^="toggle_"]')
-    .forEach((group) => {
-      const dbColumn = group.id.replace("toggle_", "");
-      const activeBtn = group.querySelector(".status-btn.active");
-      const val =
-        activeBtn && activeBtn.getAttribute("data-type") === "repair"
-          ? "For Repair"
-          : "Working";
-      formData.append(dbColumn, val);
-    });
-
-  fetch("includes/update_unit.php", { method: "POST", body: formData })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) {
-        isEditModeActive = false;
-        reloadWithToast(
-          "Update Successful",
-          "Changes to the unit have been saved.",
-          "success",
-        );
-      } else {
-        showNotification("Update Failed", data.error, "error");
-      }
-    })
-    .catch((err) =>
-      showNotification("Connection Error", "Failed to update unit.", "error"),
-    );
-}
-
 function resetUIToViewMode() {
   isEditModeActive = false;
+
+  // --- 1. RESET COMPUTER UNIT BUTTONS ---
   const btn = document.getElementById("editToggleButton");
   const btnCancel = document.getElementById("btnCancelEdit");
   const btnCondemn = document.getElementById("btnCondemn");
@@ -1435,22 +1363,48 @@ function resetUIToViewMode() {
   const backArrow = document.querySelector("#view-computer .mobile-back-btn");
 
   if (btn) {
-    // Put Edit back, keeping the span classes
     btn.innerHTML = `<i class="fas fa-pen"></i> <span class="btn-text" id="editText">Edit</span>`;
     btn.style.backgroundColor = "";
-    btn.style.color = "black";
+    btn.style.color = "";
   }
-  if (btnCancel) btnCancel.classList.remove("show-cancel");
+  if (btnCancel) {
+    btnCancel.classList.remove("show-cancel");
+    btnCancel.style.display = "none";
+  }
   if (btnCondemn) btnCondemn.style.display = "";
   if (btnResolve) btnResolve.style.display = "";
   if (backArrow) backArrow.style.display = "";
 
-  document
-    .querySelectorAll(".specs-content-box .view-mode")
-    .forEach((el) => (el.style.display = ""));
-  document
-    .querySelectorAll(".specs-content-box .edit-mode")
-    .forEach((el) => (el.style.display = "none"));
+  // --- 2. RESET FACILITY ASSET BUTTONS ---
+  const btnFA = document.getElementById("editToggleButtonFA");
+  const btnCancelFA = document.getElementById("btnCancelEditFA");
+  const btnCondemnFA = document.getElementById("btnCondemnFA");
+  const btnResolveFA = document.getElementById("btnResolveFA");
+
+  if (btnFA) {
+    btnFA.innerHTML = `<i class="fas fa-pen"></i> <span class="btn-text" id="editTextFA">Edit</span>`;
+    btnFA.style.backgroundColor = "";
+    btnFA.style.color = "";
+  }
+  if (btnCancelFA) {
+    btnCancelFA.classList.remove("show-cancel");
+    btnCancelFA.style.display = "none";
+  }
+  if (btnCondemnFA) btnCondemnFA.style.display = "";
+  if (btnResolveFA) btnResolveFA.style.display = "";
+
+  document.querySelectorAll(".right-panel .view-mode").forEach((el) => {
+    el.style.display = "";
+  });
+
+  // Hide all edit-mode elements (including inputs and status toggles)
+  document.querySelectorAll(".right-panel .edit-mode").forEach((el) => {
+    el.style.display = "none";
+  });
+
+  // 4. Clean up any leftover Modal highlighting
+  const remarksInput = document.getElementById("general_remarks");
+  if (remarksInput) remarksInput.style.border = "";
 }
 
 // ==========================================
@@ -1637,8 +1591,9 @@ function submitCondemnAction() {
 // ==========================================
 function openAdminLogModal(type) {
   currentReportType = type;
-  const changes = [];
-  const affectedNames = [];
+
+  const specChanges = []; // For grouped general updates (Brands, IDs, etc.)
+  const statusChanges = []; // For individual broken components
 
   const nameMap = {
     specs_property: "Property ID",
@@ -1655,14 +1610,70 @@ function openAdminLogModal(type) {
     keyboard_brand: "Keyboard Brand",
     avr_brand: "AVR Brand",
     usb_ports: "Available USB Ports",
+    usb_status: "USB Port",
+    wifi_status: "Wi-Fi",
+    mic_status: "Microphone Jack",
+    hdmi_status: "HDMI",
+    headphone_status: "Headphone Jack",
+    display_status: "Display Port",
+    inline_status: "In-line Jack",
+    ethernet_status: "Ethernet Port",
+    disk_health: "Disk Health",
+    power_health: "Power Supply",
+    monitor_status: "Monitor",
+    mouse_status: "Mouse",
+    keyboard_status: "Keyboard",
+    avr_status: "AVR",
+    set_status: "Overall Unit Status",
   };
 
   if (type === "pc") {
+    const activeItem = document.querySelector(
+      "#assetListContainer .asset-item.active .item-name",
+    );
+    const activeItemText = activeItem ? activeItem.innerText : "Unit";
+    const unitNameEl = document.getElementById("logStatusUnitName");
+    if (unitNameEl) unitNameEl.innerText = `[${activeItemText}]`;
+
+    // 1. SCAN STATUS TOGGLES (Only goes to statusChanges)
+    document
+      .querySelectorAll(".specs-content-box .status-toggle-group")
+      .forEach((group) => {
+        if (group.style.display !== "none") {
+          const dbColumn = group.id.replace("toggle_", "");
+          const originalPill = document.getElementById("pill_" + dbColumn);
+          const activeBtn = group.querySelector(".status-btn.active");
+
+          if (originalPill && activeBtn) {
+            const oldStatus = originalPill.innerText.trim();
+            let newStatus =
+              activeBtn.getAttribute("data-type") === "repair"
+                ? "For Repair"
+                : "Working";
+            if (dbColumn === "disk_health")
+              newStatus =
+                activeBtn.getAttribute("data-type") === "repair"
+                  ? "Poor"
+                  : "Healthy";
+
+            if (oldStatus !== newStatus) {
+              const niceName = nameMap[dbColumn] || dbColumn;
+              statusChanges.push({
+                name: niceName,
+                old: oldStatus,
+                new: newStatus,
+              });
+            }
+          }
+        }
+      });
+
+    // 2. SCAN SPEC INPUTS (Only goes to specChanges)
     document
       .querySelectorAll('.specs-content-box input[id^="edit_"]')
       .forEach((input) => {
         const dbColumn = input.id.replace("edit_", "");
-        if (dbColumn === "com_age" || dbColumn === "num_repair") return;
+        if (["com_age", "num_repair"].includes(dbColumn)) return;
 
         const viewEl = document.getElementById("view_" + dbColumn);
         if (viewEl) {
@@ -1672,175 +1683,227 @@ function openAdminLogModal(type) {
 
           if (oldVal !== newVal) {
             const niceName = nameMap[dbColumn] || dbColumn;
-            changes.push(`${niceName}: ${newVal || "(Cleared)"}`);
-            affectedNames.push(niceName);
+            specChanges.push(niceName);
           }
         }
       });
-
-    const activeItem = document.querySelector(
-      "#assetListContainer .asset-item.active .item-name",
-    );
-    document.getElementById("logStatusUnitName").innerText =
-      `[${activeItem ? activeItem.innerText : "Unit"}]`;
   } else if (type === "fa") {
-    // 1. Check Device Name
-    let titleText = document.getElementById("view_fa_header_title").innerText;
-    let oldName = "";
-    if (titleText.includes(" - ")) {
-      oldName = titleText.split(" - ")[1].replace(" Details", "").trim();
-    }
-    const newName = document.getElementById("edit_fa_name").value.trim();
-    if (oldName !== newName) {
-      changes.push(`Device Name: ${newName || "(Cleared)"}`);
-      affectedNames.push("Device Name");
-    }
-
-    // 2. Check Property ID
-    let oldProp = document.getElementById("view_fa_tag").innerText.trim();
-    if (oldProp === "---" || oldProp === "N/A") oldProp = "";
-    const newProp = document.getElementById("edit_fa_property").value.trim();
-    if (oldProp !== newProp) {
-      changes.push(`Property ID: ${newProp || "(Cleared)"}`);
-      affectedNames.push("Property ID");
-    }
-
-    // 3. Check Brand
-    let oldBrand = document.getElementById("view_fa_brand").innerText.trim();
-    if (oldBrand === "---" || oldBrand === "N/A") oldBrand = "";
-    const newBrand = document.getElementById("edit_fa_brand").value.trim();
-    if (oldBrand !== newBrand) {
-      changes.push(`Brand: ${newBrand || "(Cleared)"}`);
-      affectedNames.push("Brand");
-    }
-
-    let headerTitle = document.getElementById("view_fa_header_title").innerText;
-    headerTitle = headerTitle
-      .replace(" Details", "")
-      .replace(" Edit", "")
+    const headerTitle = document
+      .getElementById("view_fa_header_title")
+      .innerText.replace(" Details", "")
       .trim();
-    document.getElementById("logStatusUnitName").innerText = `[${headerTitle}]`;
+    const unitNameEl = document.getElementById("logStatusUnitName");
+    if (unitNameEl) unitNameEl.innerText = `[${headerTitle}]`;
+
+    // 1. FA STATUS SCANNER
+    const originalPill = document.getElementById("original_fa_status");
+    const activeBtn = document.querySelector(
+      "#toggle_fa_status .status-btn.active",
+    );
+
+    if (
+      originalPill &&
+      activeBtn &&
+      document.getElementById("toggle_fa_status").style.display !== "none"
+    ) {
+      const oldStatus = originalPill.value.trim();
+      const newStatus =
+        activeBtn.getAttribute("data-type") === "repair"
+          ? "For Repair"
+          : "Working";
+      if (oldStatus !== newStatus) {
+        statusChanges.push({
+          name: "Asset Status",
+          old: oldStatus,
+          new: newStatus,
+        });
+      }
+    }
+
+    // 2. FA TEXT INPUT SCANNER
+    const faInputs = [
+      { id: "fa_name", label: "Device Name" },
+      { id: "fa_property", label: "Property ID" },
+      { id: "fa_brand", label: "Brand" },
+    ];
+
+    faInputs.forEach((field) => {
+      const viewEl = document.getElementById("view_" + field.id);
+      const inputEl = document.getElementById("edit_" + field.id);
+      if (viewEl && inputEl) {
+        let oldVal = viewEl.innerText.trim();
+        if (oldVal === "N/A" || oldVal === "---") oldVal = "";
+        let newVal = inputEl.value.trim();
+
+        if (oldVal !== newVal) {
+          specChanges.push(field.label);
+        }
+      }
+    });
   }
 
-  // Final validation
-  if (changes.length === 0) {
-    changes.push("General Update (No specific field changes)");
-  }
-
-  affectedNames.sort();
-  // FIXED: Ensure we always update the global variable used by the save function
+  // 3. SET THE GLOBAL AFFECTED STRING FOR THE DB (Cleaned up)
   window.pendingAffectedString =
-    affectedNames.length > 0 ? affectedNames.join(", ") : "Specs/Details";
+    specChanges.length > 0 ? specChanges.join(", ") : "General Update";
 
-  const listContainer = document.getElementById("logStatusChangeList");
-  listContainer.innerHTML = changes
-    .map(
-      (c) =>
-        `<div class="log-change-item" style="border-left: 3px solid #4caf50; margin-bottom: 5px; padding-left: 10px;">${c}</div>`,
-    )
-    .join("");
+  let htmlContent = "";
 
-  // --- UI RESET ---
-  const remarksInput = document.getElementById("logStatusRemarks");
-  remarksInput.value = "";
-  remarksInput.style.border = "1px solid #ddd"; // Reset any error red borders
+  // 4. A. Grouped Specs Block
+  if (
+    specChanges.length > 0 ||
+    (specChanges.length === 0 && statusChanges.length === 0)
+  ) {
+    const affectedList =
+      specChanges.length > 0
+        ? specChanges.join("<br>")
+        : "General / Minor Edits";
+    htmlContent += `
+            <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Details & Specifications Updated:</h4>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
+                        <strong>Affected Fields:</strong><br>${affectedList}
+                    </div>
+                    <div style="flex: 2;">
+                        <textarea id="general_remarks" class="log-remark-input" data-name="Details Update" placeholder="Optional: Notes for these changes..." style="width: 100%; height: 100%; min-height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px;"></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+  }
 
-  // Set placeholder to "Required" for both types
-  remarksInput.placeholder =
-    "Required: Explain why this update is being made...";
+  // 5. B. Individual Status Blocks
+  if (statusChanges.length > 0) {
+    statusChanges.forEach((stat) => {
+      const pillBg = "#fff3e0";
+      const pillColor = "#e65100";
+
+      htmlContent += `
+                <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                        <h4 style="margin: 0; font-size: 14px; color: #f57f17;">
+                            <i class="fas fa-exclamation-circle"></i> Status Update
+                        </h4>
+                        <span style="background-color: ${pillBg}; color: ${pillColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;">
+                            ${stat.new}
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 20px;">
+                        <div style="flex: 1; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
+                            <strong>Affected:</strong><br>
+                            <span style="display: inline-block; margin-top: 5px;">${stat.name}</span>
+                        </div>
+                        <div style="flex: 2; display: flex; flex-direction: column; gap: 5px;">
+                            <label style="font-size: 13px; font-weight: 600; color: #333;">Remarks:</label>
+                            <textarea class="log-remark-input status-remark-field" data-name="${stat.name}" placeholder="Optional: Why is this marked for repair?" style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box;"></textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+    });
+  }
+
+  const contentEl = document.getElementById("logStatusDynamicContent");
+  if (contentEl) contentEl.innerHTML = htmlContent;
 
   openModal("logStatusModal");
 }
 
 function confirmLogStatus() {
-  const remarksInput = document.getElementById("logStatusRemarks");
-  const remarks = remarksInput.value.trim();
   const saveBtn = document.querySelector("#logStatusModal .btn-confirm");
+  const formData = new FormData();
 
-  // --- REVISION 1: Unified Mandatory Remarks Logic ---
-  // Now strictly requires remarks for BOTH Computer Units and Facility Assets
-  if (!remarks) {
-    showNotification(
-      "Remarks Required",
-      "Please provide a reason for this update before confirming.",
-      "error",
-    );
-    remarksInput.focus();
-    remarksInput.style.border = "2px solid #f44336"; // Highlight error in red
-
-    // Auto-reset border when user starts typing
-    remarksInput.oninput = () => {
-      remarksInput.style.border = "1px solid #ddd";
-    };
-    return;
+  // --- 1. ROUTING: PC vs FA ---
+  let targetUrl = "";
+  if (currentReportType === "pc") {
+    targetUrl = "includes/update_unit.php";
+    formData.append("set_id", currentEditingSetId);
+  } else {
+    targetUrl = "includes/update_facility_asset.php";
+    formData.append("asset_id", currentSelectedFAId);
   }
+
+  // --- 2. HANDLE GENERAL REMARKS ---
+  const generalRemarksInput = document.getElementById("general_remarks");
+  if (generalRemarksInput) {
+    let userNotes = generalRemarksInput.value.trim();
+    let finalGeneral = `Details Update. Notes: ${userNotes || "None provided"}`;
+    formData.append("general_remarks", finalGeneral);
+  } else {
+    formData.append("general_remarks", "");
+  }
+
+  // --- 3. HANDLE STATUS REMARKS ---
+  const statusRemarkInputs = document.querySelectorAll(
+    "#logStatusDynamicContent .status-remark-field",
+  );
+  let statusLogsArray = [];
+
+  statusRemarkInputs.forEach((input) => {
+    let userNotes = input.value.trim();
+    const fieldName = input.getAttribute("data-name");
+    let finalStatus = `Status Update. Notes: ${userNotes || "None provided"}`;
+    statusLogsArray.push({
+      component: fieldName,
+      remark: finalStatus,
+    });
+  });
+
+  formData.append("status_logs", JSON.stringify(statusLogsArray));
+  formData.append("report_affected_general", window.pendingAffectedString);
 
   // --- UI Loading State ---
   const originalBtnHTML = saveBtn.innerHTML;
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-  const formData = new FormData();
-  formData.append("remarks", remarks);
-  formData.append("report_affected", pendingAffectedString);
+  // --- 4. GATHER DB DATA ---
+  document
+    .querySelectorAll('.specs-content-box input[id^="edit_"]')
+    .forEach((input) => {
+      formData.append(input.id.replace("edit_", ""), input.value);
+    });
 
-  let targetUrl = "";
+  document
+    .querySelectorAll(".specs-content-box .status-toggle-group")
+    .forEach((group) => {
+      const dbColumn = group.id.replace("toggle_", "");
+      const activeBtn = group.querySelector(".status-btn.active");
 
-  if (currentReportType === "pc") {
-    targetUrl = "includes/update_unit.php";
-    formData.append("set_id", currentEditingSetId);
+      if (group.style.display !== "none" && activeBtn) {
+        let val =
+          activeBtn.getAttribute("data-type") === "repair"
+            ? "For Repair"
+            : "Working";
+        if (dbColumn === "disk_health")
+          val =
+            activeBtn.getAttribute("data-type") === "repair"
+              ? "Poor"
+              : "Healthy";
+        formData.append(dbColumn, val);
+      } else {
+        const pill = document.getElementById("pill_" + dbColumn);
+        formData.append(dbColumn, pill ? pill.innerText.trim() : "For Repair");
+      }
+    });
 
-    // Filter out automated fields for PC
-    document
-      .querySelectorAll('.specs-content-box input[id^="edit_"]')
-      .forEach((input) => {
-        const dbColumn = input.id.replace("edit_", "");
-        if (dbColumn === "com_age" || dbColumn === "num_repair") return;
-        formData.append(dbColumn, input.value);
-      });
-  } else {
-    // --- FA Section (Targeting correct FA inputs) ---
-    targetUrl = "includes/update_facility_asset.php";
-    formData.append("asset_id", currentSelectedFAId);
-    formData.append(
-      "asset_name",
-      document.getElementById("edit_fa_name").value,
-    );
-    formData.append(
-      "asset_property",
-      document.getElementById("edit_fa_property").value,
-    );
-    formData.append(
-      "asset_brand",
-      document.getElementById("edit_fa_brand").value,
-    );
-
-    const statusVal = document.getElementById("edit_fa_status").value;
-    formData.append("asset_status", statusVal);
-  }
-
-  // --- AJAX Request ---
+  // --- 5. SEND TO THE CORRECT PHP SCRIPT ---
   fetch(targetUrl, { method: "POST", body: formData })
     .then((res) => res.json())
     .then((data) => {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalBtnHTML;
       if (data.success) {
         closeModal("logStatusModal");
-        reloadWithToast(
-          "Update Saved",
-          "Changes and history log updated successfully.",
-          "success",
-        );
+        reloadWithToast("Success", "Updated successfully", "success");
       } else {
-        showNotification("Error", data.error || "Update failed", "error");
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalBtnHTML;
+        showNotification("Error", data.error, "error");
       }
     })
     .catch((err) => {
-      console.error("Save Error:", err);
-      showNotification("Connection Error", "Could not reach server.", "error");
       saveBtn.disabled = false;
       saveBtn.innerHTML = originalBtnHTML;
+      showNotification("Connection Error", "Could not reach server.", "error");
     });
 }
 // ==========================================
@@ -2174,13 +2237,14 @@ function selectFacilityAsset(element, assetId) {
     );
     return;
   }
+
   // 1. Set the correct active IDs and reset states
   currentSelectedFAId = assetId;
   currentEditingSetId = null;
 
   // 2. UI Reset: Toggle "active" highlight on the left list
   document
-    .querySelectorAll(".asset-item")
+    .querySelectorAll("#facilityListContainer .asset-item")
     .forEach((item) => item.classList.remove("active"));
   if (element) element.classList.add("active");
 
@@ -2195,33 +2259,40 @@ function selectFacilityAsset(element, assetId) {
       if (data.success) {
         const asset = data.data;
 
-        // --- POPULATE TEXT & STATUS BOX ---
-        document.getElementById("view_fa_header_title").innerHTML =
-          `FA-${asset.asset_tag} - <span style="display: inline-block; vertical-align: bottom; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${asset.asset_name}</span> Details`;
-        document.getElementById("view_fa_tag").innerText =
+        // --- POPULATE TEXT BOXES (Mapped to new grid IDs) ---
+        document.getElementById("view_fa_header_title").innerText =
+          `FA-${asset.asset_tag} Details`;
+
+        document.getElementById("view_fa_property").innerText =
           asset.asset_property || "N/A";
+        document.getElementById("view_fa_name").innerText =
+          asset.asset_name || "N/A";
         document.getElementById("view_fa_brand").innerText =
           asset.asset_brand || "N/A";
-        document.getElementById("view_fa_status").innerText =
-          asset.asset_status;
 
-        const statusBox = document.getElementById("view_fa_status_box");
-        statusBox.className = "detail-box"; // Reset classes
+        // --- POPULATE STATUS PILL ---
+        const statusPill = document.getElementById("pill_fa_status");
+        statusPill.innerText = asset.asset_status;
+        statusPill.className = "status-pill view-mode"; // Reset classes
 
-        // Dynamic Status Coloring
+        // 2. FIX: Dynamic Status Coloring uses "orange" to perfectly match CU
         if (asset.asset_status === "Working") {
-          statusBox.classList.add("status-box-green");
+          statusPill.classList.add("green");
         } else if (
           asset.asset_status === "For Repair" ||
           asset.asset_status === "Missing Parts"
         ) {
-          statusBox.classList.add("status-box-yellow");
+          statusPill.classList.add("orange"); // Changed from yellow to orange
         } else {
-          statusBox.classList.add("status-box-red");
+          statusPill.classList.add("red");
         }
 
-        const btnResolveFA = document.getElementById("btnResolveFA");
+        // Set hidden value for the Log Modal scanner
+        const origStatusEl = document.getElementById("original_fa_status");
+        if (origStatusEl) origStatusEl.value = asset.asset_status;
 
+        // --- RESOLVE BUTTON LOGIC ---
+        const btnResolveFA = document.getElementById("btnResolveFA");
         if (btnResolveFA) {
           btnResolveFA.style.display = "inline-flex"; // Always show it
 
@@ -2235,13 +2306,14 @@ function selectFacilityAsset(element, assetId) {
             btnResolveFA.style.cursor = "pointer";
             btnResolveFA.onclick = () => openResolveModal("fa");
           } else {
-            // DISABLED STATE: Grey border (Matches your PC-02 screenshot)
+            // DISABLED STATE: Grey border
             btnResolveFA.className = "btn-resolve hide-on-mobile";
-            btnResolveFA.style.opacity = "1"; // Keep it visible but grey
+            btnResolveFA.style.opacity = "1";
             btnResolveFA.style.cursor = "not-allowed";
             btnResolveFA.onclick = null;
           }
         }
+
         // --- POPULATE FA RECENT ACTIVITY LOGS ---
         const historyBody = document.getElementById("fa_activity_log_body");
         if (historyBody) {
@@ -2262,7 +2334,7 @@ function selectFacilityAsset(element, assetId) {
               if (log.report_status === "Condemned") badgeColor = "red";
 
               const card = document.createElement("div");
-              card.className = "activity-card"; // Using a class for cleaner CSS control
+              card.className = "activity-card";
               card.style.padding = "15px 20px";
               card.style.backgroundColor = "#fff";
               if (index < data.history.length - 1)
@@ -2298,11 +2370,8 @@ function selectFacilityAsset(element, assetId) {
           }
         }
 
-        // 4. Force Reset Edit Mode if open
-        const editMode = document.getElementById("fa-edit-mode");
-        if (editMode && editMode.style.display === "block") {
-          closeFAEditMode();
-        }
+        // 4. Force Reset Edit Mode (Universal sync fix)
+        resetUIToViewMode();
       } else {
         showNotification("Error", data.error, "error");
       }
@@ -2323,84 +2392,71 @@ function selectFacilityAsset(element, assetId) {
   }
 }
 
-// Helper to switch CSS classes for buttons
-function updateStatusUI(status) {
-  const btnWorking = document.getElementById("status_btn_working");
-  const btnRepair = document.getElementById("status_btn_repair");
-
-  // Reset and Toggle classes
-  btnWorking.classList.toggle("active-working", status === "Working");
-  btnRepair.classList.toggle("active-repair", status === "For Repair");
-}
-
 // ==========================================
 // FACILITY ASSETS: EDIT & TRANSFER LOGIC
 // ==========================================
 
 function toggleFAEditMode() {
-  isEditModeActive = true;
-  // 1. Hide the View panel and show the Edit panel
-  document.getElementById("fa-view-mode").style.display = "none";
-  document.getElementById("fa-edit-mode").style.display = "block";
+  const btn = document.getElementById("editToggleButtonFA");
+  const textSpan = document.getElementById("editTextFA");
+  const btnCancel = document.getElementById("btnCancelEditFA");
+  const btnCondemn = document.getElementById("btnCondemnFA");
+  const btnResolve = document.getElementById("btnResolveFA");
 
-  // 2. Grab the current values from the View screen
-  const titleText = document.getElementById("view_fa_header_title").innerText;
+  if (textSpan.textContent.trim() === "Edit") {
+    isEditModeActive = true;
+    btn.innerHTML = `<i class="fas fa-save"></i> <span class="btn-text" id="editTextFA">Save</span>`;
+    btn.style.backgroundColor = "#4caf50";
+    btn.style.color = "white";
 
-  // Extract the Device Name
-  let assetName = "";
-  if (titleText.includes(" - ")) {
-    assetName = titleText.split(" - ")[1].replace(" Details", "");
+    if (btnCancel) {
+      btnCancel.style.display = "inline-flex";
+      btnCancel.classList.add("show-cancel");
+    }
+    if (btnCondemn) btnCondemn.style.display = "none";
+    if (btnResolve) btnResolve.style.display = "none";
+
+    // Sync Text Inputs (Grab text from view mode and put it into the input boxes)
+    const faInputs = ["fa_property", "fa_name", "fa_brand"];
+    faInputs.forEach((id) => {
+      const viewEl = document.getElementById("view_" + id);
+      const editEl = document.getElementById("edit_" + id);
+      if (viewEl && editEl) {
+        let val = viewEl.innerText.trim();
+        if (val === "---" || val === "N/A") val = "";
+        editEl.value = val;
+      }
+    });
+
+    // Hide View Mode, Show Edit Mode
+    document
+      .querySelectorAll("#view-facility-right .view-mode:not(.status-pill)")
+      .forEach((el) => (el.style.display = "none"));
+    document
+      .querySelectorAll(
+        "#view-facility-right .edit-mode:not(.status-toggle-group)",
+      )
+      .forEach((el) => (el.style.display = "block"));
+
+    // Handle Status Toggle Lock
+    const pill = document.getElementById("pill_fa_status");
+    const toggleGroup = document.getElementById("toggle_fa_status");
+
+    if (pill && toggleGroup) {
+      const currentStatus = pill.innerText.trim();
+      if (currentStatus === "Working" || currentStatus === "Healthy") {
+        pill.style.display = "none";
+        toggleGroup.style.display = "flex";
+      } else {
+        pill.style.display = ""; // <--- FIX: Changed from "block" to ""
+        toggleGroup.style.display = "none";
+        pill.classList.remove("green");
+        pill.classList.add("yellow");
+      }
+    }
+  } else {
+    openAdminLogModal("fa");
   }
-  const tagStr = titleText.split(" - ")[0];
-
-  // 3. Populate the Edit Text Boxes
-  document.getElementById("edit_fa_header_title").innerText =
-    `${tagStr} Edit Details`;
-  document.getElementById("edit_fa_name").value = assetName;
-  document.getElementById("edit_fa_property").value =
-    document.getElementById("view_fa_tag").innerText;
-  document.getElementById("edit_fa_brand").value =
-    document.getElementById("view_fa_brand").innerText;
-
-  // 4. Fill in the Locked Status Box (Text AND Color)
-  const currentStatus = document
-    .getElementById("view_fa_status")
-    .innerText.trim();
-  document.getElementById("edit_fa_status_display").innerText = currentStatus;
-  document.getElementById("edit_fa_status").value = currentStatus;
-
-  // Clone the exact color classes from the View box to the Edit box
-  const viewBox = document.getElementById("view_fa_status_box");
-  const editBox = document.getElementById("edit_fa_status_box");
-
-  editBox.className = "detail-box"; // Reset classes
-  if (viewBox.classList.contains("status-box-green"))
-    editBox.classList.add("status-box-green");
-  if (viewBox.classList.contains("status-box-yellow"))
-    editBox.classList.add("status-box-yellow");
-  if (viewBox.classList.contains("status-box-red"))
-    editBox.classList.add("status-box-red");
-}
-
-function closeFAEditMode() {
-  isEditModeActive = false;
-  // Hide the Edit panel and go back to View panel
-  document.getElementById("fa-view-mode").style.display = "block";
-  document.getElementById("fa-edit-mode").style.display = "none";
-}
-
-function toggleStatusFA(btn) {
-  // Make the button turn green/orange when clicked
-  const container = btn.closest(".status-btn-container");
-  container
-    .querySelectorAll(".status-btn")
-    .forEach((b) => b.classList.remove("active"));
-
-  btn.classList.add("active");
-
-  // Update the hidden input so the database knows what to save
-  document.getElementById("edit_fa_status").value =
-    btn.getAttribute("data-type");
 }
 
 // 3. Process Transfer (Left exactly as you had it - it works perfectly!)
@@ -2469,84 +2525,6 @@ async function processTransfer() {
       "Failed to connect to the server.",
       "error",
     );
-  }
-}
-
-function toggleStatusFA(element) {
-  // 1. Remove 'active' from all buttons in this specific group
-  const parent = element.parentElement;
-  parent
-    .querySelectorAll(".status-btn")
-    .forEach((btn) => btn.classList.remove("active"));
-
-  // 2. Add 'active' to the clicked button
-  element.classList.add("active");
-
-  // Note: In your saveFAChanges(), you should now pull the value from
-  // the button that has the .active class.
-}
-
-function showFacilityAssets() {
-  // 1. Hide other sections (e.g., Computer Units)
-  document.getElementById("computer-units-section").style.display = "none";
-
-  // 2. Show the Facility section
-  document.getElementById("facility-assets-section").style.display = "block";
-
-  // 3. THE MISSING PIECE: Actually go get the data!
-  loadFacilityAssets();
-}
-async function saveFAChanges() {
-  isEditModeActive = false;
-  const saveBtn = document.querySelector("#fa-edit-mode .btn-edit");
-  const name = document.getElementById("edit_fa_name").value.trim();
-  const property = document.getElementById("edit_fa_property").value.trim();
-  const brand = document.getElementById("edit_fa_brand").value.trim();
-
-  // Get status from the active toggle button
-  const activeBtn = document.querySelector("#fa-edit-mode .status-btn.active");
-  const status = activeBtn ? activeBtn.getAttribute("data-type") : "Working";
-
-  if (!name || !property) {
-    showNotification(
-      "Required",
-      "Device Name and Property ID cannot be empty.",
-      "error",
-    );
-    return;
-  }
-
-  // Start Loading State
-  const originalBtnHTML = saveBtn.innerHTML;
-  saveBtn.disabled = true;
-  saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-  const formData = new FormData();
-  formData.append("asset_id", currentSelectedFAId);
-  formData.append("asset_name", name);
-  formData.append("asset_property", property);
-  formData.append("asset_brand", brand);
-  formData.append("asset_status", status);
-
-  try {
-    const response = await fetch("includes/update_facility_asset.php", {
-      method: "POST",
-      body: formData,
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      reloadWithToast("Updated", "Asset details saved.", "success");
-    } else {
-      showNotification("Error", result.error, "error");
-    }
-  } catch (error) {
-    console.error("Save Error:", error);
-    showNotification("Error", "Could not reach server.", "error");
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = originalBtnHTML;
   }
 }
 
@@ -2841,6 +2819,7 @@ function openResolveModal(type) {
       );
     });
 }
+
 function toggleResolveStatus(btn, column, state) {
   // 1. Locate the parent containers
   const group = btn.closest(".status-toggle-group");
@@ -2883,33 +2862,6 @@ function toggleResolveStatus(btn, column, state) {
     remarksInput.placeholder = "Available when fixed...";
   }
 }
-function toggleAdminRemarks(selectEl) {
-  const tr = selectEl.closest("tr");
-  const remarksInput = tr.querySelector(".resolve-admin-remarks");
-
-  if (selectEl.value === "working") {
-    selectEl.style.color = "#2e7d32";
-    selectEl.style.backgroundColor = "#e8f5e9";
-    selectEl.style.borderColor = "#c8e6c9";
-
-    remarksInput.disabled = false;
-    remarksInput.style.background = "#fff";
-    remarksInput.style.cursor = "text";
-    remarksInput.placeholder = "Enter fix remarks...";
-    remarksInput.focus();
-  } else {
-    selectEl.style.color = "#e65100";
-    selectEl.style.backgroundColor = "#fff3e0";
-    selectEl.style.borderColor = "#ffe0b2";
-
-    remarksInput.disabled = true;
-    remarksInput.style.background = "#f4f4f4";
-    remarksInput.style.cursor = "not-allowed";
-    remarksInput.placeholder = "Available when fixed...";
-    remarksInput.value = "";
-  }
-}
-
 // --- NEW HELPER: Silently force close edit mode ---
 function forceCloseEditMode() {
   if (isEditModeActive) {
@@ -2920,7 +2872,7 @@ function forceCloseEditMode() {
     const isFacilityView = viewFacility && viewFacility.offsetParent !== null;
 
     if (isFacilityView) {
-      closeFAEditMode(); // Closes Facility edit
+      cancelEditMode(); // Closes Facility edit
     } else {
       // Closes PC edit and reloads the original data to wipe unsaved text
       if (currentEditingSetId) {

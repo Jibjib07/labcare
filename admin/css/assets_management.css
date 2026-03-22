@@ -278,25 +278,6 @@ body {
   color: #888;
 }
 
-.page-num {
-  padding: 4px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-num.active {
-  background: #f0f0f0;
-  font-weight: bold;
-  border-color: #ccc;
-  color: #000;
-}
-
-.page-nav {
-  cursor: pointer;
-  padding: 0 5px;
-}
-
 /* =========================================
    4. RIGHT PANEL: DETAILS & TABS
    ========================================= */
