@@ -1,6 +1,7 @@
 /* --- Layout Grid --- */
 .account-grid {
   display: grid;
+  /* Two equal columns */
   grid-template-columns: 1fr 1fr;
   gap: 30px;
   align-items: start;
@@ -103,8 +104,8 @@
 
 .btn-purple-reset {
   background-color: transparent;
-  color: #7b1fa2;
-  border: 1px solid #e1bee7;
+  color: #7b1fa2; /* Purple color */
+  border: 1px solid #e1bee7; /* Light purple border */
   padding: 10px 20px;
   border-radius: 6px;
   font-size: 14px;
@@ -153,108 +154,4 @@
 
 .disclaimer strong {
   font-weight: 700;
-}
-
-/* --- Toast Popup (RIGHT SIDE) --- */
-#toast-container {
-  position: fixed;
-  top: 25px;
-  right: 25px;
-  z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  pointer-events: none;
-}
-
-.toast {
-  background: #ffffff;
-
-  /* ✅ MATCHED SIZE */
-  min-width: 320px;
-  max-width: 360px;
-
-  padding: 14px 16px; /* slightly tighter like your other module */
-
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-
-  display: flex;
-  align-items: center;
-  gap: 12px; /* slightly tighter */
-
-  pointer-events: auto;
-
-  animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-}
-.toast-icon {
-  font-size: 16px;
-  min-width: 34px;
-  height: 34px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border-radius: 8px;
-  border: 2px solid currentColor;
-}
-/* SUCCESS */
-.toast-success .toast-icon {
-  color: #4caf50;
-  background: #f1f8f1;
-}
-
-.toast-success .toast-title {
-  color: #2e7d32;
-}
-
-/* ERROR */
-.toast-danger .toast-icon {
-  color: #f44336;
-  background: #fef2f2;
-}
-
-.toast-danger .toast-title {
-  color: #c62828;
-}
-
-.toast-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.toast-title {
-  font-weight: 800;
-  font-size: 13px; /* slightly smaller */
-  margin-bottom: 2px;
-}
-
-.toast-sub {
-  font-size: 11.5px;
-  color: #666666;
-  line-height: 1.3;
-}
-
-/* ANIMATIONS */
-@keyframes slideInRight {
-  from {
-    transform: translateX(120%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(40px);
-    opacity: 0;
-  }
 }
