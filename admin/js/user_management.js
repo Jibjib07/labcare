@@ -1,5 +1,94 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Map Elements
+
+  let csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+  function showToast(title, message, type = "success") {
+    const toast = document.getElementById("authToast");
+    const icon = document.getElementById("toast-icon");
+    const titleText = document.getElementById("toast-title");
+    const msgText = document.getElementById("toast-message");
+
+    titleText.innerText = title;
+    msgText.innerText = message;
+
+    if (type === "error") {
+      icon.classList.add("error");
+      icon.innerHTML = `<i class="fas fa-exclamation-circle"></i>`;
+    } else {
+      icon.classList.remove("error");
+      icon.innerHTML = `<i class="fas fa-check-circle"></i>`;
+    }
+
+    toast.classList.add("active");
+
+    setTimeout(() => {
+      toast.classList.remove("active");
+    }, 5000);
+  }
+
+  const storedToast = sessionStorage.getItem("toastMessage");
+  if (storedToast) {
+    const toastData = JSON.parse(storedToast);
+    showToast(toastData.title, toastData.message, toastData.type);
+    sessionStorage.removeItem("toastMessage");
+  }
+
+  // ======== POST DATA WITH ROTATED CSRF + RETRY + SESSION HANDLING ========
+  async function postData(action, data, retry = true) {
+    data.append('action', action);
+    data.delete('csrf_token');
+    data.append('csrf_token', csrfToken);
+
+    try {
+      const res = await fetch('user_management.php', {
+        method: 'POST',
+        body: data
+      });
+      const result = await res.json();
+
+      if (result.session_expired) {
+        showToast("Session Expired", "Please login again.", "error");
+        setTimeout(() => window.location.href = "../login.php", 1500);
+        return {
+          status: 'error'
+        };
+      }
+
+      if (result.csrf_token) {
+        csrfToken = result.csrf_token;
+        const tokenInput = document.querySelector('input[name="csrf_token"]');
+        if (tokenInput) tokenInput.value = csrfToken;
+      }
+
+      if (result.message === 'Access denied') {
+        showToast("Access Denied", "You no longer have permission.", "error");
+        setTimeout(() => window.location.href = "../login.php", 2000);
+        return {
+          status: 'error'
+        };
+      }
+
+      if (result.message === 'Invalid CSRF token' && retry) {
+        return postData(action, data, false);
+      }
+
+      return result;
+
+    } catch (error) {
+      console.error("Network Error:", error);
+      showToast(
+        "Network Issue",
+        "Connection failed. Please check your internet or try again.",
+        "error"
+      );
+      return {
+        status: 'error',
+        message: 'network_error'
+      };
+    }
+  }
+
+  // ======== ELEMENTS ========
   const listContainer = document.getElementById("user-list-container");
   const searchInput = document.getElementById("search-input");
   const statusFilter = document.getElementById("status-filter");
@@ -10,27 +99,39 @@ document.addEventListener("DOMContentLoaded", () => {
   const infoRole = document.getElementById("info-role");
   const infoStatus = document.getElementById("info-status");
 
-  const btnAction1 = document.querySelector(
-    "#info-action-buttons button:nth-child(1)",
-  ); // Edit/Save
-  const btnAction2 = document.querySelector(
-    "#info-action-buttons button:nth-child(2)",
-  ); // Deactivate/Cancel
+  const btnAction1 = document.querySelector("#info-action-buttons button:nth-child(1)");
+  const btnAction2 = document.querySelector("#info-action-buttons button:nth-child(2)");
+  const resetBtn = document.getElementById("resetBtn"); // Recovery Button
+
+  const addModal = document.getElementById("add-user-modal");
+  const deactivateModal = document.getElementById("deactivate-modal");
+  const resetModal = document.getElementById("reset-modal");
+  const btnConfirmReset = document.getElementById("btn-confirm-reset");
 
   let currentItem = null;
   let isEditing = false;
 
-  // 2. Modals Map
-  const addModal = document.getElementById("add-user-modal");
-  const deactivateModal = document.getElementById("deactivate-modal");
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  // Email Validator
-  const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  function setLoading(button, text = "Processing...") {
+    button.disabled = true;
+    button.dataset.original = button.innerHTML;
+    button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${text}`;
+  }
 
-  // Auto-load first item if exists
+  function resetButton(button) {
+    button.disabled = false;
+    button.innerHTML = button.dataset.original;
+  }
+
+  function requireSelection() {
+    if (!currentItem) {
+      showToast("No User Selected", "Please select a user first.", "error");
+      return false;
+    }
+    return true;
+  }
+
   function loadInitialUser() {
     const firstItem = document.querySelector(".user-list-item");
     if (firstItem) {
@@ -40,28 +141,33 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function populateInfoPanel(item) {
+    const selectedUserId = item.getAttribute("data-id");
+    const loggedInId = document.getElementById("logged-in-admin-id").value;
+
     infoName.innerText = item.getAttribute("data-name");
     infoEmail.innerText = item.getAttribute("data-email");
     infoRole.innerText = item.getAttribute("data-role");
     infoStatus.innerText = item.getAttribute("data-status");
+
+    // Logic: Hide controls if viewing SELF
+    const isSelf = Number(selectedUserId) === Number(loggedInId);
+
+    if (isSelf) {
+      btnAction2.style.display = "none"; // Hide Deactivate
+      document.querySelector(".security-panel").style.visibility = "hidden"; // Hide Recovery
+      document.querySelector(".security-panel").style.opacity = "0";
+    } else {
+      btnAction2.style.display = "inline-block";
+      document.querySelector(".security-panel").style.visibility = "visible";
+      document.querySelector(".security-panel").style.opacity = "1";
+      updateStatusVisuals();
+    }
+
+    infoName.dataset.val = infoName.innerText;
+    infoEmail.dataset.val = infoEmail.innerText;
+    infoRole.dataset.val = infoRole.innerText;
+
     updateStatusVisuals();
-  }
-
-  loadInitialUser();
-
-  // 3. LIST CLICKS
-  if (listContainer) {
-    listContainer.addEventListener("click", (e) => {
-      const item = e.target.closest(".user-list-item");
-      if (!item) return;
-
-      if (currentItem) currentItem.classList.remove("selected");
-      item.classList.add("selected");
-      currentItem = item;
-
-      if (isEditing) toggleEditMode();
-      populateInfoPanel(item);
-    });
   }
 
   function updateStatusVisuals() {
@@ -77,36 +183,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 4. EDIT LOGIC
+  loadInitialUser();
+
+  if (listContainer) {
+    listContainer.addEventListener("click", (e) => {
+      const item = e.target.closest(".user-list-item");
+      if (!item) return;
+
+      if (currentItem) currentItem.classList.remove("selected");
+      item.classList.add("selected");
+      currentItem = item;
+
+      if (isEditing) toggleEditMode();
+      populateInfoPanel(item);
+    });
+  }
+
   function toggleEditMode() {
     isEditing = !isEditing;
 
     if (isEditing) {
+      const selectedUserId = currentItem.getAttribute("data-id");
+      const loggedInId = document.getElementById("logged-in-admin-id").value;
+
       infoName.innerHTML = `<input type="text" id="edit-name" value="${infoName.dataset.val}" class="edit-gray-input">`;
       infoEmail.innerHTML = `<input type="email" id="edit-email" value="${infoEmail.dataset.val}" class="edit-gray-input">`;
 
       const currentRole = infoRole.dataset.val;
+      const isSelf = Number(selectedUserId) === Number(loggedInId);
+      const disabledAttr = isSelf ? 'style="opacity: 0.6; pointer-events: none; cursor: not-allowed;"' : '';
+      const selfNote = isSelf ? '<br><span style="color: #f39c12; font-size: 11px;">You cannot change your own role.</span>' : '';
+
       infoRole.innerHTML = `
-                <div class="role-toggle" style="width: 100%; border: 1px solid #4caf50;">
-                    <button type="button" class="role-btn ${currentRole === "Admin" ? "active" : ""}" data-val="Admin" style="flex: 1;">Admin</button>
-                    <button type="button" class="role-btn ${currentRole === "Staff" ? "active" : ""}" data-val="Staff" style="flex: 1;">Staff</button>
-                    <input type="hidden" id="edit-role-val" value="${currentRole}">
-                </div>
-            `;
+            <div class="role-toggle" ${disabledAttr}>
+                <button type="button" class="role-btn ${currentRole === "Admin" ? "active" : ""}" data-val="Admin" style="flex: 1;">Admin</button>
+                <button type="button" class="role-btn ${currentRole === "Staff" ? "active" : ""}" data-val="Staff" style="flex: 1;">Staff</button>
+                <input type="hidden" id="edit-role-val" value="${currentRole}">
+            </div>
+            ${selfNote}
+        `;
 
-      const editRoleBtns = infoRole.querySelectorAll(".role-btn");
-      const editRoleInput = document.getElementById("edit-role-val");
-
-      editRoleBtns.forEach((btn) => {
+      infoRole.querySelectorAll(".role-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
-          editRoleBtns.forEach((b) => b.classList.remove("active"));
+          infoRole.querySelectorAll(".role-btn").forEach((b) => b.classList.remove("active"));
           e.target.classList.add("active");
-          editRoleInput.value = e.target.getAttribute("data-val");
+          document.getElementById("edit-role-val").value = e.target.dataset.val;
         });
       });
 
       btnAction1.className = "btn-green-add";
       btnAction1.innerHTML = `<i class="fas fa-check-circle"></i> Save`;
+      btnAction2.style.display = "inline-block"; // Ensure visible as Cancel button
       btnAction2.className = "btn-cancel-new";
       btnAction2.innerHTML = `Cancel`;
     } else {
@@ -117,221 +244,285 @@ document.addEventListener("DOMContentLoaded", () => {
 
       btnAction1.className = "btn-edit";
       btnAction1.innerHTML = `<i class="fas fa-pen"></i> Edit`;
+      populateInfoPanel(currentItem); // Re-run self checks
     }
   }
 
+  // Action: Save Edit
   if (btnAction1) {
     btnAction1.addEventListener("click", async () => {
-      if (!currentItem) return alert("Please select a user first.");
+      if (!requireSelection()) return;
 
       if (isEditing) {
         const newName = document.getElementById("edit-name").value.trim();
         const newEmail = document.getElementById("edit-email").value.trim();
         const newRole = document.getElementById("edit-role-val").value;
 
-        // Validation
-        if (!newName) return alert("Name cannot be empty.");
-        if (!isValidEmail(newEmail))
-          return alert("Please enter a valid email address.");
+        if (!newName || !newEmail || !newRole) {
+          showToast("Missing Fields", "Please fill out all fields.", "error");
+          return;
+        }
+        if (!isValidEmail(newEmail)) {
+          showToast("Email Error", "Please enter a valid email.", "error");
+          return;
+        }
 
         try {
-          // ==========================================
-          // BACKEND TODO: ADD UPDATE FETCH API CALL HERE
-          // const response = await fetch('api/update_user.php', { method: 'POST', body: ... });
-          // if (!response.ok) throw new Error('Failed to update user');
-          // ==========================================
+          setLoading(btnAction1, "Saving...");
+          const formData = new FormData();
+          formData.append("id", currentItem.dataset.id);
+          formData.append("name", newName);
+          formData.append("email", newEmail);
+          formData.append("role", newRole);
 
-          // Only update the UI if the fetch was successful
-          currentItem.setAttribute("data-name", newName);
-          currentItem.setAttribute("data-role", newRole);
-          currentItem.setAttribute("data-email", newEmail);
-          currentItem.querySelector(".fw-bold").innerText = newName;
-          currentItem.querySelector(".text-gray").innerText = `| ${newRole}`;
+          const data = await postData("update_user", formData);
 
-          infoName.dataset.val = newName;
-          infoEmail.dataset.val = newEmail;
-          infoRole.dataset.val = newRole;
+          if (data.status !== "success") throw new Error(data.message || "Update failed");
 
-          toggleEditMode();
-        } catch (error) {
-          console.error("Update Error:", error);
-          alert("An error occurred while saving the user. Please try again.");
+          sessionStorage.setItem("toastMessage", JSON.stringify({
+            title: "User Updated",
+            message: "User information updated successfully.",
+            type: "success"
+          }));
+          location.reload();
+        } catch (err) {
+          showToast("Update Failed", err.message, "error");
+          resetButton(btnAction1);
         }
       } else {
-        infoName.dataset.val = infoName.innerText;
-        infoEmail.dataset.val = infoEmail.innerText;
-        infoRole.dataset.val = infoRole.innerText;
         toggleEditMode();
       }
     });
   }
 
-  // 5. DEACTIVATE / RE-ACTIVATE LOGIC
+  // Action: Deactivate/Cancel
   if (btnAction2) {
     btnAction2.addEventListener("click", () => {
       if (isEditing) {
         toggleEditMode();
         return;
       }
-      if (!currentItem) return alert("Please select a user first.");
+      if (!requireSelection()) return;
 
-      const currentStatus = currentItem.getAttribute("data-status");
+      const currentStatus = currentItem.dataset.status;
+      document.getElementById("deact-name").value = currentItem.dataset.name;
+      document.getElementById("deact-email").value = currentItem.dataset.email;
+      document.getElementById("deact-role").value = currentItem.dataset.role;
+
+      const modalTitle = deactivateModal.querySelector("h2");
+      const confirmBtn = document.getElementById("btn-confirm-deactivate");
 
       if (currentStatus === "Active") {
-        document.getElementById("deact-name").value = infoName.innerText;
-        document.getElementById("deact-email").value = infoEmail.innerText;
-        document.getElementById("deact-role").value = infoRole.innerText;
-        deactivateModal.style.display = "flex";
+        modalTitle.innerText = "Deactivate this User";
+        confirmBtn.innerHTML = `<i class="fas fa-user-slash"></i> Deactivate`;
+        confirmBtn.className = "btn-red";
+        deactivateModal.setAttribute("data-action", "deactivate");
       } else {
-        if (confirm("Are you sure you want to re-activate this user?")) {
-          changeUserStatus("Active");
+        modalTitle.innerText = "Re-activate this User";
+        confirmBtn.innerHTML = `<i class="fas fa-undo"></i> Re-activate`;
+        confirmBtn.className = "btn-green-add";
+        deactivateModal.setAttribute("data-action", "reactivate");
+      }
+
+      deactivateModal.style.display = "flex";
+    });
+  }
+
+  // ✅ ACTION: SEND RESET LINK
+  let resetArmed = false;
+  let resetTimeout = null;
+
+  if (btnConfirmReset) {
+    btnConfirmReset.addEventListener("click", async function () {
+      // STEP 1: ARM STATE (FIRST CLICK)
+      if (!resetArmed) {
+        resetArmed = true;
+
+        this.disabled = true;
+        this.dataset.original = this.innerHTML;
+        this.innerHTML = `<i class="fas fa-hourglass-half"></i> Confirming...`;
+
+        showToast(
+          "Confirm Action",
+          "Click again to send reset link.",
+          "error"
+        );
+        
+
+        // 2-second delay lock
+        resetTimeout = setTimeout(() => {
+          this.disabled = false;
+          this.innerHTML = `<i class="fas fa-lock"></i> Send Link`;
+        }, 2000);
+
+        return;
+      }
+
+      // STEP 2: ACTUAL EXECUTION (SECOND CLICK)
+      try {
+        setLoading(this, "Sending Link...");
+
+        const formData = new FormData();
+        formData.append("id", currentItem.dataset.id);
+
+        const result = await postData("admin_send_reset", formData);
+
+        if (result.status === "success") {
+          showToast(
+            "Link Sent",
+            `A secure recovery link has been sent to ${currentItem.dataset.email}.`,
+            "success"
+          );
+          resetModal.style.display = "none";
+        } else {
+          showToast("Failed", result.message || "Could not send reset link.", "error");
         }
+      } catch (err) {
+        showToast(
+          "Request Failed",
+          err.message || "Unexpected error occurred. Please try again.",
+          "error"
+        );
+      } finally {
+        resetButton(this);
+        resetArmed = false;
+        clearTimeout(resetTimeout);
       }
     });
   }
 
-  document
-    .getElementById("btn-cancel-modal")
-    .addEventListener("click", () => (deactivateModal.style.display = "none"));
+  document.getElementById("btn-cancel-reset").addEventListener("click", () => {
+    resetModal.style.display = "none";
 
-  document
-    .getElementById("btn-confirm-deactivate")
-    .addEventListener("click", () => {
-      changeUserStatus("Deactivated");
+    // Reset state
+    resetArmed = false;
+    clearTimeout(resetTimeout);
+
+    btnConfirmReset.disabled = false;
+    btnConfirmReset.innerHTML = `<i class="fas fa-lock"></i> Send Link`;
+  });
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      if (!requireSelection()) return;
+
+      document.getElementById("reset-name").value = currentItem.dataset.name;
+      document.getElementById("reset-email").value = currentItem.dataset.email;
+
+      // Reset state every open
+      resetArmed = false;
+      clearTimeout(resetTimeout);
+      btnConfirmReset.disabled = false;
+      btnConfirmReset.innerHTML = `<i class="fas fa-lock"></i> Send Link`;
+
+      resetModal.style.display = "flex";
     });
-
-  async function changeUserStatus(newStatus) {
-    const userId = currentItem.getAttribute("data-id");
-
-    try {
-      // ==============================================
-      // BACKEND TODO: ADD STATUS UPDATE FETCH API CALL HERE
-      // const response = await fetch('api/update_status.php', { method: 'POST', body: ... });
-      // if (!response.ok) throw new Error('Failed to update status');
-      // ==============================================
-
-      currentItem.setAttribute("data-status", newStatus);
-      const badgeClass = newStatus === "Active" ? "active" : "deactivated";
-      currentItem.querySelector(".user-list-status").innerHTML =
-        `<span class="badge ${badgeClass}">${newStatus}</span>`;
-
-      infoStatus.innerText = newStatus;
-      updateStatusVisuals();
-      applyFilters();
-      deactivateModal.style.display = "none";
-    } catch (error) {
-      console.error("Status Update Error:", error);
-      alert(
-        "Could not update user status. Please check your connection and try again.",
-      );
-      deactivateModal.style.display = "none";
-    }
   }
 
-  // 6. ADD USER MODAL LOGIC
-  document
-    .getElementById("btn-open-add-modal")
-    .addEventListener("click", () => (addModal.style.display = "flex"));
+
+
+
+  // Modals & Filters Logic...
+  document.getElementById("btn-cancel-modal").addEventListener("click", () => (deactivateModal.style.display = "none"));
+
+  document.getElementById("btn-confirm-deactivate").addEventListener("click", async () => {
+    const action = deactivateModal.dataset.action;
+    const newStatus = action === "deactivate" ? "Deactivated" : "Active";
+    const confirmBtn = document.getElementById("btn-confirm-deactivate");
+
+    try {
+      const formData = new FormData();
+      formData.append("id", currentItem.dataset.id);
+      formData.append("status", newStatus);
+
+      setLoading(confirmBtn, "Updating...");
+      const data = await postData("update_status", formData);
+      if (data.status !== "success") throw new Error(data.message);
+
+      sessionStorage.setItem("toastMessage", JSON.stringify({
+        title: "Success",
+        message: `User is now ${newStatus.toLowerCase()}.`,
+        type: "success"
+      }));
+      location.reload();
+    } catch (err) {
+      resetButton(confirmBtn);
+      showToast("Update Failed", err.message, "error");
+    }
+  });
+
+  // Add User Logic
+  document.getElementById("btn-open-add-modal").addEventListener("click", () => (addModal.style.display = "flex"));
   document.getElementById("btn-cancel-add").addEventListener("click", () => {
     addModal.style.display = "none";
     document.getElementById("add-user-form").reset();
   });
 
-  document.querySelectorAll("#add-user-modal .role-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      document
-        .querySelectorAll("#add-user-modal .role-btn")
-        .forEach((b) => b.classList.remove("active"));
-      e.target.classList.add("active");
-      document.getElementById("add-role").value =
-        e.target.getAttribute("data-val");
-    });
+  document.getElementById("btn-confirm-add").addEventListener("click", async () => {
+    const name = document.getElementById("add-name").value.trim();
+    const email = document.getElementById("add-email").value.trim();
+    const password = document.getElementById("add-password").value;
+    const confirmPw = document.getElementById("add-confirm-password").value;
+    const role = document.getElementById("add-role").value;
+
+    if (!name || !email || !password) {
+      showToast("Missing Fields", "Please fill out all required fields.", "error");
+      return;
+    }
+
+    const passwordRegex = {
+      upper: /[A-Z]/,
+      lower: /[a-z]/,
+      number: /[0-9]/,
+      special: /[\W_]/
+    };
+
+    if (!passwordRegex.upper.test(password) ||
+        !passwordRegex.lower.test(password) ||
+        !passwordRegex.number.test(password) ||
+        !passwordRegex.special.test(password) ||
+        password.length < 8) {
+        showToast("Password Error", "Password does not meet security requirements.", "error");
+        return;
+    }
+    
+    if (password !== confirmPw) {
+        showToast("Password Error", "Passwords do not match.", "error");
+        return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("role", role);
+
+      const data = await postData("add_user", formData);
+      if (data.status !== "success") throw new Error(data.message);
+
+      sessionStorage.setItem("toastMessage", JSON.stringify({
+        title: "User Created",
+        message: "New user added successfully.",
+        type: "success"
+      }));
+      location.reload();
+    } catch (err) {
+      showToast("Creation Failed", err.message, "error");
+    }
   });
 
-  document
-    .getElementById("btn-confirm-add")
-    .addEventListener("click", async () => {
-      const name = document.getElementById("add-name").value.trim();
-      const email = document.getElementById("add-email").value.trim();
-      const password = document.getElementById("add-password").value;
-      const confirmPw = document.getElementById("add-confirm-password").value;
-      const role = document.getElementById("add-role").value;
+  // Filters
+  searchInput.addEventListener("input", applyFilters);
+  statusFilter.addEventListener("change", applyFilters);
 
-      // ERROR TRAPPING: Strict Validation
-      if (!name || !email || !password)
-        return alert("Please fill out all required fields.");
-      if (!isValidEmail(email))
-        return alert("Please enter a valid email address.");
-      if (password.length < 6)
-        return alert("Password must be at least 6 characters long.");
-      if (password !== confirmPw) return alert("Passwords do not match.");
-
-      try {
-        // =======================================
-        // BACKEND TODO: ADD INSERT FETCH API CALL HERE
-        // const response = await fetch('api/add_user.php', { method: 'POST', body: ... });
-        // if (!response.ok) throw new Error('Failed to create user');
-        // const newDbId = await response.json(); // Get the real ID from database
-        // =======================================
-
-        const dummyId = Math.floor(Math.random() * 1000); // Backend: Replace with newDbId
-
-        const newItem = document.createElement("div");
-        newItem.className = "user-list-item";
-        newItem.setAttribute("data-id", dummyId);
-        newItem.setAttribute("data-name", name);
-        newItem.setAttribute("data-role", role);
-        newItem.setAttribute("data-email", email);
-        newItem.setAttribute("data-status", "Active");
-
-        newItem.innerHTML = `
-                <div class="user-list-info">
-                    <span class="fw-bold">${name}</span> <span class="text-gray">| ${role}</span>
-                </div>
-                <div class="user-list-status">
-                    <span class="badge active">Active</span>
-                </div>
-            `;
-
-        listContainer.prepend(newItem);
-        addModal.style.display = "none";
-        document.getElementById("add-user-form").reset();
-
-        // Reset Toggle UI to Staff
-        document
-          .querySelectorAll("#add-user-modal .role-btn")
-          .forEach((b) => b.classList.remove("active"));
-        document
-          .querySelector('#add-user-modal .role-btn[data-val="Staff"]')
-          .classList.add("active");
-
-        // Auto-select newly added user
-        newItem.click();
-      } catch (error) {
-        console.error("Creation Error:", error);
-        alert("Failed to create the new user. Please try again.");
-      }
-    });
-
-  // 7. FILTER LOGIC
   function applyFilters() {
     const term = searchInput.value.toLowerCase();
     const status = statusFilter.value;
-
-    if (status === "All") listTitle.innerText = "All";
-    else listTitle.innerText = status;
-
     document.querySelectorAll(".user-list-item").forEach((item) => {
-      const name = item.getAttribute("data-name").toLowerCase();
-      const itemStatus = item.getAttribute("data-status");
-
-      const matchSearch = name.includes(term);
-      const matchStatus = status === "All" || itemStatus === status;
-
-      item.style.display = matchSearch && matchStatus ? "flex" : "none";
+      const name = item.dataset.name.toLowerCase();
+      const itemStatus = item.dataset.status;
+      item.style.display = (name.includes(term) && (status === "All" || itemStatus === status)) ? "flex" : "none";
     });
   }
-
-  searchInput.addEventListener("input", applyFilters);
-  statusFilter.addEventListener("change", applyFilters);
 });
