@@ -60,19 +60,6 @@
     align-items: center;
 }
 
-<<<<<<< HEAD
-.btn-green-add, .btn-edit, .btn-save, .btn-restore {
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-=======
 .btn-green-add,
 .btn-edit,
 .btn-save,
@@ -112,7 +99,6 @@
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 }
 .btn-cancel {
   background: transparent;
@@ -147,35 +133,6 @@
     animation: floatUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
 
-<<<<<<< HEAD
-.status-toggle-row { 
-    display: flex; 
-    margin-bottom: 15px; 
-}
-
-.toggle-group {
-    display: flex;
-    background-color: #f0f0f0;
-    padding: 4px;
-    border-radius: 12px;
-    gap: 0;
-    width: 100%;
-}
-
-.status-toggle-btn {
-    flex: 1;
-    border: none;
-    background: none;
-    padding: 10px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: transparent;
-    font-family: inherit;
-    border-radius: 8px;
-=======
 .search-filter-row {
   display: flex;
   gap: 10px;
@@ -223,7 +180,6 @@
   background: transparent;
   color: #555;
   font-family: inherit;
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 }
 
 
@@ -240,21 +196,10 @@
 /* =========================================
    4. TABLE ROW STYLING
    ========================================= */
-<<<<<<< HEAD
-.table-container {
-    flex: 1;
-    overflow-y: auto;
-    border: 1px solid #f0f0f0;
-    border-radius: 4px;
-}
-
-.guide-table { width: 100%; border-collapse: collapse; }
-=======
 .guide-table {
   width: 100%;
   border-collapse: collapse;
 }
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 
 .guide-info-wrapper {
   display: flex;
@@ -263,12 +208,6 @@
 }
 
 .guide-title-text {
-<<<<<<< HEAD
-    flex: 1;
-    font-weight: 700;
-    color: #333;
-    font-size: 14px;
-=======
   flex: 1; /* Takes up the first half of the space */
   font-weight: 700;
   color: #333;
@@ -276,31 +215,15 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 }
 
 .badge-container {
-<<<<<<< HEAD
-    flex: 1; 
-    display: flex;
-    justify-content: center;
-=======
   flex: 1;
   display: flex;
   justify-content: center; /* This keeps the text centered horizontally */
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 }
 
 .guide-category-badge {
-<<<<<<< HEAD
-    background-color: transparent;
-    padding: 0;
-    border-radius: 0;
-    color: #666;
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-=======
   background-color: transparent; /* Removed the gray background */
   padding: 0; /* Removed the padding */
   border-radius: 0; /* Removed the curves */
@@ -308,7 +231,6 @@
   font-size: 13px; /* Slightly larger since the pill is gone */
   font-weight: 500; /* Medium weight for readability */
   white-space: nowrap;
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 }
 
 .guide-table td {
@@ -317,20 +239,6 @@
   cursor: pointer;
 }
 
-<<<<<<< HEAD
-.guide-row {
-    opacity: 1;
-    transform: none;
-}
-
-.guide-row:hover { background-color: #fafafa; }
-
-.active-row { 
-    background-color: #f1f8f1 !important; 
-    border-left: 4px solid #4caf50; 
-}
-
-=======
 .guide-row:hover {
   background-color: #fafafa;
 }
@@ -365,7 +273,6 @@
   scrollbar-color: #ccc transparent;
 }
 
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 /* =========================================
    5. MODAL & ANIMATIONS
    ========================================= */
@@ -383,42 +290,6 @@
 }
 
 .modal-content {
-<<<<<<< HEAD
-    width: 600px;
-    max-width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: modalSlideIn 0.3s ease;
-    padding: 30px;
-}
-
-@keyframes modalSlideIn {
-    from { opacity: 0; transform: scale(0.95) translateY(-20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes floatUp {
-    from { 
-        opacity: 0; 
-        transform: translateY(15px); 
-    }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
-    }
-}
-
-/* =========================================
-   6. DETAIL VIEW & NOTIFICATIONS
-   ========================================= */
-.detail-content { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 15px; 
-    animation: fadeIn 0.4s ease; 
-}
-
-=======
   width: 600px;
   max-width: 90%;
   max-height: 90vh;
@@ -474,7 +345,6 @@
   flex-direction: column;
   gap: 15px;
 }
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 .detail-group label {
   display: block;
   font-size: 11px;
@@ -485,24 +355,6 @@
   font-weight: 800;
 }
 
-<<<<<<< HEAD
-/* Shared Styles for all fields */
-.detail-input, 
-.detail-textarea, 
-.detail-select {
-    width: 100%; 
-    padding: 12px; 
-    border: 1px solid #e0e0e0; 
-    border-radius: 6px;
-    background-color: #fcfcfc; 
-    color: #444; 
-    font-size: 14px; 
-    font-family: inherit;
-    line-height: 1.5;
-    box-sizing: border-box; 
-    resize: none;
-    display: block;
-=======
 .detail-input,
 .detail-textarea,
 .detail-select {
@@ -514,7 +366,6 @@
   color: #444;
   font-size: 14px;
   font-family: inherit;
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 }
 
 /* Fixed height ONLY for single-line elements */
@@ -532,30 +383,6 @@
 
 /* --- Notification System Design --- */
 .notification-container {
-<<<<<<< HEAD
-    position: fixed;
-    top: 25px;
-    right: 25px;
-    z-index: 100000;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    pointer-events: none;
-}
-
-.toast {
-    background: #ffffff;
-    min-width: 320px;
-    padding: 16px 20px;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    pointer-events: auto;
-    animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-    border-left: 5px solid #ddd;
-=======
   position: fixed;
   top: 25px;
   right: 25px;
@@ -575,7 +402,6 @@
   align-items: center;
   gap: 15px;
   animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
 }
 
 /* Specific Notification Themes */
@@ -596,79 +422,6 @@
 .toast-sub { font-size: 12px; color: #777; margin-top: 2px; }
 
 @keyframes slideInRight {
-<<<<<<< HEAD
-    from { transform: translateX(120%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-10px); }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* =========================================
-   7. RESPONSIVENESS
-   ========================================= */
-@media (max-width: 900px) {
-    .troubleshoot-layout { grid-template-columns: 1fr; }
-    .white-panel { height: auto; max-height: 500px; }
-}
-
-/* =========================================
-   8. ADD GUIDE MODAL SPECIFICS
-   ========================================= */
-#addGuideModal .modal-content {
-    width: 650px; 
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-}
-
-.modal-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-top: 10px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.form-group label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #1b4d3e;
-    font-weight: 800;
-}
-
-.modal-form input,
-.modal-form select,
-.modal-form textarea {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    background-color: #fcfcfc;
-    color: #444;
-    font-size: 14px;
-    font-family: inherit;
-    box-sizing: border-box;
-}
-
-.modal-form input, .modal-form select { height: 45px; }
-.modal-form textarea { min-height: 80px; resize: vertical; }
-.modal-divider { border: 0; border-top: 1px solid #eee; margin: 15px 0 20px 0; }
-=======
   from {
     transform: translateX(120%);
     opacity: 0;
@@ -678,4 +431,3 @@
     opacity: 1;
   }
 }
->>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
