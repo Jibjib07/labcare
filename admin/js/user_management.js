@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-
-  let csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+  let csrfToken =
+    document.querySelector('input[name="csrf_token"]')?.value || "";
 
   function showToast(title, message, type = "success") {
     const toast = document.getElementById("authToast");
@@ -35,22 +35,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ======== POST DATA WITH ROTATED CSRF + RETRY + SESSION HANDLING ========
   async function postData(action, data, retry = true) {
-    data.append('action', action);
-    data.delete('csrf_token');
-    data.append('csrf_token', csrfToken);
+    data.append("action", action);
+    data.delete("csrf_token");
+    data.append("csrf_token", csrfToken);
 
     try {
-      const res = await fetch('user_management.php', {
-        method: 'POST',
-        body: data
+      const res = await fetch("user_management.php", {
+        method: "POST",
+        body: data,
       });
       const result = await res.json();
 
       if (result.session_expired) {
         showToast("Session Expired", "Please login again.", "error");
-        setTimeout(() => window.location.href = "../login.php", 1500);
+        setTimeout(() => (window.location.href = "../login.php"), 1500);
         return {
-          status: 'error'
+          status: "error",
         };
       }
 
@@ -60,30 +60,29 @@ document.addEventListener("DOMContentLoaded", () => {
         if (tokenInput) tokenInput.value = csrfToken;
       }
 
-      if (result.message === 'Access denied') {
+      if (result.message === "Access denied") {
         showToast("Access Denied", "You no longer have permission.", "error");
-        setTimeout(() => window.location.href = "../login.php", 2000);
+        setTimeout(() => (window.location.href = "../login.php"), 2000);
         return {
-          status: 'error'
+          status: "error",
         };
       }
 
-      if (result.message === 'Invalid CSRF token' && retry) {
+      if (result.message === "Invalid CSRF token" && retry) {
         return postData(action, data, false);
       }
 
       return result;
-
     } catch (error) {
       console.error("Network Error:", error);
       showToast(
         "Network Issue",
         "Connection failed. Please check your internet or try again.",
-        "error"
+        "error",
       );
       return {
-        status: 'error',
-        message: 'network_error'
+        status: "error",
+        message: "network_error",
       };
     }
   }
@@ -99,8 +98,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const infoRole = document.getElementById("info-role");
   const infoStatus = document.getElementById("info-status");
 
-  const btnAction1 = document.querySelector("#info-action-buttons button:nth-child(1)");
-  const btnAction2 = document.querySelector("#info-action-buttons button:nth-child(2)");
+  const btnAction1 = document.querySelector(
+    "#info-action-buttons button:nth-child(1)",
+  );
+  const btnAction2 = document.querySelector(
+    "#info-action-buttons button:nth-child(2)",
+  );
   const resetBtn = document.getElementById("resetBtn"); // Recovery Button
 
   const addModal = document.getElementById("add-user-modal");
@@ -211,8 +214,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const currentRole = infoRole.dataset.val;
       const isSelf = Number(selectedUserId) === Number(loggedInId);
-      const disabledAttr = isSelf ? 'style="opacity: 0.6; pointer-events: none; cursor: not-allowed;"' : '';
-      const selfNote = isSelf ? '<br><span style="color: #f39c12; font-size: 11px;">You cannot change your own role.</span>' : '';
+      const disabledAttr = isSelf
+        ? 'style="opacity: 0.6; pointer-events: none; cursor: not-allowed;"'
+        : "";
+      const selfNote = isSelf
+        ? '<br><span style="color: #f39c12; font-size: 11px;">You cannot change your own role.</span>'
+        : "";
 
       infoRole.innerHTML = `
             <div class="role-toggle" ${disabledAttr}>
@@ -225,7 +232,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       infoRole.querySelectorAll(".role-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
-          infoRole.querySelectorAll(".role-btn").forEach((b) => b.classList.remove("active"));
+          infoRole
+            .querySelectorAll(".role-btn")
+            .forEach((b) => b.classList.remove("active"));
           e.target.classList.add("active");
           document.getElementById("edit-role-val").value = e.target.dataset.val;
         });
@@ -277,13 +286,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
           const data = await postData("update_user", formData);
 
-          if (data.status !== "success") throw new Error(data.message || "Update failed");
+          if (data.status !== "success")
+            throw new Error(data.message || "Update failed");
 
-          sessionStorage.setItem("toastMessage", JSON.stringify({
-            title: "User Updated",
-            message: "User information updated successfully.",
-            type: "success"
-          }));
+          sessionStorage.setItem(
+            "toastMessage",
+            JSON.stringify({
+              title: "User Updated",
+              message: "User information updated successfully.",
+              type: "success",
+            }),
+          );
           location.reload();
         } catch (err) {
           showToast("Update Failed", err.message, "error");
@@ -342,12 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
         this.dataset.original = this.innerHTML;
         this.innerHTML = `<i class="fas fa-hourglass-half"></i> Confirming...`;
 
-        showToast(
-          "Confirm Action",
-          "Click again to send reset link.",
-          "error"
-        );
-        
+        showToast("Confirm Action", "Click again to send reset link.", "error");
 
         // 2-second delay lock
         resetTimeout = setTimeout(() => {
@@ -371,17 +379,21 @@ document.addEventListener("DOMContentLoaded", () => {
           showToast(
             "Link Sent",
             `A secure recovery link has been sent to ${currentItem.dataset.email}.`,
-            "success"
+            "success",
           );
           resetModal.style.display = "none";
         } else {
-          showToast("Failed", result.message || "Could not send reset link.", "error");
+          showToast(
+            "Failed",
+            result.message || "Could not send reset link.",
+            "error",
+          );
         }
       } catch (err) {
         showToast(
           "Request Failed",
           err.message || "Unexpected error occurred. Please try again.",
-          "error"
+          "error",
         );
       } finally {
         resetButton(this);
@@ -419,98 +431,119 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-
-
-
   // Modals & Filters Logic...
-  document.getElementById("btn-cancel-modal").addEventListener("click", () => (deactivateModal.style.display = "none"));
+  document
+    .getElementById("btn-cancel-modal")
+    .addEventListener("click", () => (deactivateModal.style.display = "none"));
 
-  document.getElementById("btn-confirm-deactivate").addEventListener("click", async () => {
-    const action = deactivateModal.dataset.action;
-    const newStatus = action === "deactivate" ? "Deactivated" : "Active";
-    const confirmBtn = document.getElementById("btn-confirm-deactivate");
+  document
+    .getElementById("btn-confirm-deactivate")
+    .addEventListener("click", async () => {
+      const action = deactivateModal.dataset.action;
+      const newStatus = action === "deactivate" ? "Deactivated" : "Active";
+      const confirmBtn = document.getElementById("btn-confirm-deactivate");
 
-    try {
-      const formData = new FormData();
-      formData.append("id", currentItem.dataset.id);
-      formData.append("status", newStatus);
+      try {
+        const formData = new FormData();
+        formData.append("id", currentItem.dataset.id);
+        formData.append("status", newStatus);
 
-      setLoading(confirmBtn, "Updating...");
-      const data = await postData("update_status", formData);
-      if (data.status !== "success") throw new Error(data.message);
+        setLoading(confirmBtn, "Updating...");
+        const data = await postData("update_status", formData);
+        if (data.status !== "success") throw new Error(data.message);
 
-      sessionStorage.setItem("toastMessage", JSON.stringify({
-        title: "Success",
-        message: `User is now ${newStatus.toLowerCase()}.`,
-        type: "success"
-      }));
-      location.reload();
-    } catch (err) {
-      resetButton(confirmBtn);
-      showToast("Update Failed", err.message, "error");
-    }
-  });
+        sessionStorage.setItem(
+          "toastMessage",
+          JSON.stringify({
+            title: "Success",
+            message: `User is now ${newStatus.toLowerCase()}.`,
+            type: "success",
+          }),
+        );
+        location.reload();
+      } catch (err) {
+        resetButton(confirmBtn);
+        showToast("Update Failed", err.message, "error");
+      }
+    });
 
   // Add User Logic
-  document.getElementById("btn-open-add-modal").addEventListener("click", () => (addModal.style.display = "flex"));
+  document
+    .getElementById("btn-open-add-modal")
+    .addEventListener("click", () => (addModal.style.display = "flex"));
   document.getElementById("btn-cancel-add").addEventListener("click", () => {
     addModal.style.display = "none";
     document.getElementById("add-user-form").reset();
   });
 
-  document.getElementById("btn-confirm-add").addEventListener("click", async () => {
-    const name = document.getElementById("add-name").value.trim();
-    const email = document.getElementById("add-email").value.trim();
-    const password = document.getElementById("add-password").value;
-    const confirmPw = document.getElementById("add-confirm-password").value;
-    const role = document.getElementById("add-role").value;
+  document
+    .getElementById("btn-confirm-add")
+    .addEventListener("click", async () => {
+      const name = document.getElementById("add-name").value.trim();
+      const email = document.getElementById("add-email").value.trim();
+      const password = document.getElementById("add-password").value;
+      const confirmPw = document.getElementById("add-confirm-password").value;
+      const role = document.getElementById("add-role").value;
 
-    if (!name || !email || !password) {
-      showToast("Missing Fields", "Please fill out all required fields.", "error");
-      return;
-    }
+      if (!name || !email || !password) {
+        showToast(
+          "Missing Fields",
+          "Please fill out all required fields.",
+          "error",
+        );
+        return;
+      }
 
-    const passwordRegex = {
-      upper: /[A-Z]/,
-      lower: /[a-z]/,
-      number: /[0-9]/,
-      special: /[\W_]/
-    };
+      const passwordRegex = {
+        upper: /[A-Z]/,
+        lower: /[a-z]/,
+        number: /[0-9]/,
+        special: /[\W_]/,
+      };
 
-    if (!passwordRegex.upper.test(password) ||
+      if (
+        !passwordRegex.upper.test(password) ||
         !passwordRegex.lower.test(password) ||
         !passwordRegex.number.test(password) ||
         !passwordRegex.special.test(password) ||
-        password.length < 8) {
-        showToast("Password Error", "Password does not meet security requirements.", "error");
+        password.length < 8
+      ) {
+        showToast(
+          "Password Error",
+          "Password does not meet security requirements.",
+          "error",
+        );
         return;
-    }
-    
-    if (password !== confirmPw) {
+      }
+
+      if (password !== confirmPw) {
         showToast("Password Error", "Passwords do not match.", "error");
         return;
-    }
+      }
 
-    try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("email", email);
-      formData.append("password", password);
-      formData.append("role", role);
+      try {
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("email", email);
+        formData.append("password", password);
+        formData.append("role", role);
 
-      const data = await postData("add_user", formData);
-      if (data.status !== "success") throw new Error(data.message);
+        const data = await postData("add_user", formData);
+        if (data.status !== "success") throw new Error(data.message);
 
-      sessionStorage.setItem("toastMessage", JSON.stringify({
-        title: "User Created",
-        message: "New user added successfully.",
-        type: "success"
-      }));
-      location.reload();
-    } catch (err) {
-      showToast("Creation Failed", err.message, "error");
-    }
-  });
+        sessionStorage.setItem(
+          "toastMessage",
+          JSON.stringify({
+            title: "User Created",
+            message: "New user added successfully.",
+            type: "success",
+          }),
+        );
+        location.reload();
+      } catch (err) {
+        showToast("Creation Failed", err.message, "error");
+      }
+    });
 
   // Filters
   searchInput.addEventListener("input", applyFilters);
@@ -522,7 +555,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".user-list-item").forEach((item) => {
       const name = item.dataset.name.toLowerCase();
       const itemStatus = item.dataset.status;
-      item.style.display = (name.includes(term) && (status === "All" || itemStatus === status)) ? "flex" : "none";
+      item.style.display =
+        name.includes(term) && (status === "All" || itemStatus === status)
+          ? "flex"
+          : "none";
     });
   }
 });

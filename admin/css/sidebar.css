@@ -158,19 +158,19 @@ nav ul li a.active i {
 }
 
 /* =========================================
-   4. MOBILE RESPONSIVENESS (Max-width: 768px)
+   4. MOBILE RESPONSIVENESS (Max-width: 1024px)
    ========================================= */
-@media (max-width: 768px) {
+@media screen and (max-width: 1024px) {
   body {
     flex-direction: column;
   }
 
   /* --- Mobile Header --- */
   .mobile-header {
-    height: 55px !important;
+    height: 60px !important;
     display: flex;
     align-items: center;
-    padding: 0px 15px;
+    padding: 0px 20px;
     background: white;
     border-bottom: 1px solid #eee;
     position: fixed;
@@ -183,7 +183,7 @@ nav ul li a.active i {
   #mobile-menu-toggle {
     background: none;
     border: none;
-    font-size: 22px;
+    font-size: 24px;
     color: #1b4d3e;
     cursor: pointer;
     margin-right: 15px;
@@ -191,7 +191,7 @@ nav ul li a.active i {
 
   .logo-container.mobile {
     margin-bottom: 0;
-    padding-left: 70px;
+    padding-left: 0;
   }
 
   /* --- Hide Desktop Only Elements --- */
@@ -201,8 +201,8 @@ nav ul li a.active i {
 
   /* --- Adjust Main Content --- */
   .main-content {
-    margin-left: 0;
-    padding: 80px 20px 20px 20px; /* Top padding for header */
+    margin-left: 0; /* Remove left margin since sidebar is hidden */
+    padding: 85px 25px 25px 25px; /* Top padding clears the header */
     width: 100%;
   }
 
@@ -219,6 +219,7 @@ nav ul li a.active i {
     opacity: 0;
     transition: opacity 0.3s;
   }
+
   .sidebar-overlay.active {
     display: block;
     opacity: 1;
@@ -228,17 +229,18 @@ nav ul li a.active i {
   .sidebar {
     position: fixed;
     top: 0;
-    left: -100%; /* Hidden Left */
+    left: -100%; /* Hidden Off-Screen Left */
     width: 280px;
     height: 100vh;
     z-index: 1002; /* Topmost */
     border-right: none;
     box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
     padding-top: 60px; /* Space for close button */
+    transition: left 0.3s ease-in-out; /* Smooth slide-in */
   }
 
   .sidebar.active {
-    left: 0;
+    left: 0; /* Slide in */
   }
 
   /* --- Close Button --- */
@@ -247,8 +249,8 @@ nav ul li a.active i {
     align-items: center;
     justify-content: center;
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 15px;
+    right: 15px;
     background: #f5f5f5;
     border: none;
     color: #555;
@@ -257,5 +259,21 @@ nav ul li a.active i {
     border-radius: 50%;
     cursor: pointer;
     font-size: 16px;
+  }
+}
+
+/* --- Mobile Phones (Max-width: 480px) --- */
+/* Tightens up the layout for smaller phone screens */
+@media screen and (max-width: 480px) {
+  .sidebar {
+    width: 250px; /* Slightly narrower drawer for phones */
+  }
+
+  .main-content {
+    padding: 75px 15px 15px 15px; /* Less padding on the edges */
+  }
+
+  .mobile-header {
+    padding: 0px 15px;
   }
 }

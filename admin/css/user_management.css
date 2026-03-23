@@ -269,6 +269,14 @@
   color: #555;
 }
 
+/* --- FIX: PREVENT 'BOX INSIDE A BOX' IN EDIT MODE --- */
+.info-value:has(.edit-gray-input),
+.info-value:has(.role-toggle),
+.info-value:has(select) {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
 .action-buttons {
   display: flex;
   gap: 10px;
@@ -358,7 +366,7 @@
 }
 
 #reset-modal h2 {
-  color: #7B1FA2;
+  color: #7b1fa2;
 }
 
 /* TOAST BASE */
@@ -377,8 +385,8 @@
   align-items: center;
   gap: 12px;
 
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-  border-left: 5px solid #4CAF50;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-left: 5px solid #4caf50;
 
   opacity: 0;
   transform: translateY(-20px);
@@ -398,7 +406,7 @@
 /* ICON */
 #toast-icon {
   font-size: 18px;
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 /* ERROR STATE */
@@ -422,76 +430,78 @@
   color: #555;
 }
 
+.security-panel {
+  margin-top: 25px; /* <--- THIS ADDS THE SEPARATION GAP */
+}
 /* --- Security Section --- */
 .security-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
 }
 
 .security-text {
-    text-align: center;
-    font-size: 14px;
-    color: #333;
-    margin-bottom: 25px;
-    line-height: 1.5;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 25px;
+  line-height: 1.5;
 }
 
-
 .btn-purple-reset {
-    background-color: transparent;
-    color: #7B1FA2;
-    border: 1px solid #E1BEE7;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
+  background-color: transparent;
+  color: #7b1fa2;
+  border: 1px solid #e1bee7;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-purple-reset:hover {
-    background-color: #f3e5f5;
-    border-color: #7B1FA2;
+  background-color: #f3e5f5;
+  border-color: #7b1fa2;
 }
 
 /* --- Right Column: System Info --- */
 .info-block {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .info-block h4 {
-    font-size: 14px;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 10px;
 }
 
 .info-block p {
-    font-size: 13px;
-    color: #444;
-    line-height: 1.6;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.6;
 }
 
 .info-block strong {
-    font-weight: 700;
-    color: #222;
+  font-weight: 700;
+  color: #222;
 }
 
 .disclaimer {
-    text-align: center;
-    margin-top: 60px;
-    font-size: 12px;
-    color: #444;
+  text-align: center;
+  margin-top: 60px;
+  font-size: 12px;
+  color: #444;
 }
 
 .disclaimer strong {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 /* =========================================

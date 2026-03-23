@@ -148,17 +148,17 @@ if (isset($_POST['submit_restore'])) {
             <?php endif; ?>
 
             <div class="panel white-panel left-list-panel">
-                <div class="switch-filter-container" style="margin-bottom: 20px;">
-                    <div class="switch-filter">
-                        <button type="button" class="switch-btn active" data-value="Current">Current Inventory</button>
-                        <button type="button" class="switch-btn" data-value="Archived">Archived</button>
-                    </div>
-                </div>
                 <div class="panel-header-row" style="margin-bottom: 20px;">
                     <h3 style="font-size: 16px;">Existing Supply List</h3>
                     <button type="button" class="btn-green-add" id="openModalBtn">
                         <i class="fas fa-plus-circle"></i> Add
                     </button>
+                </div>
+                <div class="switch-filter-container" style="margin-bottom: 20px;">
+                    <div class="switch-filter">
+                        <button type="button" class="switch-btn active" data-value="Current">Current Inventory</button>
+                        <button type="button" class="switch-btn" data-value="Archived">Archived</button>
+                    </div>
                 </div>
                 <div class="search-filter-row">
                     <div class="search-box-container" style="flex: 1; position: relative;">

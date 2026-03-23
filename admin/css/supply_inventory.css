@@ -5,14 +5,17 @@
   margin-bottom: 25px;
 }
 .page-header h1 {
-  font-size: 24px;
+  font-size: 28px;
   color: #000;
-  margin-bottom: 5px;
-  font-weight: 800;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.5px;
 }
 .page-header p {
   color: #555;
   font-size: 14px;
+  margin-top: 5px;
+  margin-bottom: 0;
 }
 
 .white-panel {
@@ -779,24 +782,37 @@
   }
 }
 
-/* =========================================
-   8. RESPONSIVENESS
-   ========================================= */
-@media (max-width: 900px) {
+/* =========================================================
+   BASE STATE (Desktop Default)
+   ========================================================= */
+/* Hide the mobile back button on desktop screens by default */
+.mobile-back-row {
+  display: none;
+}
+
+/* =========================================================
+   1. SMALL DESKTOPS & TABLET LANDSCAPE (max-width: 1024px)
+   Goal: Keep the side-by-side list/detail view, but loosen strict heights and gaps.
+   ========================================================= */
+@media screen and (max-width: 1024px) {
   .supply-layout {
-    grid-template-columns: 1fr;
+    gap: 15px; /* Tighter gap between list and details */
+    grid-template-columns: 1fr; /* Stack vertically if screen gets too tight, though usually 768px handles this */
   }
+
   .right-detail-panel,
   .left-list-panel {
     height: auto;
     max-height: none;
+    padding: 20px; /* Slightly reduce padding to save space */
   }
 }
 
-/* =========================================
-   8. MOBILE RESPONSIVENESS (PHASE 2)
-   ========================================= */
-@media screen and (max-width: 900px) {
+/* =========================================================
+   2. TABLET PORTRAIT & LARGE MOBILE (max-width: 768px)
+   Goal: The Major Shift. Hide the right panel, stretch the left panel, and enable the slide-over transition.
+   ========================================================= */
+@media screen and (max-width: 768px) {
   /* 1. Layout Stacking */
   .supply-layout {
     display: block !important;
@@ -828,16 +844,25 @@
   .header-actions .btn-text {
     display: none !important;
   }
+
   .header-actions button {
-    width: 40px;
-    height: 40px;
+    width: 40px !important;
+    height: 40px !important;
     padding: 0 !important;
+    display: inline-flex;
     justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+  }
+
+  .header-actions button i {
+    margin: 0 !important;
   }
 
   /* 4. Detail Grid Stacking */
   .detail-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 15px;
   }
 
@@ -868,9 +893,38 @@
   }
 }
 
-/* Hide mobile-only elements on desktop */
-@media screen and (min-width: 901px) {
-  .mobile-back-row {
-    display: none;
+/* =========================================================
+   3. SMALL MOBILE PHONES (max-width: 480px)
+   Goal: Shrink paddings and pack UI elements tightly.
+   ========================================================= */
+@media screen and (max-width: 480px) {
+  /* Pull the edges of the main layout closer to the phone bezel */
+  .supply-layout {
+    padding: 5px;
+  }
+
+  .left-list-panel,
+  .right-detail-panel {
+    padding: 10px;
+  }
+
+  /* Shrink the Action Buttons slightly to fit tiny screens */
+  .header-actions button {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .header-actions button i {
+    font-size: 14px !important;
+  }
+
+  /* Tighten up List Item Cards */
+  .supply-row.asset-item {
+    padding: 12px;
+  }
+
+  /* Tighten up the detail grid spacing */
+  .detail-grid {
+    gap: 10px;
   }
 }
