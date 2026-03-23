@@ -134,24 +134,25 @@ if (isset($_POST['send_link_btn'])) {
             <span class="brand-name">LAB<span class="bname2">CARE</span></span>
         </div>
 
-        <div class="login-box reset-card">
-            <h2 class="auth-title-large">Reset Password</h2>
-            <p class="auth-subtitle-gray">Enter the email address associated with your account and we'll send you a link to reset your password.</p>
+            <div class="login-box reset-card">
+                <h2 class="auth-title-large">Reset Password</h2>
+                <p class="auth-subtitle-gray">Enter the email address associated with your account and we'll send you a link to reset your password.</p>
 
-            <form method="POST">
-                <div class="input-group">
-                    <label>Email</label>
-                    <div class="input-wrapper">
-                        <input type="email" name="email" placeholder="Ex. JohnDoe@gmail.com" required>
-                        <i class="fas fa-at"></i>
+                <form method="POST">
+                    <div class="input-group">
+                        <label>Email</label>
+                        <div class="input-wrapper">
+                            <input type="email" name="email" placeholder="Ex. JohnDoe@gmail.com" required>
+                            <i class="fas fa-at"></i>
+                        </div>
                     </div>
+                    <button type="submit" name="send_link_btn" class="btn-login btn-dark-green">Send Reset Link</button>
+                </form>
+                <div class="login-footer">
+                    <a href="login.php" class="return-link">Return to Login</a>
                 </div>
-                <button type="submit" name="send_link_btn" class="btn-login btn-dark-green">Send Reset Link</button>
-            </form>
-            <div class="login-footer">
-                <a href="login.php" class="return-link">Return to Login</a>
             </div>
-        </div>
+
 
         <p class="disclaimer"><strong>Disclaimer:</strong> For Computer Laboratory Use Only</p>
     </div>
@@ -164,6 +165,7 @@ if (isset($_POST['send_link_btn'])) {
                 toast.classList.remove('active');
             }, 5000);
         }
+
     </script>
 </body>
 
