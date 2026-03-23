@@ -24,15 +24,9 @@
 
 .user-layout {
   display: grid;
-  grid-template-columns: 1fr 1.5fr; /* Split: Left Form(1fr) | Right Stack(1.5fr) */
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
   align-items: start;
-}
-
-.right-column-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
 .panel-header-row {
@@ -41,30 +35,19 @@
   align-items: center;
   margin-bottom: 20px;
 }
-.panel-header-row h3,
-.user-list-panel h3 {
+.panel-header-row h3 {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
   color: #222;
 }
-.user-list-panel h3 {
-  margin-bottom: 15px;
-}
 
 /* =========================================
-   2. FORMS & BUTTONS (Global)
+   2. FORMS & BUTTONS
    ========================================= */
-.left-form-panel {
-  min-height: 500px;
+.form-group {
+  margin-bottom: 15px;
 }
-
-.user-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
 .form-group label {
   display: block;
   font-size: 13px;
@@ -77,33 +60,45 @@
 .form-select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
   font-size: 13px;
   color: #555;
-  background: white;
+  background: #fff;
+  box-sizing: border-box;
 }
-
-.radio-group {
-  display: flex;
-  gap: 20px;
+.readonly-input {
+  background-color: #fbfbfb;
+  color: #777;
+  outline: none;
 }
+.readonly-input:focus {
+  border-color: #e0e0e0;
+} /* Keep border clean on click */
 
-.radio-label {
+.inline-role-group {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  color: #333;
-  cursor: pointer;
 }
-
-.radio-label input[type="radio"] {
-  accent-color: #555;
-  width: 16px;
-  height: 16px;
-  margin: 0;
+.role-toggle {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.role-btn {
+  padding: 8px 30px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
   cursor: pointer;
+  transition: 0.2s;
+}
+.role-btn.active {
+  background: #4caf50;
+  color: white;
 }
 
 .btn-green-add {
@@ -111,295 +106,35 @@
   color: white;
   border: none;
   padding: 8px 20px;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 5px;
+  transition: 0.2s;
+}
+.btn-green-add:hover {
+  background: #45a049;
 }
 
 .btn-red {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.btn-red:hover {
-  background-color: #c82333;
-}
-
-/* =========================================
-   3. DATA TABLES & FILTERS
-   ========================================= */
-.search-filter-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.search-input {
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-}
-
-.filter-btn {
-  background: white;
-  border: 1px solid #ddd;
-  padding: 0 15px;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #555;
-}
-
-.table-container {
-  overflow-x: auto;
-  max-height: 250px;
-  overflow-y: auto;
-  margin-bottom: 15px;
-}
-
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.user-table th {
-  background: #1b4d3e;
-  color: white;
-  padding: 12px 15px;
-  text-align: left;
-  font-size: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-.user-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 13px;
-  color: #333;
-}
-
-.user-table tbody tr {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.user-table tbody tr:hover {
-  background-color: #f9f9f9;
-}
-
-.active-row {
-  background-color: #e8f5e9;
-}
-
-.badge {
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 700;
-  color: white;
-  display: inline-block;
-}
-.badge.active {
-  background-color: #4caf50;
-}
-.badge.deactivated {
-  background-color: #9e9e9e;
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  gap: 5px;
-  font-size: 12px;
-  color: #666;
-  align-items: center;
-}
-.page-num {
-  padding: 4px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.page-num.active {
-  background: #f0f0f0;
-  font-weight: bold;
-  border-color: #ccc;
-  color: #000;
-}
-.page-nav {
-  cursor: pointer;
-  padding: 0 5px;
-}
-
-/* =========================================
-   4. USER INFO PANEL & EDIT MODE
-   ========================================= */
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.full-width {
-  grid-column: span 2;
-}
-
-.info-item label {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 5px;
-}
-
-.info-value {
-  background: #fcfcfc;
-  border: 1px solid #eee;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #555;
-}
-
-.info-value.status-bg {
-  background: #e8f5e9;
-  color: #1b4d3e;
-  font-weight: 600;
-  border: none;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-edit {
-  background: #4caf50;
+  background-color: #e63946;
   color: white;
   border: none;
   padding: 8px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
+  border-radius: 6px;
   font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 5px;
-}
-
-.btn-deactivate {
-  background: white;
-  border: 1px solid #ddd;
-  color: #333;
-  padding: 8px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* Edit Mode Specific UI */
-.edit-input,
-.edit-gray-input {
-  width: 100%;
-  padding: 10px 15px;
-  background-color: #f0f0f0;
-  border: 1px solid #f0f0f0;
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 13px;
-  color: #333;
-  box-sizing: border-box;
-  outline: none;
-  transition: border 0.2s;
-}
-
-.edit-gray-input:focus {
-  border-color: #ccc;
-}
-
-.edit-input {
-  border: 1px solid #4caf50;
-  background: white;
-  padding: 8px;
-}
-
-.edit-gray-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 15px center;
-  padding-right: 30px;
-  cursor: pointer;
-}
-
-.status-toggle-wrapper {
-  display: flex;
-  background-color: #f5f5f5;
-  border-radius: 6px;
-  width: 100%;
-  border: 1px solid #eee;
-  overflow: hidden;
-}
-
-.status-btn {
-  flex: 1;
-  padding: 9px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  color: #777;
   transition: 0.2s;
 }
-
-.status-btn.active-green {
-  background-color: #4caf50;
-  color: white;
-  border-radius: 6px;
-}
-
-.status-btn.active-gray {
-  background-color: #9e9e9e;
-  color: white;
-  border-radius: 6px;
-}
-
-.btn-save-new {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.btn-red:hover {
+  background-color: #d62828;
 }
 
 .btn-cancel-new {
@@ -414,6 +149,171 @@
 }
 
 /* =========================================
+   3. LIST VIEW & FILTERS
+   ========================================= */
+.search-filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.search-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.filter-btn {
+  background: white;
+  border: 1px solid #eee;
+  padding: 0 15px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #555;
+  outline: none;
+}
+
+.list-container {
+  max-height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.user-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #fff;
+  border-bottom: 1px solid #f9f9f9;
+  border-left: 4px solid transparent;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.user-list-item:hover {
+  background: #fafafa;
+}
+.user-list-item.selected {
+  border-left-color: #4caf50;
+  background: #f8fbfa;
+}
+
+.fw-bold {
+  font-weight: 700;
+  color: #222;
+  font-size: 13px;
+}
+.text-gray {
+  color: #888;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+.badge {
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  display: inline-block;
+}
+.badge.active {
+  background-color: #4caf50;
+}
+.badge.deactivated {
+  background-color: #9e9e9e;
+}
+
+/* =========================================
+   4. USER INFO PANEL & EDIT MODE
+   ========================================= */
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.info-item {
+  width: 100%;
+}
+.info-item label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.info-value {
+  background: #f4f5f7;
+  border: 1px solid #f4f5f7;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+.info-value.status-bg {
+  background: #e8f5e9;
+  color: #1b4d3e;
+  font-weight: 600;
+  border: none;
+  width: max-content;
+  padding: 12px 30px;
+}
+.info-value.status-bg.deact-bg {
+  background: #f0f0f0;
+  color: #555;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+.btn-edit {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-deactivate {
+  background: white;
+  border: 1px solid #ddd;
+  color: #333;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.edit-gray-input {
+  width: 100%;
+  padding: 11px;
+  background-color: #fff;
+  border: 1px solid #4caf50;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #333;
+  box-sizing: border-box;
+  outline: none;
+}
+
+/* =========================================
    5. MODALS
    ========================================= */
 .modal-overlay {
@@ -423,22 +323,24 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.4);
   z-index: 1000;
   justify-content: center;
   align-items: center;
 }
-
 .modal-content {
   background-color: #ffffff;
   padding: 30px;
   border-radius: 12px;
   width: 100%;
   max-width: 450px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   animation: modalFadeIn 0.2s ease-out;
+  box-sizing: border-box;
 }
-
+.modal-large {
+  max-width: 500px;
+}
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -449,54 +351,168 @@
     transform: translateY(0);
   }
 }
-
-.modal-content h2 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #2c3e50;
-  font-size: 1.5rem;
-}
-
-.modal-content p {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 25px;
-  line-height: 1.5;
-}
-
-.modal-inputs label {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: #444;
-}
-
-.modal-inputs .readonly-input {
-  width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 16px;
-  background-color: #f8f9fa;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  color: #6c757d;
-  font-family: inherit;
-  box-sizing: border-box;
-  cursor: not-allowed;
-}
-
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 25px;
+}
+
+#reset-modal h2 {
+  color: #7B1FA2;
+}
+
+/* TOAST BASE */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 280px;
+  max-width: 350px;
+
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  border-left: 5px solid #4CAF50;
+
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+
+  transition: all 0.3s ease;
+  z-index: 9999;
+}
+
+/* ACTIVE STATE */
+.toast.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ICON */
+#toast-icon {
+  font-size: 18px;
+  color: #4CAF50;
+}
+
+/* ERROR STATE */
+#toast-icon.error {
+  color: #e74c3c;
+}
+
+.toast.error {
+  border-left-color: #e74c3c;
+}
+
+/* TEXT */
+#toast-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+#toast-message {
+  font-size: 12px;
+  color: #555;
+}
+
+/* --- Security Section --- */
+.security-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.security-text {
+    text-align: center;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+
+.btn-purple-reset {
+    background-color: transparent;
+    color: #7B1FA2;
+    border: 1px solid #E1BEE7;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-purple-reset:hover {
+    background-color: #f3e5f5;
+    border-color: #7B1FA2;
+}
+
+/* --- Right Column: System Info --- */
+.info-block {
+    margin-bottom: 40px;
+}
+
+.info-block h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.info-block p {
+    font-size: 13px;
+    color: #444;
+    line-height: 1.6;
+}
+
+.info-block strong {
+    font-weight: 700;
+    color: #222;
+}
+
+.disclaimer {
+    text-align: center;
+    margin-top: 60px;
+    font-size: 12px;
+    color: #444;
+}
+
+.disclaimer strong {
+    font-weight: 700;
 }
 
 /* =========================================
-   6. RESPONSIVENESS (Always at the bottom)
+   6. RESPONSIVENESS (MOBILE FRIENDLY)
    ========================================= */
 @media (max-width: 900px) {
   .user-layout {
     grid-template-columns: 1fr;
+  }
+  .modal-content {
+    width: 92%;
+    padding: 20px;
+    margin: auto;
+  }
+  .action-buttons {
+    flex-direction: column;
+    width: auto;
+    gap: 5px;
+  }
+  .btn-edit,
+  .btn-deactivate {
+    justify-content: center;
   }
 }
