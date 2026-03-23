@@ -1,5 +1,5 @@
-<?php 
-include '../includes/db.php'; 
+<?php
+include '../includes/db.php';
 
 // 1. AJAX Endpoint: Fetch Single Guide Details
 if (isset($_GET['get_details'])) {
@@ -25,9 +25,10 @@ if (isset($_GET['ajax_filter'])) {
     $result = mysqli_query($conn, $query);
 
     if (mysqli_num_rows($result) > 0) {
+        $isFirst = true;
         while ($row = mysqli_fetch_assoc($result)) {
-            // UPDATED: Dynamic data mapping for title and category
-            echo "<tr class='guide-row' data-id='{$row['guide_id']}'>
+            $firstClass = $isFirst ? 'auto-click' : '';
+            echo "<tr class='guide-row $firstClass' data-id='{$row['guide_id']}'>
                     <td>
                         <div class='guide-info-wrapper'>
                             <span class='guide-title-text'>" . htmlspecialchars($row['issue_title']) . "</span>
@@ -37,6 +38,7 @@ if (isset($_GET['ajax_filter'])) {
                         </div>
                     </td>
                   </tr>";
+            $isFirst = false;
         }
     } else {
         echo "<tr><td style='text-align:center; padding: 20px;'>No results found.</td></tr>";
@@ -75,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_guide'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_guide'])) {
     $id = intval($_POST['guide_id']);
     $archive_query = "UPDATE troubleshooting SET guide_status = 'Archived' WHERE guide_id = $id";
-
     if (mysqli_query($conn, $archive_query)) {
         echo json_encode(['status' => 'success', 'message' => 'Guide archived successfully']);
     } else {
@@ -88,7 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_guide'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_guide'])) {
     $id = intval($_POST['guide_id']);
     $restore_query = "UPDATE troubleshooting SET guide_status = 'Available' WHERE guide_id = $id";
-
     if (mysqli_query($conn, $restore_query)) {
         echo json_encode(['status' => 'success', 'message' => 'Guide restored successfully']);
     } else {
@@ -105,10 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_guide'])) {
     $cause = mysqli_real_escape_string($conn, $_POST['issue_cause']);
     $solution = mysqli_real_escape_string($conn, $_POST['issue_solutio']);
     $preventive = mysqli_real_escape_string($conn, $_POST['issue_preven']);
-    
     $insert_query = "INSERT INTO troubleshooting (issue_title, issue_catego, issue_summary, issue_cause, issue_solutio, issue_preven, guide_status) 
                      VALUES ('$title', '$category', '$summary', '$cause', '$solution', '$preventive', 'Available')";
-
     if (mysqli_query($conn, $insert_query)) {
         echo json_encode(['status' => 'success', 'message' => 'New guide created successfully']);
     } else {
@@ -116,10 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_guide'])) {
     }
     exit;
 }
-
 $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection Errors", "Peripheral Device Issues"];
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -132,15 +128,12 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
 </head>
 <body>
     <?php include 'includes/sidebar.php'; ?>
-
     <div id="notification-container" class="notification-container"></div>
-
     <div class="main-content">
         <div class="page-header">
             <h1>Troubleshooting Management</h1>
             <p>Diagnose technical issues and access guided solutions for common hardware problems.</p>
         </div>
-
         <div class="troubleshoot-layout">
             <div class="panel white-panel left-list-panel">
                 <div class="panel-header-row">
@@ -148,7 +141,6 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                     <input type="hidden" id="categoryList" value='<?php echo json_encode($categories); ?>'>
                     <button class="btn-green-add" id="openAddModal"><i class="fas fa-plus-circle"></i> Add</button>
                 </div>
-
                 <div class="status-toggle-row">
                     <div class="toggle-group">
                         <button type="button" class="status-toggle-btn active" data-status="Available">Available</button>
@@ -156,7 +148,6 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                     </div>
                     <input type="hidden" id="statusValue" value="Available">
                 </div>
-
                 <div class="search-filter-row">
                     <input type="text" id="searchInput" class="search-input" placeholder="Search a guide">
                     <select id="categoryFilter" class="filter-dropdown">
@@ -166,14 +157,12 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                         <?php endforeach; ?>
                     </select>
                 </div>
-
                 <div class="table-container">
                     <table class="guide-table">
                         <tbody id="guideTableBody"></tbody>
                     </table>
                 </div>
             </div>
-
             <div class="panel white-panel right-detail-panel">
                 <div class="panel-header-row">
                     <h3>Guide Full Details</h3>
@@ -182,23 +171,17 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                         <button class="btn-archive" id="archiveToggleBtn"></button>
                     </div>
                 </div>
-                <hr class="modal-divider">
-                <div id="detailView" class="detail-content">
-                    <p class="placeholder-text" style="text-align:center; color:#888; margin-top:50px;">Select a guide to view details.</p>
-                </div>
+                <div id="detailView" class="detail-content"></div>
             </div>
         </div>
     </div>
-
     <div id="addGuideModal" class="modal-overlay" style="display:none;">
         <div class="modal-content white-panel">
             <div class="panel-header-row">
                 <h3>Adding New Guide</h3>
                 <div class="action-buttons">
                     <button type="button" class="btn-cancel" id="closeAddModal">Cancel</button>
-                    <button type="button" class="btn-green-add" id="submitCreateBtn">
-                        <i class="fas fa-plus-circle"></i> Create
-                    </button>
+                    <button type="button" class="btn-green-add" id="submitCreateBtn"><i class="fas fa-plus-circle"></i> Create</button>
                 </div>
             </div>
             <hr class="modal-divider">
@@ -218,7 +201,6 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             </form>
         </div>
     </div>
-
     <div id="archiveConfirmModal" class="modal-overlay" style="display:none;">
         <div class="modal-content white-panel modal-confirm">
             <h3>Archive this Troubleshooting Guide?</h3>
@@ -231,11 +213,10 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             </div>
         </div>
     </div>
-
     <div id="restoreConfirmModal" class="modal-overlay" style="display:none;">
         <div class="modal-content white-panel modal-confirm">
             <h3>Restore Troubleshooting Guide?</h3>
-            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">This guide will be returned to the active list and will be visible to all staff.</p>
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">This guide will be returned to the active list and visible to all staff.</p>
             <div class="form-group"><label>Issue Title</label><input type="text" id="restoreIssueTitle" class="detail-input" readonly></div>
             <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="restoreCategory" class="detail-input" readonly></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -244,7 +225,6 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             </div>
         </div>
     </div>
-
     <script src="js/troubleshooting.js"></script>
 </body>
 </html>

@@ -1,4 +1,132 @@
-<?php include '../includes/db.php'; ?>
+<?php 
+/**
+ * 1. AJAX HANDLER - MUST BE AT THE ABSOLUTE TOP
+ */
+if (isset($_POST['action'])) {
+    ob_start(); 
+    header('Content-Type: application/json');
+    
+    require_once dirname(__FILE__) . '/../includes/db.php'; 
+    session_start(); 
+
+    // Metadata for the report signature
+    $response = ['success' => false, 'data' => [], 'prepared_by' => 'System Administrator'];
+    
+    if(isset($_SESSION['user_fname']) && isset($_SESSION['user_lname'])) {
+        $response['prepared_by'] = $_SESSION['user_fname'] . ' ' . $_SESSION['user_lname'];
+    }
+
+    $asOfDate = $_POST['asOfDate'] ?? date('Y-m-d');
+    $subTab = $_POST['subTab'] ?? 'units'; 
+    $type = $_POST['type'] ?? 'status';
+
+    try {
+        if (!isset($conn) || $conn->connect_error) {
+            throw new Exception("Database connection failed.");
+        }
+
+        /**
+         * ACTION: fetch_snapshot_rooms
+         */
+        if ($_POST['action'] === 'fetch_snapshot_rooms') {
+            $query = "
+                SELECT DISTINCT l.lab_id, l.lab_room 
+                FROM laboratories l
+                WHERE l.lab_id IN (
+                    SELECT DISTINCT lab_id FROM units_log WHERE log_date <= ?
+                    UNION
+                    SELECT DISTINCT lab_id FROM assets_log WHERE log_date <= ?
+                )
+                ORDER BY l.lab_room ASC
+            ";
+            
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("ss", $asOfDate, $asOfDate);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $response['data'] = $result->fetch_all(MYSQLI_ASSOC);
+            $response['success'] = true;
+        }
+
+        /**
+         * ACTION: generate_snapshot_report
+         */
+        if ($_POST['action'] === 'generate_snapshot_report') {
+            
+            if ($type === 'inventory') {
+                $query = "
+                    SELECT sl.supply_name AS set_tag, sl.supply_status AS set_status, 
+                           'N/A' AS lab_room, sl.log_date
+                    FROM supply_log sl
+                    INNER JOIN (
+                        SELECT supply_id, MAX(log_id) as max_log_id
+                        FROM supply_log
+                        WHERE log_date <= ?
+                        GROUP BY supply_id
+                    ) latest ON sl.log_id = latest.max_log_id
+                    WHERE sl.supply_avail = 'Current'
+                    ORDER BY sl.supply_name ASC
+                ";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param("s", $asOfDate);
+            } else {
+                $table = ($subTab === 'assets') ? 'assets_log' : 'units_log';
+                $idCol = ($subTab === 'assets') ? 'asset_id' : 'set_id';
+                $tagCol = ($subTab === 'assets') ? 'asset_tag' : 'set_tag';
+                $statusCol = ($subTab === 'assets') ? 'asset_status' : 'set_status';
+                $labId = $_POST['labId'] ?? 'all';
+
+                $query = "
+                    SELECT log.$tagCol AS set_tag, log.$statusCol AS set_status, log.lab_room, log.log_date
+                    FROM $table log
+                    INNER JOIN (
+                        SELECT $idCol, MAX(log_id) as max_log_id
+                        FROM $table
+                        WHERE log_date <= ?
+                        GROUP BY $idCol
+                    ) latest ON log.log_id = latest.max_log_id
+                    WHERE 1=1
+                ";
+
+                if (!empty($labId) && $labId !== 'all') {
+                    $query .= " AND log.lab_id = ? ";
+                }
+
+                if ($type === 'status') {
+                    $query .= " AND log.$statusCol IN ('Working', 'For Repair')";
+                } else if ($type === 'condemned') {
+                    $query .= " AND log.$statusCol = 'Condemned'";
+                }
+
+                $query .= " ORDER BY log.$tagCol ASC";
+                $stmt = $conn->prepare($query);
+                
+                if (!empty($labId) && $labId !== 'all') {
+                    $stmt->bind_param("si", $asOfDate, $labId);
+                } else {
+                    $stmt->bind_param("s", $asOfDate);
+                }
+            }
+
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $response['data'] = $result->fetch_all(MYSQLI_ASSOC);
+            $response['success'] = true;
+        }
+
+    } catch (Exception $e) {
+        $response['success'] = false;
+        $response['message'] = $e->getMessage();
+    }
+
+    ob_end_clean(); 
+    echo json_encode($response);
+    exit; 
+}
+
+require_once '../includes/db.php'; 
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +134,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Generation - LabCare</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/report_generation.css?v=<?php echo time(); ?>">
 </head>
@@ -14,127 +141,92 @@
     <?php include 'includes/sidebar.php'; ?>
 
     <div class="main-content">
-        
         <div class="page-header">
             <h1>Report Generation Management</h1>
-            <p>Generate and export detailed analytics on laboratory performance and asset conditions.</p>
+            <p>Snapshot Analytics: Performance and conditions as of a specific date.</p>
         </div>
 
         <div class="report-layout">
-            
-            <div class="panel white-panel filter-panel">
+            <div class="panel white-panel">
                 <div class="panel-header-row">
-                    <h3>Report Filter Selection</h3>
-                    <button class="btn-green"><i class="fas fa-filter"></i> Apply Filter</button>
+                    <h3 class="panel-title">Generate Report</h3>
+                    <button class="btn-generate" id="generateReportBtn">
+                        <i class="fas fa-sync-alt"></i> Generate
+                    </button>
                 </div>
 
-                <form class="filter-form">
+                <div class="main-tabs">
+                    <button class="tab-btn active" data-tab="status">Status</button>
+                    <button class="tab-btn" data-tab="condemned">Condemned</button>
+                    <button class="tab-btn" data-tab="inventory">Inventory</button>
+                </div>
+
+                <form class="filter-form" onsubmit="return false;">
                     <div class="form-group">
+                        <label>As of Date (Snapshot)</label>
+                        <input type="date" id="snapshotDate" class="form-input" value="<?php echo date('Y-m-d'); ?>">
+                    </div>
+
+                    <div class="form-group" id="labRoomGroup">
                         <label>Select Computer Laboratory Room</label>
-                        <select class="form-select">
-                            <option>Lab Room List</option>
-                            <option>Room 104</option>
-                            <option>Room 105</option>
+                        <select class="form-select" id="labRoomSelect">
+                            <option value="all">All Laboratories</option>
                         </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Date Range</label>
-                        <select class="form-select">
-                            <option>Select Range</option>
-                            <option>This Week</option>
-                            <option>This Month</option>
-                            <option>Custom</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Starting Date</label>
-                        <div class="date-input-wrapper">
-                            <input type="date" class="form-input" placeholder="MM/DD/YYYY">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>End Date</label>
-                        <div class="date-input-wrapper">
-                            <input type="date" class="form-input" placeholder="MM/DD/YYYY">
-                        </div>
                     </div>
                 </form>
+
+                <div class="sub-tabs-wrapper" id="subTabsWrapper">
+                    <button class="sub-tab active" data-sub="units">Computer Units</button>
+                    <button class="sub-tab" data-sub="assets">Facility Assets</button>
+                </div>
+
+                <div class="visualization-area">
+                    <div class="chart-container" id="statusChartContainer">
+                        <div class="donut-chart" id="mainDonutChart"></div>
+                        <div class="chart-legend-box" id="statusLegend">
+                            <div class="legend-pill">
+                                <div class="legend-content">
+                                    <span class="dot green" id="legendColor1"></span>
+                                    <span id="legendText1">Working</span>
+                                </div>
+                                <span class="count" id="countWorking">0</span>
+                            </div>
+                            <div class="legend-pill">
+                                <div class="legend-content">
+                                    <span class="dot yellow" id="legendColor2"></span>
+                                    <span id="legendText2">For Repair</span>
+                                </div>
+                                <span class="count" id="countRepair">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="condemnedCountPanel" class="condemned-display-panel" style="display: none;">
+                        <div class="condemned-card">
+                            <h2 class="condemned-number" id="totalCondemnedCount">0</h2>
+                            <p class="condemned-label" id="condemnedLabel">Number of Condemned</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="panel white-panel preview-panel">
                 <div class="panel-header-row">
-                    <h3>Maintenance Report Preview</h3>
-                    <button class="btn-green"><i class="fas fa-file-export"></i> Export Data</button>
+                    <h3 class="panel-title">Report Preview</h3>
+                    <button class="btn-export" id="exportReportBtn"><i class="fas fa-file-export"></i> Export Data</button>
                 </div>
-
-                <div class="chart-section">
-                    <h4>Units & Assets Status Distribution From Room 104</h4>
-                    
-                    <div class="chart-wrapper">
-                        <div class="donut-chart"></div>
-                        
-                        <div class="chart-legend">
-                            <div class="legend-item">
-                                <div class="legend-label"><span class="dot green"></span> Working</div>
-                                <div class="legend-value">45</div>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-label"><span class="dot yellow"></span> For Repair</div>
-                                <div class="legend-value">1</div>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-label"><span class="dot red"></span> Condemned</div>
-                                <div class="legend-value">1</div>
-                            </div>
+                
+                <div class="report-document-container">
+                    <div class="preview-content" id="reportPreviewArea">
+                        <div class="empty-state">
+                            <i class="fas fa-file-invoice fa-3x" style="color: #ddd; margin-bottom: 15px;"></i>
+                            <p>Select criteria and click <strong>Generate</strong> to view the formal report preview.</p>
                         </div>
                     </div>
                 </div>
-
-                <div class="summary-section">
-                    <h3>Summary Table</h3>
-                    <div class="table-wrapper">
-                        <table class="summary-table">
-                            <thead>
-                                <tr>
-                                    <th>Status</th>
-                                    <th>Unit Count</th>
-                                    <th>Percentage %</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Working</td>
-                                    <td>42</td>
-                                    <td>89%</td>
-                                </tr>
-                                <tr>
-                                    <td>For Repair</td>
-                                    <td>7</td>
-                                    <td>10%</td>
-                                </tr>
-                                <tr>
-                                    <td>Condemned</td>
-                                    <td>1</td>
-                                    <td>1%</td>
-                                </tr>
-                                <tr class="total-row">
-                                    <td>Total Inventory Count</td>
-                                    <td>50</td>
-                                    <td>100%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
-
         </div>
     </div>
-
-    <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
+    <script src="js/report_generation.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>
