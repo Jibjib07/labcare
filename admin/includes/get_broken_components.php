@@ -91,13 +91,23 @@ try {
             }
         }
     } else {
-        // Facility Asset
-        $res = $conn->query("SELECT asset_status FROM assets WHERE asset_id='$id'");
+        // Facility Asset Logic
+        $stmt = $conn->prepare("SELECT asset_status, asset_name FROM assets WHERE asset_id=?");
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+
         if ($res && $row = $res->fetch_assoc()) {
-            if (isset($row['asset_status']) && $row['asset_status'] === 'For Repair') {
-                $components[] = ['db_column' => 'asset_status', 'name' => 'Facility Asset', 'reporter_remarks' => $reporter_remarks];
+            // Check for 'For Repair' or 'Missing Parts'
+            if ($row['asset_status'] !== 'Working' && $row['asset_status'] !== 'Condemned') {
+                $components[] = [
+                    'db_column' => 'asset_status',
+                    'name' => $row['asset_name'],
+                    'reporter_remarks' => $reporter_remarks // Now correctly passed!
+                ];
             }
         }
+        $stmt->close();
     }
 
     echo json_encode(['success' => true, 'components' => $components]);

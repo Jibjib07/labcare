@@ -18,8 +18,8 @@ try {
     $roomResult = $roomQuery->get_result()->fetch_assoc();
     $lab_room = $roomResult ? $roomResult['lab_room'] : 'Unknown';
 
-    // 2. Insert Asset (Including asset_property and lab_room)
-    $stmt = $conn->prepare("INSERT INTO assets (asset_id, asset_name, asset_tag, asset_property, asset_brand, asset_status, lab_id, lab_room) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    // 2. Insert Asset (FIXED: Added latest_activity and NOW())
+    $stmt = $conn->prepare("INSERT INTO assets (asset_id, asset_name, asset_tag, asset_property, asset_brand, asset_status, lab_id, lab_room, latest_activity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
     $stmt->bind_param("ssssssss", $asset_id, $asset_name, $asset_tag, $asset_property, $asset_brand, $asset_status, $lab_id, $lab_room);
 
     if ($stmt->execute()) {

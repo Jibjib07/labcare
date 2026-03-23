@@ -43,11 +43,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </a>
             </li>
             <li>
-                <a href="maintenance_history.php" class="<?= $current_page == 'maintenance_history.php' ? 'active' : '' ?>">
-                    <i class="fas fa-clipboard-list"></i> <span>History Management</span>
-                </a>
-            </li>
-            <li>
                 <a href="troubleshooting.php" class="<?= $current_page == 'troubleshooting.php' ? 'active' : '' ?>">
                     <i class="fas fa-tools"></i> <span>Troubleshooting</span>
                 </a>

@@ -18,7 +18,9 @@ if (!empty($asset_id)) {
         // 3. Map the database columns to the keys your JS expects
         // (Ensure these match the 'key' in your JS populateRightPanel loop)
         $history_data = [];
-        $hist_stmt = $conn->prepare("SELECT report_date, report_actor, report_remarks, report_status FROM asset_history WHERE asset_id = ? ORDER BY report_date DESC LIMIT 5");
+
+        // --- FIXED: Added 'report_affected' to the SELECT query ---
+        $hist_stmt = $conn->prepare("SELECT report_date, report_actor, report_affected, report_remarks, report_status FROM asset_history WHERE asset_id = ? ORDER BY report_id DESC");
         $hist_stmt->bind_param("s", $asset_id);
         $hist_stmt->execute();
         $hist_res = $hist_stmt->get_result();

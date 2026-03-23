@@ -3,6 +3,7 @@ header('Content-Type: application/json');
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 try {
+    session_start(); // Added this just in case admin_auth doesn't start the session automatically
     require_once __DIR__ . '/../../includes/admin_auth.php';
     require_once __DIR__ . '/../../includes/db.php';
 
@@ -17,8 +18,8 @@ try {
 
     $conn->begin_transaction();
 
-    // 1. Update status to Condemned
-    $stmt = $conn->prepare("UPDATE assets SET asset_status = 'Condemned' WHERE asset_id = ?");
+    // 1. Update status to Condemned AND set the latest_activity timestamp!
+    $stmt = $conn->prepare("UPDATE assets SET asset_status = 'Condemned', latest_activity = NOW() WHERE asset_id = ?");
     $stmt->bind_param("s", $asset_id);
     $stmt->execute();
 

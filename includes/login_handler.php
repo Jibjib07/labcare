@@ -27,10 +27,16 @@ if (isset($_POST['login_btn'])) {
                 exit();
             }
 
+            // Prevent Session Fixation: Change the ID immediately upon login
+            session_regenerate_id(true);            
+
             // Set Session Variables
             $_SESSION['user_id'] = $row['user_id'];
             $_SESSION['user_name'] = $row['user_name'];
             $_SESSION['user_role'] = $row['user_role'];
+
+            // Track Activity for Expiration Logic
+            $_SESSION['last_activity'] = time();
 
             // Role-Based Redirection
             if (strtolower($row['user_role']) === 'admin') {

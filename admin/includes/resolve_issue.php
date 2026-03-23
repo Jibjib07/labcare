@@ -65,11 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // 4. CHECK IF UNIT IS FULLY REPAIRED
             updateUnitStatus($conn, $id);
+
+            // 5. NEW: STAMP THE LATEST ACTIVITY ON THE PARENT UNIT
+            // This ensures the main PC is marked as recently updated regardless of which component was fixed.
+            $conn->query("UPDATE units SET latest_activity = NOW() WHERE set_id='$id'");
         } else if ($type === 'fa') {
             foreach ($resolutions as $res) {
                 $remarks = !empty($res['adminRemarks']) ? $res['adminRemarks'] : 'Resolved without specific remarks.';
 
-                $conn->query("UPDATE assets SET asset_status='Working' WHERE asset_id='$id'");
+                // FIXED: Added latest_activity = NOW() to the FA update
+                $conn->query("UPDATE assets SET asset_status='Working', latest_activity = NOW() WHERE asset_id='$id'");
 
                 $action = "Fixed";
                 $affected = "Facility Asset";

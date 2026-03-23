@@ -251,7 +251,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                             </button>
 
                             <button class="btn-delete" id="btnCondemn" onclick="openCondemnModal()">
-                                <i class="fas fa-trash-alt"></i>
+                                <i class="fas fa-archive"></i>
                             </button>
                         </div>
                     </div>
@@ -423,7 +423,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
 
                             <div class="activity-section view-mode">
                                 <div class="activity-header">
-                                    <h4>Recent Activity</h4>
+                                    <h4>Activity</h4>
                                     <a href="#" class="view-history-link">View Full Maintenance History</a>
                                 </div>
 
@@ -598,97 +598,73 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                 </div>
 
                 <div class="panel white-panel right-panel" id="view-facility-right">
+                    <div class="section-header-row details-header-mobile">
+                        <button type="button" class="mobile-back-btn" onclick="closeMobileDetails()">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
 
-                    <div id="fa-view-mode">
-                        <div class="section-header-row details-header-mobile">
-                            <button type="button" class="mobile-back-btn" onclick="closeMobileDetails()">
-                                <i class="fas fa-arrow-left"></i>
+                        <h3 id="view_fa_header_title" style="flex: 1; margin: 0; font-size: 18px;">Select an Asset</h3>
+
+                        <input type="hidden" id="original_fa_status" value="">
+
+                        <div class="action-buttons" style="display: flex; gap: 8px;">
+                            <button class="btn-cancel" id="btnCancelEditFA" onclick="cancelEditMode()" style="display: none;">
+                                <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
                             </button>
+                            <button class="action-button edit-btn" id="editToggleButtonFA" onclick="toggleEditMode()">
+                                <i class="fas fa-pen"></i> <span class="btn-text" id="editTextFA">Edit</span>
+                            </button>
+                            <button class="btn-resolve" id="btnResolveFA" style="display: none;" onclick="openResolveModal('fa')">
+                                <i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>
+                            </button>
+                            <button class="btn-delete" id="btnCondemnFA" onclick="openCondemnModal()">
+                                <i class="fas fa-archive"></i>
+                            </button>
+                        </div>
+                    </div>
 
-                            <h3 id="view_fa_header_title" style="flex: 1; margin: 0; font-size: 18px;">Select an Asset</h3>
-
-                            <div class="action-buttons">
-                                <button class="btn-resolve" id="btnResolveFA" style="display: none;" onclick="openResolveModal('fa')">
-                                    <i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>
-                                </button>
-
-                                <button class="action-btn edit-btn" id="editToggleButtonFA" onclick="toggleEditMode()">
-                                    <i class="fas fa-pen"></i> <span class="btn-text">Edit</span>
-                                </button>
-
-                                <button class="btn-delete" id="btnCondemnFA" onclick="openCondemnModal()">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                    <div class="specs-content-box" style="padding: 20px;">
+                        <div class="detail-grid-row">
+                            <div class="detail-group">
+                                <label>Property ID</label>
+                                <div id="view_fa_property" class="detail-box view-mode">---</div>
+                                <input type="text" id="edit_fa_property" class="edit-mode edit-input" style="display:none;">
+                            </div>
+                            <div class="detail-group">
+                                <label>Device Name</label>
+                                <div id="view_fa_name" class="detail-box view-mode">---</div>
+                                <input type="text" id="edit_fa_name" class="edit-mode edit-input" style="display:none;">
                             </div>
                         </div>
 
-                        <div class="detail-content">
-                            <div class="detail-grid-row">
-                                <div class="detail-group"><label>Property ID:</label>
-                                    <div class="detail-box" id="view_fa_tag">---</div>
-                                </div>
+                        <div class="detail-grid-row">
+                            <div class="detail-group">
+                                <label>Brand</label>
+                                <div id="view_fa_brand" class="detail-box view-mode">---</div>
+                                <input type="text" id="edit_fa_brand" class="edit-mode edit-input" style="display:none;">
                             </div>
-                            <div class="detail-grid-row">
-                                <div class="detail-group"><label>Brand:</label>
-                                    <div class="detail-box" id="view_fa_brand">---</div>
-                                </div>
-                            </div>
-                            <div class="detail-grid-row">
-                                <div class="detail-group"><label>Status:</label>
-                                    <div class="detail-box" id="view_fa_status_box">
-                                        <span id="view_fa_status">---</span>
+                            <div class="detail-group" style="display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 5px;">
+                                <div class="status-row">
+                                    <span style="font-size: 13px; font-weight: 600; color: #333; margin-right: 15px;">Status:</span>
+                                    <div id="pill_fa_status" class="status-pill green view-mode">---</div>
+                                    <div id="toggle_fa_status" class="status-toggle-group edit-mode" style="display:none;">
+                                        <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                        <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">For Repair</button>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="activity-section">
-                            <div class="activity-header">
-                                <h4>Recent Activity</h4>
-                                <a href="maintenance_history.php" class="view-history-link">View Full Maintenance History</a>
-                            </div>
-
-                            <div id="fa_activity_log_body" class="recent-reports-feed" style="max-height: 300px; overflow-y: auto; border: 1px solid #eaeaea; border-radius: 8px; background: #fafafa;">
-                                <div style="text-align:center; color:#888; padding: 25px;">
-                                    <i class="fas fa-history" style="display:block; font-size:20px; margin-bottom:10px;"></i>
-                                    Select an item to view activity logs.
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div id="fa-edit-mode" style="display: none;">
-                        <div class="section-header-row">
-                            <h3 id="edit_fa_header_title" style="font-size: 18px;">Edit Details</h3>
-                            <div class="action-buttons">
-                                <button class="btn-cancel" onclick="closeFAEditMode()">
-                                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
-                                </button>
-                                <button class="action-btn edit-btn save-active-state" onclick="openAdminLogModal('fa')">
-                                    <i class="fas fa-save"></i> <span class="btn-text">Save</span>
-                                </button>
-                            </div>
+                    <div class="activity-section view-mode" style="padding: 0 20px 20px 20px;">
+                        <div class="activity-header">
+                            <h4>Activity</h4>
+                            <a href="maintenance_history.php" class="view-history-link">View Full Maintenance History</a>
                         </div>
-
-                        <div class="detail-content" style="margin-top:20px;">
-                            <div class="detail-group" style="margin-bottom:15px;">
-                                <label>Device Name:</label>
-                                <input type="text" id="edit_fa_name" class="modal-input" placeholder="e.g. Printer">
-                            </div>
-                            <div class="detail-group" style="margin-bottom:15px;">
-                                <label>Property ID:</label>
-                                <input type="text" id="edit_fa_property" class="modal-input" placeholder="Enter Property ID">
-                            </div>
-                            <div class="detail-group" style="margin-bottom:15px;">
-                                <label>Brand:</label>
-                                <input type="text" id="edit_fa_brand" class="modal-input" placeholder="e.g. Samsung">
-                            </div>
-                            <div class="detail-group">
-                                <label>Current Status:</label>
-                                <div class="detail-box" id="edit_fa_status_box" style="cursor: not-allowed; opacity: 0.8; background: #f0f0f0; border: 1px dashed #ccc;">
-                                    <span id="edit_fa_status_display">---</span>
-                                </div>
-                                <input type="hidden" id="edit_fa_status">
+                        <div id="fa_activity_log_body" class="recent-reports-feed" style="max-height: 300px; overflow-y: auto; border: 1px solid #eaeaea; border-radius: 8px; background: #fafafa;">
+                            <div style="text-align:center; color:#888; padding: 25px;">
+                                <i class="fas fa-history" style="display:block; font-size:20px; margin-bottom:10px;"></i>
+                                Select an item to view activity logs.
                             </div>
                         </div>
                     </div>
@@ -967,7 +943,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
 
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeModal('condemnModal')">Cancel</button>
-                <button class="btn-confirm-condemn" onclick="submitCondemnAction()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                <button class="btn-confirm-condemn" onclick="submitCondemnAction()"><i class="fas fa-archive"></i> Condemn</button>
             </div>
         </div>
     </div>
@@ -1128,32 +1104,22 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
     </div>
 
     <div id="logStatusModal" class="modal-overlay" style="display: none;">
-        <div class="modal-container" style="max-width: 600px;">
+        <div class="modal-container" style="max-width: 650px;">
             <div class="modal-header">
-                <h2>Log Status Change</h2>
+                <h2 id="logStatusModalTitle"><i class="fas fa-clipboard-list"></i> Finalize Updates</h2>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 65vh; overflow-y: auto; padding: 20px; background: #fdfdfd;">
                 <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
-                    You are updating the status of one or more components for <strong id="logStatusUnitName">[PC-00]</strong>. Please provide a brief remark for the maintenance log.
+                    You are updating <strong id="logStatusUnitName">[PC-00]</strong>. Please provide context for the audit trail.
                 </p>
 
-                <div class="log-status-grid">
-                    <div class="log-col-left">
-                        <label>Change Summary List:</label>
-                        <div id="logStatusChangeList" class="change-summary-list">
-                        </div>
-                    </div>
+                <div id="logStatusDynamicContent"></div>
 
-                    <div class="log-col-right">
-                        <label>Remarks:</label>
-                        <textarea id="logStatusRemarks" placeholder="Provide specific details for this status update..."></textarea>
-                    </div>
-                </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee;">
                 <button type="button" class="btn-cancel" onclick="closeModal('logStatusModal')">Cancel</button>
-                <button type="button" class="btn-confirm" onclick="confirmLogStatus()">
-                    <i class="fas fa-check-circle"></i> Confirm
+                <button type="button" class="btn-confirm" onclick="confirmLogStatus()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-check-circle"></i> Submit
                 </button>
             </div>
         </div>

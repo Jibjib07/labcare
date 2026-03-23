@@ -456,13 +456,32 @@
   color: #666;
 }
 
+@media screen and (max-width: 1024px) {
+  .main-content {
+    padding:
+      70px, 0px, 0px, 0px; /* Give the dashboard a bit less edge breathing room */
+  }
+
+  /* Convert the 4-item Resource Summary into a 2x2 grid early to prevent text clipping */
+  .resource-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  /* Make sure the charts and tables have room to breathe */
+  .dashboard-top-grid,
+  .dashboard-bottom-grid {
+    gap: 15px;
+  }
+}
 /* =========================================================
    DASHBOARD MOBILE RESPONSIVENESS (Max Width: 768px)
    ========================================================= */
 @media screen and (max-width: 768px) {
   /* Push content down so the mobile header doesn't cover it */
   .main-content {
-    padding-top: 70px;
+    padding-top: 70px, 0px, 0px, 0px;
   }
 
   /* Override the grids to stack all panels vertically */
@@ -520,5 +539,41 @@
   }
   .mobile-report-view {
     display: flex !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .main-content {
+    padding-top: 60px; /* Slightly shorter header offset for smaller phones */
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  /* Recover space inside the main white panels */
+  .dashboard-top-grid .panel,
+  .dashboard-bottom-grid .panel {
+    padding: 15px;
+  }
+
+  /* Tightly pack the 2x2 resource grid */
+  .resource-grid {
+    gap: 10px;
+  }
+  .res-item {
+    padding: 12px;
+  }
+
+  /* Shrink the large statistic numbers so they fit the smaller boxes */
+  .res-item h2 {
+    font-size: 20px;
+  }
+  .res-item p {
+    font-size: 12px;
+  }
+
+  /* Ensure the mobile reports look good on tiny screens */
+  .mobile-report-view {
+    flex-direction: column;
+    gap: 10px;
   }
 }

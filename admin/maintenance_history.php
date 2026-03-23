@@ -180,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div id="unit-tab" class="tab-content">
                         <div class="table-container">
+<<<<<<< HEAD
                             <table class="history-table no-header">
                                 <tbody>
                                     <?php
@@ -202,6 +203,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                               </td>";
                                         echo "<td class='text-right'><span class='status-pill {$statusClass}'>" . htmlspecialchars($row['set_status']) . "</span></td>";
                                         echo "</tr>";
+=======
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Room Number</th>
+                                        <th>Set Tag</th>
+                                        <th>Set ID</th>
+                                        <th>Latest Activity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    $query_units = "SELECT lab_room, set_tag, set_id, latest_activity FROM units WHERE set_status != 'Condemned' OR set_status IS NULL ORDER BY latest_activity DESC";
+                                    $result_units = $conn->query($query_units);
+
+                                    if ($result_units && $result_units->num_rows > 0) {
+                                        while ($row = $result_units->fetch_assoc()) {
+                                            echo "<tr class='selectable-row' data-unit-id='" . htmlspecialchars($row['set_id']) . "' data-tag='" . htmlspecialchars($row['set_tag']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['set_id']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='4' style='text-align:center;'>No active unit logs available.</td></tr>";
+>>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
                                     }
                                     ?>
                                 </tbody>
@@ -214,6 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <table class="history-table no-header">
                                 <tbody>
                                     <?php
+<<<<<<< HEAD
                                     $res = $conn->query("SELECT asset_id, asset_tag, lab_room, latest_activity, asset_status FROM assets WHERE asset_status IN ('Working', 'For Repair') ORDER BY latest_activity DESC");
                                     while ($row = $res->fetch_assoc()) {
                                         $statusClass = ($row['asset_status'] == 'Working') ? 'badge green' : 'badge orange';
@@ -223,6 +252,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         echo "<td><div class='activity-info'><strong>Latest Activity | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                         echo "<td class='text-right'><span class='status-pill {$statusClass}'>" . htmlspecialchars($row['asset_status']) . "</span></td>";
                                         echo "</tr>";
+=======
+                                    $query_assets = "SELECT lab_room, asset_tag, asset_id, latest_activity FROM assets WHERE asset_status != 'Condemned' OR asset_status IS NULL ORDER BY latest_activity DESC";
+                                    $result_assets = $conn->query($query_assets);
+
+                                    if ($result_assets && $result_assets->num_rows > 0) {
+                                        while ($row = $result_assets->fetch_assoc()) {
+                                            echo "<tr class='selectable-row' data-prop-id='" . htmlspecialchars($row['asset_id']) . "' data-tag='" . htmlspecialchars($row['asset_tag']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['asset_id']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='4' style='text-align:center;'>No active asset logs available.</td></tr>";
+>>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
                                     }
                                     ?>
                                 </tbody>
@@ -257,6 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <table class="history-table no-header">
                                 <tbody>
                                     <?php
+<<<<<<< HEAD
                                     $res = $conn->query("SELECT set_id, set_tag, latest_activity, lab_room FROM units WHERE set_status = 'Condemned' ORDER BY latest_activity DESC");
                                     while ($row = $res->fetch_assoc()) {
                                         $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
@@ -265,6 +311,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         echo "<td><div class='activity-info'><strong>Condemned On | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                         echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
                                         echo "</tr>";
+=======
+                                    $query_ret_units = "SELECT set_id, set_tag, latest_activity, lab_room, set_status FROM units WHERE set_status = 'Condemned' ORDER BY latest_activity DESC";
+                                    $result_ret_units = $conn->query($query_ret_units);
+
+                                    if ($result_ret_units && $result_ret_units->num_rows > 0) {
+                                        while ($row = $result_ret_units->fetch_assoc()) {
+                                            echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['set_tag']) . "' data-id='" . htmlspecialchars($row['set_id']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['set_id']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
+                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['set_status']) . "</span></td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='5' style='text-align:center;'>No retired units found.</td></tr>";
+>>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
                                     }
                                     ?>
                                 </tbody>
@@ -277,6 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <table class="history-table no-header">
                                 <tbody>
                                     <?php
+<<<<<<< HEAD
                                     $res = $conn->query("SELECT asset_id, asset_tag, lab_room, latest_activity FROM assets WHERE asset_status = 'Condemned' ORDER BY latest_activity DESC");
                                     while ($row = $res->fetch_assoc()) {
                                         $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
@@ -309,6 +373,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         echo "<td><div class='activity-info'><strong>Archived On | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                         echo "<td class='text-right'><span class='status-pill badge-archived'>Archived</span></td>";
                                         echo "</tr>";
+=======
+                                    $query_ret_assets = "SELECT asset_id, asset_tag, latest_activity, lab_room, asset_status FROM assets WHERE asset_status = 'Condemned' ORDER BY latest_activity DESC";
+                                    $result_ret_assets = $conn->query($query_ret_assets);
+
+                                    if ($result_ret_assets && $result_ret_assets->num_rows > 0) {
+                                        while ($row = $result_ret_assets->fetch_assoc()) {
+                                            echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['asset_tag']) . "' data-prop-id='" . htmlspecialchars($row['asset_id']) . "'>";
+                                            echo "<td>" . htmlspecialchars($row['asset_id']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
+                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
+                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['asset_status']) . "</span></td>";
+                                            echo "</tr>";
+                                        }
+                                    } else {
+                                        echo "<tr><td colspan='5' style='text-align:center;'>No retired assets found.</td></tr>";
+>>>>>>> 84dfccf54a8819cfe1cf65d5080812b9e027dd65
                                     }
                                     ?>
                                 </tbody>
