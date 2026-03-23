@@ -1537,6 +1537,82 @@ body {
   outline: none;
   background-color: #fff;
 }
+
+/* Modal 2-Column Grid */
+.log-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.log-status-grid label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #000;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Left Side: Summary List */
+.change-summary-list {
+  background-color: #f4f4f4;
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 150px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.log-change-item {
+  background-color: #fff;
+  border: 1px solid #eaeaea;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+}
+
+/* Right Side: Textarea */
+.log-col-right textarea {
+  width: 100%;
+  height: 150px;
+  background-color: #f4f4f4;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 13px;
+  color: #333;
+  resize: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.log-col-right textarea:focus {
+  border-color: #4caf50;
+  outline: none;
+  background-color: #fff;
+}
+@media screen and (max-width: 1024px) {
+  .main-content {
+    padding: 70px, 0px, 0px, 0px;
+  }
+
+  .split-layout {
+    gap: 15px; /* Reduce gap between left and right panels */
+  }
+
+  .modal-container {
+    width: 85%;
+    max-width: 800px;
+  }
+
+  /* Stack form elements in modals early to prevent squishing */
+  .modal-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
 @media screen and (max-width: 768px) {
   .action-buttons .btn-text {
     display: none !important;
@@ -2081,59 +2157,58 @@ body {
   }
 }
 
-/* Modal 2-Column Grid */
-.log-status-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  align-items: stretch;
-}
+@media screen and (max-width: 480px) {
+  .main-content {
+    padding-top: 60px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 
-.log-status-grid label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #000;
-  display: block;
-  margin-bottom: 8px;
-}
+  .breadcrumb .bold-text {
+    font-size: 20px;
+  }
 
-/* Left Side: Summary List */
-.change-summary-list {
-  background-color: #f4f4f4;
-  border-radius: 6px;
-  padding: 10px;
-  max-height: 150px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  /* Shrink the Action Buttons slightly to fit all 4 */
+  .action-buttons button {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .action-buttons button i {
+    font-size: 14px !important;
+  }
 
-.log-change-item {
-  background-color: #fff;
-  border: 1px solid #eaeaea;
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-}
+  /* Force strong truncation for long Device Names on tiny screens */
+  #view_fa_header_title {
+    max-width: 180px;
+  }
 
-/* Right Side: Textarea */
-.log-col-right textarea {
-  width: 100%;
-  height: 150px;
-  background-color: #f4f4f4;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 12px;
-  font-size: 13px;
-  color: #333;
-  resize: none;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-.log-col-right textarea:focus {
-  border-color: #4caf50;
-  outline: none;
-  background-color: #fff;
+  /* Tighten up details boxes to save vertical space */
+  .detail-box,
+  .edit-input,
+  .sub-field .modal-input {
+    padding: 10px 12px;
+  }
+  .status-pill.view-mode {
+    padding: 10px 12px;
+  }
+
+  /* Tighten up List Items */
+  .asset-item {
+    padding: 12px;
+  }
+  .asset-item .item-name {
+    font-size: 14px;
+  }
+
+  /* Tightly pack the Modal Footer */
+  .modal-footer,
+  #transferModal .modal-footer {
+    padding: 10px;
+    gap: 8px;
+  }
+  .modal-footer button,
+  #transferModal .modal-footer button {
+    padding: 10px 0;
+    font-size: 13px;
+  }
 }

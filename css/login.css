@@ -13,7 +13,7 @@
    2. BODY & BACKGROUND
    ========================================= */
 .login-body {
-  background: url("../assets/background_login.png") no-repeat center center
+  background: url("../assets/login_background.png") no-repeat center center
     fixed;
   background-size: cover;
   background-color: #104236; /* Fallback color */
