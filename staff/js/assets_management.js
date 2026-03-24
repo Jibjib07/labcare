@@ -539,6 +539,7 @@ function selectFacilityAsset(element, assetId) {
 
 let pendingAffectedString = "";
 let currentReportType = "pc";
+let currentHasIssues = false;
 
 // --- COMPUTER UNITS REPORT ---
 function toggleReportMode() {
@@ -583,8 +584,8 @@ function cancelReportMode() {
 
 function openLogStatusModal() {
   currentReportType = "pc";
-  const changes = [];
-  const affectedNames = [];
+  currentHasIssues = false;
+  const statusChanges = [];
 
   const nameMap = {
     usb_status: "USB Port",
@@ -613,51 +614,97 @@ function openLogStatusModal() {
 
         if (originalPill && activeBtn) {
           const oldStatus = originalPill.innerText.trim();
-
-          // Convert back end value to human readable string
           let newStatus =
             activeBtn.getAttribute("data-type") === "repair"
               ? "For Repair"
               : "Working";
-          if (dbColumn === "disk_health") {
+          if (dbColumn === "disk_health")
             newStatus =
               activeBtn.getAttribute("data-type") === "repair"
                 ? "Poor"
                 : "Healthy";
-          }
 
           if (oldStatus !== newStatus) {
             const niceName = nameMap[dbColumn] || dbColumn;
-            changes.push(`${niceName}: ${newStatus}`);
+            statusChanges.push({
+              name: niceName,
+              old: oldStatus,
+              new: newStatus,
+            });
             if (newStatus === "For Repair" || newStatus === "Poor")
-              affectedNames.push(niceName);
+              currentHasIssues = true;
           }
         }
       }
     });
 
-  if (changes.length === 0)
-    changes.push("No specific component changes detected (General Update)");
-
-  affectedNames.sort();
   pendingAffectedString =
-    affectedNames.length > 0 ? affectedNames.join(", ") : "Entire Unit";
+    statusChanges.length > 0
+      ? statusChanges.map((c) => c.name).join(", ")
+      : "Entire Unit  ";
 
   const activeItem = document.querySelector(
     "#assetListContainer .asset-item.active .item-name",
   );
   const unitName = activeItem ? activeItem.innerText : "Unknown Unit";
-
-  const listContainer = document.getElementById("logStatusChangeList");
-  listContainer.innerHTML = changes
-    .map((c) => `<div class="log-change-item">${c}</div>`)
-    .join("");
   document.getElementById("logStatusUnitName").innerText = `[${unitName}]`;
-  document.getElementById("logStatusRemarks").value = "";
 
+  // --- Build Admin-Style Cards with Embedded Remarks ---
+  let htmlContent = "";
+
+  if (statusChanges.length > 0) {
+    statusChanges.forEach((stat) => {
+      const isRepair = stat.new === "For Repair" || stat.new === "Poor";
+      const pillBg = isRepair ? "#fff3e0" : "#e8f5e9";
+      const pillColor = isRepair ? "#e65100" : "#2e7d32";
+      const icon = isRepair ? "fa-exclamation-circle" : "fa-check-circle";
+      const placeholderText = isRepair
+        ? "REQUIRED: Why is this marked for repair?"
+        : "Optional: General notes...";
+      const bgTint = isRepair ? "#fffbfa" : "#fff"; // Light red tint to encourage typing
+
+      htmlContent += `
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <h4 style="margin: 0; font-size: 14px; color: ${pillColor};">
+                    <i class="fas ${icon}"></i> Status Update
+                </h4>
+                <span style="background-color: ${pillBg}; color: ${pillColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;">
+                    ${stat.new}
+                </span>
+            </div>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
+                    <strong>Affected:</strong><br>
+                    <span style="display: inline-block; margin-top: 5px;">${stat.name}</span>
+                </div>
+                <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; gap: 5px;">
+                    <label style="font-size: 13px; font-weight: 600; color: #333;">Remarks:</label>
+                    <textarea class="log-remark-input status-remark-field" data-name="${stat.name}" data-issue="${isRepair}" placeholder="${placeholderText}" style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box; background-color: ${bgTint};"></textarea>
+                </div>
+            </div>
+        </div>
+      `;
+    });
+  } else {
+    htmlContent += `
+      <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+          <div style="text-align: center; margin-bottom: 15px;">
+              <i class="fas fa-check-circle" style="color: #4caf50; font-size: 24px; margin-bottom: 10px;"></i>
+              <h4 style="margin: 0; font-size: 14px; color: #333;">No Issues Found</h4>
+              <p style="font-size: 13px; color: #666; margin-top: 5px;">No status changes were detected. You can submit this as a routine check.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px; border-top: 1px solid #eee; padding-top: 15px;">
+              <label style="font-size: 13px; font-weight: 600; color: #333;">Additional Remarks (Optional):</label>
+              <textarea class="log-remark-input general-remark-field" placeholder="Optional: Any general notes..." style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box;"></textarea>
+          </div>
+      </div>
+    `;
+  }
+
+  document.getElementById("logStatusChangeList").innerHTML = htmlContent;
   openModal("logStatusModal");
 }
-
 // --- FACILITY ASSETS REPORT ---
 function toggleFAReportMode() {
   if (!currentSelectedFAId) {
@@ -725,64 +772,130 @@ function openFALogStatusModal() {
   );
   const newStatus = activeBtn ? activeBtn.getAttribute("data-type") : "Working";
 
-  const changes = [];
-  if (oldStatus !== newStatus) {
-    changes.push(`Asset Status: ${newStatus}`);
-  } else {
-    changes.push("No status change detected (General Update)");
-  }
+  currentHasIssues =
+    newStatus === "For Repair" ||
+    newStatus === "repair" ||
+    newStatus === "Missing Parts";
 
   const headerTitle = document.getElementById("view_fa_header_title").innerText;
   const assetName = headerTitle.replace(" Details", "").trim();
-
-  const listContainer = document.getElementById("logStatusChangeList");
-  listContainer.innerHTML = changes
-    .map((c) => `<div class="log-change-item">${c}</div>`)
-    .join("");
   document.getElementById("logStatusUnitName").innerText = `[${assetName}]`;
-  document.getElementById("logStatusRemarks").value = "";
 
+  let htmlContent = "";
+  const formatNewStatus = currentHasIssues ? "For Repair" : "Working";
+
+  if (oldStatus !== formatNewStatus) {
+    const pillBg = currentHasIssues ? "#fff3e0" : "#e8f5e9";
+    const pillColor = currentHasIssues ? "#e65100" : "#2e7d32";
+    const icon = currentHasIssues ? "fa-exclamation-circle" : "fa-check-circle";
+    const placeholderText = currentHasIssues
+      ? "REQUIRED: Why is this marked for repair?"
+      : "Optional: General notes...";
+    const bgTint = currentHasIssues ? "#fffbfa" : "#fff";
+
+    htmlContent += `
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <h4 style="margin: 0; font-size: 14px; color: ${pillColor};">
+                    <i class="fas ${icon}"></i> Status Update
+                </h4>
+                <span style="background-color: ${pillBg}; color: ${pillColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;">
+                    ${formatNewStatus}
+                </span>
+            </div>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
+                    <strong>Affected:</strong><br>
+                    <span style="display: inline-block; margin-top: 5px;">${assetName}</span>
+                </div>
+                <div style="flex: 2; min-width: 200px; display: flex; flex-direction: column; gap: 5px;">
+                    <label style="font-size: 13px; font-weight: 600; color: #333;">Remarks:</label>
+                    <textarea class="log-remark-input status-remark-field" data-name="${assetName}" data-issue="${currentHasIssues}" placeholder="${placeholderText}" style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box; background-color: ${bgTint};"></textarea>
+                </div>
+            </div>
+        </div>
+     `;
+  } else {
+    htmlContent += `
+      <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+          <div style="text-align: center; margin-bottom: 15px;">
+              <i class="fas fa-check-circle" style="color: #4caf50; font-size: 24px; margin-bottom: 10px;"></i>
+              <h4 style="margin: 0; font-size: 14px; color: #333;">No Issues Found</h4>
+              <p style="font-size: 13px; color: #666; margin-top: 5px;">No status changes were detected. You can submit this as a routine check.</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 5px; border-top: 1px solid #eee; padding-top: 15px;">
+              <label style="font-size: 13px; font-weight: 600; color: #333;">Additional Remarks (Optional):</label>
+              <textarea class="log-remark-input general-remark-field" placeholder="Optional: Any general notes..." style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box;"></textarea>
+          </div>
+      </div>
+    `;
+  }
+
+  document.getElementById("logStatusChangeList").innerHTML = htmlContent;
   openModal("logStatusModal");
 }
-
 // --- SUBMIT WORKFLOW FOR BOTH ---
+// --- SUBMISSION HANDLER ---
 function confirmLogStatus() {
-  const remarks = document.getElementById("logStatusRemarks").value.trim();
   const saveBtn = document.querySelector("#logStatusModal .btn-confirm");
+  let allValid = true;
 
+  // 1. Gather & Validate Card Textareas
+  document.querySelectorAll(".status-remark-field").forEach((textarea) => {
+    const val = textarea.value.trim();
+    const isIssue = textarea.getAttribute("data-issue") === "true";
+    if (isIssue && val === "") {
+      allValid = false;
+      textarea.style.border = "1px solid #f44336"; // Highlight empty required fields
+    } else {
+      textarea.style.border = "1px solid #ddd";
+    }
+  });
+
+  // Stop submission if a required box is empty
+  if (!allValid) {
+    showNotification(
+      "Remarks Required",
+      "Please describe the issue for all broken components.",
+      "error",
+    );
+    return;
+  }
+
+  // --- UI Loading State ---
   const originalBtnHTML = saveBtn.innerHTML;
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
   // A. IF FACILITY ASSET
   if (currentReportType === "fa") {
-    if (
-      !remarks &&
-      document
-        .getElementById("logStatusChangeList")
-        .innerText.includes("No status change")
-    ) {
-      showNotification(
-        "Remarks Required",
-        "Please provide a description of the issue.",
-        "error",
-      );
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = originalBtnHTML;
-      return;
-    }
-
     const activeBtn = document.querySelector(
       "#toggle_fa_status .status-btn.active",
     );
     const newStatus = activeBtn
       ? activeBtn.getAttribute("data-type")
       : "Working";
+    const formattedStatus =
+      newStatus === "repair" || newStatus === "For Repair"
+        ? "For Repair"
+        : "Working";
+
+    // Format Remarks and Log Status
+    const remarksBox =
+      document.querySelector(".status-remark-field") ||
+      document.querySelector(".general-remark-field");
+    let faRemark = remarksBox ? remarksBox.value.trim() : "";
+    if (!currentHasIssues && faRemark === "")
+      faRemark = "Routine check. No issues found.";
+
+    // Set to "Updated" if there are no issues!
+    const historyStatus = currentHasIssues ? "For Repair" : "Updated";
 
     const formData = new FormData();
     formData.append("asset_id", currentSelectedFAId);
-    formData.append("remarks", remarks);
-    formData.append("report_status", newStatus);
+    formData.append("remarks", faRemark);
+    formData.append("report_status", historyStatus); // Goes to History log
+    formData.append("overall_status", formattedStatus); // Goes to Asset table
 
     fetch("includes/staff_log_report_fa.php", {
       method: "POST",
@@ -820,61 +933,101 @@ function confirmLogStatus() {
   }
 
   // B. IF COMPUTER UNIT
-  if (!remarks && pendingAffectedString === "Entire Unit") {
-    showNotification(
-      "Remarks Required",
-      "Please provide a description of the issue.",
-      "error",
-    );
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = originalBtnHTML;
-    return;
-  }
+  if (currentReportType === "pc") {
+    let componentLogs = []; // We will build a JSON array of individual logs!
 
-  const formData = new FormData();
-  formData.append("set_id", currentEditingSetId);
-  formData.append("remarks", remarks);
-  formData.append("report_affected", pendingAffectedString);
+    if (currentHasIssues) {
+      // Log each broken component individually
+      document.querySelectorAll(".status-remark-field").forEach((textarea) => {
+        const val = textarea.value.trim();
+        const isIssue = textarea.getAttribute("data-issue") === "true";
+        const compName = textarea.getAttribute("data-name");
 
-  document
-    .querySelectorAll(".specs-content-box .status-toggle-group")
-    .forEach((group) => {
-      if (group.style.display !== "none") {
-        const dbColumn = group.id.replace("toggle_", "");
-        const activeBtn = group.querySelector(".status-btn.active");
-        if (activeBtn) {
-          const val =
-            activeBtn.getAttribute("data-type") === "repair"
-              ? "For Repair"
-              : "Working";
-          formData.append(dbColumn, val);
+        if (isIssue) {
+          componentLogs.push({
+            affected: compName,
+            remark: val,
+            status: "For Repair",
+          });
         }
-      }
-    });
+      });
 
-  fetch("includes/staff_log_report.php", { method: "POST", body: formData })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) {
-        closeModal("logStatusModal");
-        reloadWithToast(
-          "Report Logged",
-          "Maintenance request submitted successfully.",
-          "success",
-        );
-      } else {
+      // Also grab optional general remarks if they typed them
+      const generalBox = document.querySelector(".general-remark-field");
+      if (generalBox && generalBox.value.trim() !== "") {
+        componentLogs.push({
+          affected: "General",
+          remark: generalBox.value.trim(),
+          status: "Updated",
+        });
+      }
+    } else {
+      // No Issues: Log the entire unit as "Updated"
+      const generalBox = document.querySelector(".general-remark-field");
+      let genRemark =
+        generalBox && generalBox.value.trim() !== ""
+          ? generalBox.value.trim()
+          : "Routine check. No issues found.";
+      componentLogs.push({
+        affected: "Entire Unit",
+        remark: genRemark,
+        status: "Updated",
+      });
+    }
+
+    const formData = new FormData();
+    formData.append("set_id", currentEditingSetId);
+    formData.append(
+      "overall_status",
+      currentHasIssues ? "For Repair" : "Working",
+    );
+    formData.append("component_logs", JSON.stringify(componentLogs)); // Pass as JSON!
+
+    // Append physical statuses for the other tables
+    document
+      .querySelectorAll(".specs-content-box .status-toggle-group")
+      .forEach((group) => {
+        if (group.style.display !== "none") {
+          const dbColumn = group.id.replace("toggle_", "");
+          const activeBtn = group.querySelector(".status-btn.active");
+          if (activeBtn) {
+            const val =
+              activeBtn.getAttribute("data-type") === "repair"
+                ? "For Repair"
+                : "Working";
+            formData.append(dbColumn, val);
+          }
+        }
+      });
+
+    fetch("includes/staff_log_report.php", { method: "POST", body: formData })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          closeModal("logStatusModal");
+          reloadWithToast(
+            "Report Logged",
+            "Maintenance request submitted successfully.",
+            "success",
+          );
+        } else {
+          showNotification(
+            "Database Error",
+            data.error || "Failed to save log.",
+            "error",
+          );
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalBtnHTML;
+        }
+      })
+      .catch((err) => {
         showNotification(
-          "Database Error",
-          data.error || "Failed to save log.",
+          "Connection Error",
+          "Could not reach server.",
           "error",
         );
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalBtnHTML;
-      }
-    })
-    .catch((err) => {
-      showNotification("Connection Error", "Could not reach server.", "error");
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = originalBtnHTML;
-    });
+      });
+  }
 }
