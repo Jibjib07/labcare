@@ -565,31 +565,22 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
         </div>
 
         <div id="logStatusModal" class="modal" style="display: none;">
-            <div class="modal-container" style="max-width: 600px;">
+            <div class="modal-container" style="max-width: 650px;">
                 <div class="modal-header">
-                    <h2>Submit Maintenance Report</h2>
+                    <h2><i class="fas fa-clipboard-list"></i> Submit Maintenance Report</h2>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="max-height: 65vh; overflow-y: auto; padding: 20px; background: #fdfdfd;">
                     <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
-                        You are submitting a maintenance request for <strong id="logStatusUnitName">[PC-00]</strong>. Please describe the exact issue you are experiencing.
+                        You are submitting a maintenance request for <strong id="logStatusUnitName">[PC-00]</strong>. Please review the details below.
                     </p>
 
-                    <div class="log-status-grid">
-                        <div class="log-col-left">
-                            <label>Reported Components:</label>
-                            <div id="logStatusChangeList" class="change-summary-list">
-                            </div>
-                        </div>
+                    <div id="logStatusChangeList"></div>
 
-                        <div class="log-col-right">
-                            <label>Description of Issue:</label>
-                            <textarea id="logStatusRemarks" placeholder="E.g., The mouse is completely unresponsive and the USB port feels loose..."></textarea>
-                        </div>
-                    </div>
                 </div>
-                <div class="modal-footer">
+
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee;">
                     <button type="button" class="btn-cancel" onclick="closeModal('logStatusModal')">Cancel</button>
-                    <button type="button" class="btn-confirm" onclick="confirmLogStatus()">
+                    <button type="button" class="btn-confirm" onclick="confirmLogStatus()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;">
                         <i class="fas fa-paper-plane"></i> Submit Report
                     </button>
                 </div>

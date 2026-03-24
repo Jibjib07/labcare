@@ -46,9 +46,22 @@ if (isset($_POST['submit_supply'])) {
     }
 
     $insert_query = "INSERT INTO supply (supply_name, supply_status, supply_avail) VALUES ('$supply_name', '$status', 'Current')";
+
     if (mysqli_query($conn, $insert_query)) {
         // Get last ID to auto-select the newly created item
         $new_id = mysqli_insert_id($conn);
+
+        // --- NEW: INSTANT HISTORY LOG ---
+        $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
+        $date = date('Y-m-d');
+        $activity = ($status === "In Stock") ? "Marked In Stock" : "Marked Out of Stock";
+        $remarks = "Added"; // Automatically set remarks to "Added"
+
+        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
+                       VALUES ('$date', '$activity', '$status', '$actor', '$remarks', '$new_id')";
+        mysqli_query($conn, $hist_query);
+        // --------------------------------
+
         header("Location: supply_inventory.php?success=added&id=$new_id");
         exit();
     }
@@ -75,8 +88,10 @@ if (isset($_POST['submit_update'])) {
     if (mysqli_query($conn, $update_query)) {
         if ($new_status !== $old_status) {
             $activity = ($new_status === "In Stock") ? "Marked In Stock" : "Marked Out of Stock";
-            $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_actor, suphisto_remarks, supply_id) 
-                           VALUES ('$date', '$activity', '$actor', '$remarks', '$id')";
+
+            // --- FIXED: Added suphisto_stat and $new_status to the INSERT query ---
+            $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
+                           VALUES ('$date', '$activity', '$new_status', '$actor', '$remarks', '$id')";
             mysqli_query($conn, $hist_query);
         }
         // MODIFIED: Pass ID for auto-selection after reload
