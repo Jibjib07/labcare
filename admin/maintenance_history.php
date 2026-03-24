@@ -1,7 +1,134 @@
-<?php include '../includes/db.php'; ?>
+<?php
+// 1. DATABASE CONNECTION
+include '../includes/db.php'; 
+
+// 2. DATA FETCHING LOGIC (For AJAX Requests)
+if (isset($_GET['id']) && isset($_GET['type'])) {
+    $id = $_GET['id'];
+    $type = $_GET['type'];
+
+    // CASE 1: LAB ARCHIVES (JSON RESPONSE FOR RIGHT PANEL)
+    if ($type === 'archive') {
+        header('Content-Type: application/json');
+        
+        $stmt = $conn->prepare("SELECT lab_name, lab_room, reason, archived_by, archived_date 
+                                FROM lab_history 
+                                WHERE lab_room = ? 
+                                ORDER BY archived_date DESC LIMIT 1");
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+
+        if ($row = $res->fetch_assoc()) {
+            echo json_encode([
+                "status" => "success",
+                "reason" => $row['reason'], 
+                "admin" => $row['archived_by'],    
+                "lab_name" => $row['lab_name'],
+                "lab_room" => $row['lab_room'],
+                "date" => date('m/d/Y', strtotime($row['archived_date']))
+            ]);
+        } else {
+            echo json_encode(["status" => "error", "reason" => "No archive history found.", "admin" => "-"]);
+        }
+        exit;
+    }
+
+    // CASE 2: MAINTENANCE / ASSET / INVENTORY / RETIRED (HTML TABLE RESPONSE)
+    $foundData = false;
+    
+    if ($type === 'inventory') {
+        $stmt_supply = $conn->prepare("SELECT suphisto_date, suphisto_act, suphisto_actor, suphisto_remarks FROM supply_history WHERE supply_id = ? ORDER BY suphisto_date DESC");
+        $stmt_supply->bind_param("i", $id);
+        $stmt_supply->execute();
+        $res_supply = $stmt_supply->get_result();
+
+        if ($res_supply->num_rows > 0) {
+            $foundData = true;
+            while ($row = $res_supply->fetch_assoc()) {
+                echo "<tr>";
+                echo "<td>" . htmlspecialchars(date('m/d/Y', strtotime($row['suphisto_date']))) . "</td>";
+                echo "<td>" . htmlspecialchars($row['suphisto_act']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['suphisto_actor']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['suphisto_remarks']) . "</td>";
+                echo "</tr>";
+            }
+        }
+    } else {
+        $stmt_unit = $conn->prepare("SELECT report_date, report_actor, report_affected, report_action, report_remarks, report_status FROM unit_history WHERE set_id = ? ORDER BY report_date DESC");
+        $stmt_unit->bind_param("s", $id);
+        $stmt_unit->execute();
+        $res_unit = $stmt_unit->get_result();
+
+        if ($res_unit->num_rows > 0) {
+            $foundData = true;
+            while ($row = $res_unit->fetch_assoc()) {
+                $status = $row['report_status'];
+                $badgeClass = ($status == 'Resolved' || $status == 'Working') ? 'green' : (($status == 'Condemned') ? 'red' : 'orange');
+                
+                echo "<tr>";
+                echo "<td>" . htmlspecialchars(date('m/d/Y', strtotime($row['report_date']))) . "</td>";
+                echo "<td>" . htmlspecialchars($row['report_actor']) . "</td>";
+                if ($type !== 'retired') {
+                    echo "<td>" . htmlspecialchars($row['report_affected'] ?? '-') . "</td>";
+                    echo "<td>" . htmlspecialchars($row['report_action'] ?? '-') . "</td>";
+                }
+                echo "<td>" . htmlspecialchars($row['report_remarks']) . "</td>";
+                echo "<td><span class='badge {$badgeClass}'>" . htmlspecialchars($status) . "</span></td>";
+                echo "</tr>";
+            }
+        } else {
+            $stmt_asset = $conn->prepare("SELECT report_date, report_actor, report_remarks, report_status FROM asset_history WHERE asset_id = ? ORDER BY report_date DESC");
+            $stmt_asset->bind_param("s", $id);
+            $stmt_asset->execute();
+            $res_asset = $stmt_asset->get_result();
+
+            if ($res_asset->num_rows > 0) {
+                $foundData = true;
+                while ($row = $res_asset->fetch_assoc()) {
+                    $status = $row['report_status'];
+                    $badgeClass = ($status == 'Resolved' || $status == 'Working') ? 'green' : (($status == 'Condemned') ? 'red' : 'orange');
+                    
+                    echo "<tr>";
+                    echo "<td>" . htmlspecialchars(date('m/d/Y', strtotime($row['report_date']))) . "</td>";
+                    echo "<td>" . htmlspecialchars($row['report_actor']) . "</td>";
+                    if ($type !== 'retired') {
+                        echo "<td>-</td><td>-</td>";
+                    }
+                    echo "<td>" . htmlspecialchars($row['report_remarks']) . "</td>";
+                    echo "<td><span class='badge {$badgeClass}'>" . htmlspecialchars($status) . "</span></td>";
+                    echo "</tr>";
+                }
+            }
+        }
+    }
+
+    if (!$foundData) {
+        $colSpan = ($type === 'inventory' || $type === 'retired') ? 4 : 6;
+        echo "<tr><td colspan='{$colSpan}' style='text-align:center; padding: 20px; color: #757575;'>No activity history found for this item.</td></tr>";
+    }
+    exit;
+}
+
+// 3. POST LOGIC (For Restoration)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    if (isset($_POST['restore_room_id'])) {
+        $room_id = $_POST['restore_room_id'];
+        $update = $conn->prepare("UPDATE laboratories SET lab_status = 'Available' WHERE lab_room = ?");
+        $update->bind_param("s", $room_id);
+        if ($update->execute()) {
+            echo json_encode(["success" => true]);
+        } else {
+            echo json_encode(["success" => false, "message" => $conn->error]);
+        }
+        exit;
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +137,6 @@
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/maintenance_history.css?v=<?php echo time(); ?>">
 </head>
-
 <body>
     <?php include 'includes/sidebar.php'; ?>
 
@@ -22,72 +148,60 @@
 
         <div class="view-section">
             <div class="split-layout">
-
+                
                 <div class="panel white-panel left-panel">
                     <div class="section-header-row">
-                        <h3>Maintenance Logs</h3>
+                        <h3 id="nav-title">Activity Logs</h3>
+                        <button class="btn-toggle-view" onclick="toggleNavView(this)">
+                            View Retirement <i></i>
+                        </button>
                     </div>
 
-                    <div class="toggle-container">
-                        <button class="toggle-link active" onclick="switchHistoryTab('unit', this)">Unit Logs</button>
-                        <button class="toggle-link" onclick="switchHistoryTab('asset', this)">Asset Logs</button>
-                        <button class="toggle-link" onclick="switchHistoryTab('archives', this)">Archives</button>
-                        <button class="toggle-link" onclick="switchHistoryTab('retired-units', this)">Retired Units</button>
-                        <button class="toggle-link" onclick="switchHistoryTab('retired-assets', this)">Retired Assets</button>
+                    <div class="nav-hierarchy">
+                        <div id="log-nav-container" class="pill-container">
+                            <button class="main-nav-btn active" onclick="switchHistoryTab('unit', this)">Unit Logs</button>
+                            <button class="main-nav-btn" onclick="switchHistoryTab('asset', this)">Asset Logs</button>
+                            <button class="main-nav-btn" onclick="switchHistoryTab('inventory', this)">Inventory</button>
+                        </div>
+
+                        <div id="retirement-nav-container" class="pill-container" style="display: none;">
+                            <button class="main-nav-btn" onclick="switchHistoryTab('retired-units', this)">Condemned Units</button>
+                            <button class="main-nav-btn" onclick="switchHistoryTab('retired-assets', this)">Condemned Assets</button>
+                            <button class="main-nav-btn" onclick="switchHistoryTab('archives', this)">Lab Archives</button>
+                        </div>
                     </div>
 
                     <div class="search-filter-row" style="display: flex; gap: 10px; position: relative;">
-                        <input type="text" class="search-input" id="main-search-input" placeholder="Search a set tag...." style="flex: 2;">
-
-                        <button class="btn-filter-date" onclick="toggleDateFilter()" style="flex: 1; background: white; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; color: #666; cursor: pointer; padding: 0 10px;">
-                            Date Range <i class="fas fa-filter" style="margin-left: 5px;"></i>
+                        <input type="text" class="search-input" id="main-search-input" placeholder="Search record..." style="flex: 2;">
+                        <button class="btn-filter-date" onclick="toggleDateFilter()" style="flex: 1;">
+                            Date Range <i class="fas fa-filter"></i>
                         </button>
-
-                        <div id="date-filter-popover" class="filter-popover" style="display: none;">
-                            <div class="date-inputs">
-                                <div class="input-group">
-                                    <label>From Date:</label>
-                                    <input type="date" id="filter-start-date" class="date-picker">
-                                </div>
-                                <div class="input-group">
-                                    <label>To Date:</label>
-                                    <input type="date" id="filter-end-date" class="date-picker">
-                                </div>
-                            </div>
-                            <div class="popover-actions">
-                                <button class="btn-cancel" style="padding: 6px 12px; font-size: 12px;" onclick="clearDateFilter()">Clear</button>
-                                <button class="btn-green-export" style="padding: 6px 12px; font-size: 12px;" onclick="applyFilters()">Apply Filter</button>
-                            </div>
-                        </div>
                     </div>
 
                     <div id="unit-tab" class="tab-content">
                         <div class="table-container">
-                            <table class="history-table">
-                                <thead>
-                                    <tr>
-                                        <th>Room Number</th>
-                                        <th>Set Tag</th>
-                                        <th>Set ID</th>
-                                        <th>Latest Activity</th>
-                                    </tr>
-                                </thead>
+                            <table class="history-table no-header">
                                 <tbody>
                                     <?php
-                                    $query_units = "SELECT lab_room, set_tag, set_id, latest_activity FROM units WHERE set_status != 'Condemned' OR set_status IS NULL ORDER BY latest_activity DESC";
-                                    $result_units = $conn->query($query_units);
-
-                                    if ($result_units && $result_units->num_rows > 0) {
-                                        while ($row = $result_units->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-unit-id='" . htmlspecialchars($row['set_id']) . "' data-tag='" . htmlspecialchars($row['set_tag']) . "'>";
-                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['set_id']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='4' style='text-align:center;'>No active unit logs available.</td></tr>";
+                                    $res = $conn->query("SELECT set_id, set_tag, lab_room, latest_activity, set_status FROM units WHERE set_status IN ('Working', 'For Repair') ORDER BY latest_activity DESC");
+                                    while ($row = $res->fetch_assoc()) {
+                                        $statusClass = ($row['set_status'] == 'Working') ? 'badge green' : 'badge orange';
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='unit' data-id='{$row['set_id']}' data-tag='{$row['set_tag']}'>";
+                                        echo "<td>
+                                                <div class='tag-info'>
+                                                    <strong>PC-" . htmlspecialchars($row['set_tag']) . "</strong>
+                                                    <span class='separator'> | </span>
+                                                    <span class='room-text'>Room " . htmlspecialchars($row['lab_room']) . "</span>
+                                                </div>
+                                              </td>";
+                                        echo "<td>
+                                                <div class='activity-info'>
+                                                    <strong>Latest Activity | </strong><span class='date-text'>{$formattedDate}</span>
+                                                </div>
+                                              </td>";
+                                        echo "<td class='text-right'><span class='status-pill {$statusClass}'>" . htmlspecialchars($row['set_status']) . "</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -97,31 +211,18 @@
 
                     <div id="asset-tab" class="tab-content" style="display: none;">
                         <div class="table-container">
-                            <table class="history-table">
-                                <thead>
-                                    <tr>
-                                        <th>Room Number</th>
-                                        <th>Asset Tag</th>
-                                        <th>Property ID</th>
-                                        <th>Latest Maintenance Date</th>
-                                    </tr>
-                                </thead>
+                            <table class="history-table no-header">
                                 <tbody>
                                     <?php
-                                    $query_assets = "SELECT lab_room, asset_tag, asset_id, latest_activity FROM assets WHERE asset_status != 'Condemned' OR asset_status IS NULL ORDER BY latest_activity DESC";
-                                    $result_assets = $conn->query($query_assets);
-
-                                    if ($result_assets && $result_assets->num_rows > 0) {
-                                        while ($row = $result_assets->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-prop-id='" . htmlspecialchars($row['asset_id']) . "' data-tag='" . htmlspecialchars($row['asset_tag']) . "'>";
-                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['asset_id']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='4' style='text-align:center;'>No active asset logs available.</td></tr>";
+                                    $res = $conn->query("SELECT asset_id, asset_tag, lab_room, latest_activity, asset_status FROM assets WHERE asset_status IN ('Working', 'For Repair') ORDER BY latest_activity DESC");
+                                    while ($row = $res->fetch_assoc()) {
+                                        $statusClass = ($row['asset_status'] == 'Working') ? 'badge green' : 'badge orange';
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='asset' data-id='{$row['asset_id']}' data-tag='{$row['asset_tag']}'>";
+                                        echo "<td><div class='tag-info'><strong>FA-" . htmlspecialchars($row['asset_tag']) . "</strong><span class='separator'> | </span><span class='room-text'>Room " . htmlspecialchars($row['lab_room']) . "</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Latest Activity | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill {$statusClass}'>" . htmlspecialchars($row['asset_status']) . "</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -129,31 +230,21 @@
                         </div>
                     </div>
 
-                    <div id="archives-tab" class="tab-content" style="display: none;">
+                    <div id="inventory-tab" class="tab-content" style="display: none;">
                         <div class="table-container">
-                            <table class="history-table">
-                                <thead>
-                                    <tr>
-                                        <th>Room Number</th>
-                                        <th>Room Name</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
+                            <table class="history-table no-header">
                                 <tbody>
                                     <?php
-                                    $query_archives = "SELECT lab_room, lab_name, lab_status FROM laboratories WHERE lab_status = 'Archived'";
-                                    $result_archives = $conn->query($query_archives);
-
-                                    if ($result_archives && $result_archives->num_rows > 0) {
-                                        while ($row = $result_archives->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-type='archive' data-room-num='" . htmlspecialchars($row['lab_room']) . "'>";
-                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['lab_name']) . "</td>";
-                                            echo "<td><span class='status-pill'>" . htmlspecialchars($row['lab_status']) . "</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='3' style='text-align:center;'>No archived rooms.</td></tr>";
+                                    $res = $conn->query("SELECT supply_id, supply_name, latest_activity, supply_status FROM supply ORDER BY latest_activity DESC");
+                                    while ($row = $res->fetch_assoc()) {
+                                        $status = $row['supply_status'];
+                                        $statusClass = ($status == 'In Stock') ? 'badge green' : (($status == 'Low Stock') ? 'badge orange' : 'badge red');
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='inventory' data-id='{$row['supply_id']}' data-tag='{$row['supply_name']}'>";
+                                        echo "<td><div class='tag-info'><strong>" . htmlspecialchars($row['supply_name']) . "</strong></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Latest Activity | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill {$statusClass}'>" . htmlspecialchars($status) . "</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -163,33 +254,17 @@
 
                     <div id="retired-units-tab" class="tab-content" style="display: none;">
                         <div class="table-container">
-                            <table class="history-table">
-                                <thead>
-                                    <tr>
-                                        <th>Set ID</th>
-                                        <th>Set Tag</th>
-                                        <th>Retirement Date</th>
-                                        <th>Origin Lab</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
+                            <table class="history-table no-header">
                                 <tbody>
                                     <?php
-                                    $query_ret_units = "SELECT set_id, set_tag, latest_activity, lab_room, set_status FROM units WHERE set_status = 'Condemned' ORDER BY latest_activity DESC";
-                                    $result_ret_units = $conn->query($query_ret_units);
-
-                                    if ($result_ret_units && $result_ret_units->num_rows > 0) {
-                                        while ($row = $result_ret_units->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['set_tag']) . "' data-id='" . htmlspecialchars($row['set_id']) . "'>";
-                                            echo "<td>" . htmlspecialchars($row['set_id']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['set_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
-                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['set_status']) . "</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='5' style='text-align:center;'>No retired units found.</td></tr>";
+                                    $res = $conn->query("SELECT set_id, set_tag, latest_activity, lab_room FROM units WHERE set_status = 'Condemned' ORDER BY latest_activity DESC");
+                                    while ($row = $res->fetch_assoc()) {
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='retired' data-id='{$row['set_id']}' data-tag='{$row['set_tag']}'>";
+                                        echo "<td><div class='tag-info'><strong>PC-" . htmlspecialchars($row['set_tag']) . "</strong><span class='separator'> | </span><span class='room-text'>Room " . htmlspecialchars($row['lab_room']) . "</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Condemned On | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -199,33 +274,41 @@
 
                     <div id="retired-assets-tab" class="tab-content" style="display: none;">
                         <div class="table-container">
-                            <table class="history-table">
-                                <thead>
-                                    <tr>
-                                        <th>Property ID</th>
-                                        <th>Asset Tag</th>
-                                        <th>Retirement Date</th>
-                                        <th>Origin Lab</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
+                            <table class="history-table no-header">
                                 <tbody>
                                     <?php
-                                    $query_ret_assets = "SELECT asset_id, asset_tag, latest_activity, lab_room, asset_status FROM assets WHERE asset_status = 'Condemned' ORDER BY latest_activity DESC";
-                                    $result_ret_assets = $conn->query($query_ret_assets);
+                                    $res = $conn->query("SELECT asset_id, asset_tag, lab_room, latest_activity FROM assets WHERE asset_status = 'Condemned' ORDER BY latest_activity DESC");
+                                    while ($row = $res->fetch_assoc()) {
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='retired' data-id='{$row['asset_id']}' data-tag='{$row['asset_tag']}'>";
+                                        echo "<td><div class='tag-info'><strong>FA-" . htmlspecialchars($row['asset_tag']) . "</strong><span class='separator'> | </span><span class='room-text'>Room " . htmlspecialchars($row['lab_room']) . "</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Condemned On | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
+                                        echo "</tr>";
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                                    if ($result_ret_assets && $result_ret_assets->num_rows > 0) {
-                                        while ($row = $result_ret_assets->fetch_assoc()) {
-                                            echo "<tr class='selectable-row' data-type='retired' data-tag='" . htmlspecialchars($row['asset_tag']) . "' data-prop-id='" . htmlspecialchars($row['asset_id']) . "'>";
-                                            echo "<td>" . htmlspecialchars($row['asset_id']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['asset_tag']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['latest_activity']) . "</td>";
-                                            echo "<td>" . htmlspecialchars($row['lab_room']) . "</td>";
-                                            echo "<td><span class='badge red'>" . htmlspecialchars($row['asset_status']) . "</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr><td colspan='5' style='text-align:center;'>No retired assets found.</td></tr>";
+                    <div id="archives-tab" class="tab-content" style="display: none;">
+                        <div class="table-container">
+                            <table class="history-table no-header">
+                                <tbody>
+                                    <?php
+                                    $res = $conn->query("SELECT l.lab_room, l.lab_name, l.lab_status, MAX(h.archived_date) as archived_date 
+                                                         FROM laboratories l 
+                                                         INNER JOIN lab_history h ON l.lab_room = h.lab_room 
+                                                         WHERE l.lab_status = 'Archived' 
+                                                         GROUP BY l.lab_room");
+                                    while ($row = $res->fetch_assoc()) {
+                                        $formattedDate = date('m/d/Y', strtotime($row['archived_date']));
+                                        echo "<tr class='selectable-row' data-type='archive' data-id='{$row['lab_room']}'>";
+                                        echo "<td><div class='tag-info'><strong>Room " . htmlspecialchars($row['lab_room']) . "</strong><span class='separator'> | </span><span class='room-text'>(" . htmlspecialchars($row['lab_name']) . ")</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Archived On | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill badge-archived'>Archived</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -235,55 +318,29 @@
                 </div>
 
                 <div class="panel white-panel right-panel">
-
                     <div id="view-full-timeline" class="history-view">
                         <div class="section-header-row">
-                            <h3><span class="selected-tag-label"></span> Maintenance Timeline</h3>
-                            <button class="btn-red-condemn" onclick="openCondemnModal()"><i class="fas fa-trash-alt"></i> Condemn</button>
+                            <h3 id="timeline-title">Activity Timeline</h3>
                         </div>
                         <div class="table-container">
                             <table class="timeline-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Reported by</th>
-                                        <th>Affected</th>
-                                        <th>Action Taken</th>
-                                        <th>Remarks</th>
-                                        <th>Status</th>
-                                    </tr>
+                                <thead id="timeline-thead">
+                                    <tr><th>Date</th><th>By</th><th>Affected</th><th>Action</th><th>Remarks</th><th>Status</th></tr>
                                 </thead>
                                 <tbody class="data-body">
-                                    <tr class="placeholder-row">
-                                        <td colspan="6" style="text-align: center; padding: 40px; color: #757575;">
-                                            <em>Click an item on the left to view its maintenance timeline.</em>
-                                        </td>
-                                    </tr>
+                                    <tr class="placeholder-row"><td colspan="6" style="text-align: center; padding: 40px; color: #757575;"><em>Select an item on the left.</em></td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
                     <div id="view-retired-timeline" class="history-view" style="display: none;">
-                        <div class="section-header-row">
-                            <h3><span class="selected-tag-label"></span> Retirement History</h3>
-                        </div>
+                        <div class="section-header-row"><h3>Retirement Record</h3></div>
                         <div class="table-container">
                             <table class="timeline-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Reported by</th>
-                                        <th>Remarks</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr><th>Date</th><th>Reported by</th><th>Remarks</th><th>Status</th></tr></thead>
                                 <tbody class="data-body">
-                                    <tr class="placeholder-row">
-                                        <td colspan="4" style="text-align: center; padding: 40px; color: #757575;">
-                                            <em>Click an item on the left to view its retirement history.</em>
-                                        </td>
-                                    </tr>
+                                    <tr class="placeholder-row"><td colspan="4" style="text-align: center; padding: 40px; color: #757575;"><em>Select a retired item.</em></td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -291,75 +348,27 @@
 
                     <div id="view-archives-details" class="history-view" style="display: none;">
                         <div class="section-header-row">
-                            <h3><span id="archive-room-id"></span> Full Details</h3>
+                            <h3>Archive Details</h3>
+                            <span id="archive-room-id" style="display: none;"></span>
                             <div class="action-buttons">
-                                <button class="btn-restore" onclick="handleRestore()"><i class="fas fa-circle-plus"></i> Restore</button>
+                                <button class="btn-restore" onclick="handleRestore()"><i class="fas fa-undo"></i> Restore Room</button>
                             </div>
                         </div>
                         <div class="detail-group">
                             <label>Archive Reason:</label>
-                            <div class="detail-box" id="archive-reason-text" style="color: #757575; font-style: italic;">
-                                Click a room on the left to view archive details.
-                            </div>
+                            <div class="detail-box" id="archive-reason-text">Select a room to view details.</div>
                         </div>
                         <div class="detail-group">
                             <label>Archived By:</label>
-                            <div class="detail-box mini" id="archived-by-name" style="color: #757575;">-</div>
+                            <div class="detail-box mini" id="archived-by-name">-</div>
                         </div>
                     </div>
-
                 </div>
-
             </div>
-        </div>
-    </div>
-
-    <div id="condemn-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <h2 class="modal-title">Condemn this Unit?</h2>
-            <p class="modal-desc">
-                Are you sure you want to condemn <strong id="modal-tag-display">[PC-01]</strong>? This unit will be marked as permanently unusable. This action will be logged in the <strong>History Management</strong> section.
-            </p>
-
-            <form id="condemn-form">
-                <div class="modal-split">
-                    <div class="modal-left">
-                        <div class="form-group">
-                            <label>Set Tag:</label>
-                            <input type="text" id="modal-set-tag" readonly class="readonly-input">
-                        </div>
-                        <div class="form-group">
-                            <label>Set ID:</label>
-                            <input type="text" id="modal-set-id" readonly class="readonly-input">
-                        </div>
-                    </div>
-
-                    <div class="modal-right">
-                        <label>Action Taken:</label>
-                        <div class="checkbox-grid">
-                            <label><input type="checkbox" name="action_taken" value="Hardware Failure"> Hardware Failure (Non-repairable)</label>
-                            <label><input type="checkbox" name="action_taken" value="Physical Damage"> Significant Physical Damage</label>
-                            <label><input type="checkbox" name="action_taken" value="System Obsolescence"> System Obsolescence (End of Life)</label>
-                            <label><input type="checkbox" name="action_taken" value="Other"> Other (Please specify...)</label>
-                        </div>
-
-                        <div class="form-group remarks-group">
-                            <label>Remarks:</label>
-                            <textarea id="modal-remarks" placeholder="Provide specific details for the audit log..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeCondemnModal()">Cancel</button>
-                    <button type="button" class="btn-red-condemn" onclick="submitCondemn()"><i class="fas fa-trash-alt"></i> Condemn</button>
-                </div>
-            </form>
         </div>
     </div>
 
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/maintenance_history.js?v=<?php echo time(); ?>"></script>
 </body>
-
 </html>

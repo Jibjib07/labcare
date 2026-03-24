@@ -1,158 +1,418 @@
 /* =========================================
-   1. SHARED UTILITIES
+   1. LAYOUT & PANELS
    ========================================= */
-.page-header { margin-bottom: 25px; }
-.page-header h1 { font-size: 24px; color: #000; margin-bottom: 5px; font-weight: 800; }
-.page-header p { color: #555; font-size: 14px; }
-
-.white-panel {
-    background: white;
-    border-radius: 8px;
-    padding: 25px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-    height: 100%;
+.main-content {
+    padding: 30px;
+    background-color: #f8f9fa;
 }
+
+.page-header { margin-bottom: 25px; }
+.page-header h1 { font-size: 24px; color: #1a1a1a; margin-bottom: 5px; font-weight: 800; }
+.page-header p { color: #666; font-size: 14px; }
 
 .report-layout {
     display: grid;
-    /* Split: Filter(35%) | Preview(65%) */
-    grid-template-columns: 1fr 1.8fr; 
-    gap: 20px;
+    grid-template-columns: 450px 1fr; 
+    gap: 25px;
     align-items: start;
+}
+
+.white-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    border: 1px solid #edf0f2;
 }
 
 .panel-header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
-.panel-header-row h3 { margin: 0; font-size: 15px; font-weight: 700; color: #222; }
 
-.btn-green {
-    background: #4CAF50; color: white; border: none;
-    padding: 8px 15px; border-radius: 4px; font-size: 13px; font-weight: 600;
-    cursor: pointer; display: flex; align-items: center; gap: 5px;
+.panel-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
 }
-.btn-green:hover { background: #43a047; }
-
 
 /* =========================================
-   2. LEFT PANEL: FILTER FORM
+   2. TABS & BUTTONS
    ========================================= */
-.filter-form { display: flex; flex-direction: column; gap: 20px; }
+.main-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.sub-tabs-wrapper {
+    display: flex;
+    background: #f1f3f4;
+    padding: 5px;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.sub-tab {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    color: #666;
+    transition: 0.3s;
+}
+
+.sub-tab.active {
+    background: #4CAF50;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn-generate, .btn-export {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s;
+}
+
+.btn-generate:hover { background: #43A047; }
+
+/* =========================================
+   3. FORM ELEMENTS
+   ========================================= */
+.filter-form { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+}
 
 .form-group label {
-    display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px;
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 8px;
 }
 
 .form-select, .form-input {
     width: 100%;
-    padding: 10px 12px;
+    padding: 11px 12px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 13px;
-    color: #555;
-    background-color: white;
+    color: #333;
+    background-color: #fff;
+    outline: none;
 }
-
-/* Date Input Wrapper specific styling if needed */
-.date-input-wrapper input {
-    color: #555;
-}
-
 
 /* =========================================
-   3. RIGHT PANEL: PREVIEW
+   4. VISUALIZATION
    ========================================= */
-
-/* Chart Section */
-.chart-section {
-    text-align: center; margin-bottom: 30px;
-}
-.chart-section h4 { font-size: 13px; font-weight: 700; margin-bottom: 20px; color: #333; }
-
-.chart-wrapper {
+.chart-container {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    gap: 40px; /* Space between chart and legend */
+    border-top: 1px dashed #eee;
+    padding-top: 25px;
 }
 
-/* Donut Chart CSS */
 .donut-chart {
-    width: 180px; height: 180px; border-radius: 50%;
-    /* Gradient matches image: Green(large), Yellow(medium), Red(small) */
-    background: conic-gradient(
-        #4CAF50 0% 70%, 
-        #B71C1C 70% 80%,
-        #FFC107 80% 100%
-    );
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: conic-gradient(#4CAF50 0% 50%, #FFC107 50% 100%);
     position: relative;
+    margin-bottom: 25px;
 }
+
 .donut-chart::after {
-    content: ""; position: absolute; width: 110px; height: 110px;
-    background: white; border-radius: 50%; top: 35px; left: 35px;
-}
-
-/* Legend */
-.chart-legend {
-    display: flex; flex-direction: column; gap: 10px;
-}
-.legend-item {
-    display: flex; justify-content: space-between; align-items: center;
-    background: white; border: 1px solid #eee;
-    padding: 8px 12px; border-radius: 6px; width: 160px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-
-.legend-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #444; }
-.legend-value { font-size: 12px; font-weight: 700; color: #222; }
-
-.dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-.dot.green { background: #4CAF50; }
-.dot.yellow { background: #FFC107; }
-.dot.red { background: #B71C1C; }
-
-
-/* Summary Table */
-.summary-section h3 { font-size: 13px; font-weight: 700; margin-bottom: 15px; color: #222; }
-
-.table-wrapper {
-    background: #fcfcfc; border: 1px solid #eee; border-radius: 8px; padding: 15px;
-}
-
-.summary-table { width: 100%; border-collapse: collapse; }
-
-.summary-table th {
-    background: #1B4D3E; /* Dark Green Header */
-    color: white;
-    padding: 12px 15px; text-align: left; font-size: 12px;
-}
-
-.summary-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #eee;
-    font-size: 13px; color: #333;
+    content: "";
+    position: absolute;
+    width: 120px;
+    height: 120px;
     background: white;
+    border-radius: 50%;
+    top: 30px;
+    left: 30px;
 }
 
-.summary-table tr:last-child td { border-bottom: none; }
-
-.total-row td {
-    font-weight: 700; color: #000;
+.legend-pill {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    width: 250px;
 }
 
+.condemned-number {
+    font-size: 80px;
+    font-weight: 800;
+    color: #f44336;
+    margin: 0;
+
+
+
+    
+}
 
 /* =========================================
-   4. RESPONSIVENESS
+   5. REPORT DOCUMENT CONTAINER (THE DESK)
    ========================================= */
-@media (max-width: 900px) {
-    .report-layout {
-        grid-template-columns: 1fr; /* Stack vertically */
+.preview-panel {
+    background-color: #fff;
+    min-height: 850px;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-document-container {
+    background-color: #f0f2f5; 
+    padding: 40px 15px;
+    border-radius: 8px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* =========================================
+   6. THE REPORT PAPER (A4 STYLE)
+   ========================================= */
+.report-paper {
+    background: white;
+    width: 800px;
+    padding: 0.5in;
+    font-family: "Arial", sans-serif;
+    color: #000;
+    box-sizing: border-box;
+    margin-bottom: 30px;
+}
+
+/* HEADER LOGIC: Preview vs Print */
+.print-only-header {
+    display: none; /* Hidden in web preview */
+}
+
+.page-break {
+    page-break-before: always;
+    margin: 30px 0;
+}
+
+/* Header & Typography */
+.doc-header { 
+    text-align: center; 
+    line-height: 1.2; 
+    margin-bottom: 5px; 
+}
+
+.doc-header p { font-size: 14px; margin: 2px 0; }
+.doc-header h2 { font-size: 18px; font-weight: bold; margin: 0; color: #000; }
+.doc-header h3 { font-size: 16px; font-weight: bold; margin: 0; color: #000; }
+
+.doc-divider { 
+    border-bottom: 1.5px solid #000; 
+    margin: 10px 0 20px 0; 
+}
+
+/* Title Block Styles */
+.report-title-block {
+    text-align: center;
+    margin-bottom: 30px;
+    font-weight: bold;
+    line-height: 1.3;
+}
+
+.report-main-title { font-size: 16px; }
+.report-sub-title { font-size: 15px; }
+.report-room { font-size: 15px; margin-top: 5px; }
+.report-date { font-size: 15px; font-weight: normal; margin-top: 10px; }
+
+/* Table Styling */
+.table-label { 
+    text-align: left; 
+    font-size: 14px; 
+    font-weight: bold; 
+    margin-bottom: 8px; 
+}
+
+.doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.doc-table th, .doc-table td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 13px;
+}
+
+.doc-table th {
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+}
+
+.doc-table tr.row-total {
+    font-weight: bold;
+    background-color: #f8f9fa;
+}
+
+/* Signature Section */
+.signature-section {
+    margin-top: 60px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sig-box {
+    text-align: center;
+    width: 250px;
+}
+
+.sig-line {
+    border-top: 1px solid #000;
+    margin-top: 45px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 13px;
+    padding-top: 5px;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 100px;
+    color: #7f8c8d;
+}
+
+/* Responsive Grid */
+@media (max-width: 1100px) {
+    .report-layout { grid-template-columns: 1fr; }
+}
+
+/* =========================================
+   FINAL PRINT OVERRIDE - FIXED FOR 1 PAGE
+   ========================================= */
+@media print {
+    /* 1. THE KILL LIST: This removes the filters and the left panel */
+    header, nav, .sidebar, .navbar, .page-header, .panel-header-row,
+    .main-tabs, .sub-tabs-wrapper, .btn-generate, .btn-export,
+    .no-print, .mobile-header, .mobile-nav, .hamburger, .menu-toggle,
+    .lab-logo-container, .logo-wrapper, .top-bar, .visualization-area,
+    .filter-form, .white-panel:not(.preview-panel) { 
+        display: none !important;
     }
-    
-    .chart-wrapper {
-        flex-direction: column; gap: 20px;
+
+    /* 2. THE "FORCE SHOW" PATH: Ensure ONLY the report path is visible */
+    html, body, .main-content, .report-layout, 
+    .preview-panel, .report-document-container, #reportPreviewArea {
+        display: block !important;
+        visibility: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
+    /* 3. TARGET THE PREVIEW AREA (The Wrapper) */
+    #reportPreviewArea {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 4. THE PAPER */
+    .report-paper {
+        display: block !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important; /* We will use the header's margin instead */
+        border: none;
+    }
+
+    /* 5. FIX TABLES: Ensure they stay visible and crisp */
+    .doc-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        display: table !important;
+    }
+    .doc-table th, .doc-table td {
+        border: 1px solid #000 !important;
+        padding: 8px !important;
+        display: table-cell !important;
+    }
+
+    .doc-header {
+        margin-bottom: 20px !important;
+        margin-top: 40px;
+    }
+
+    /* 6. SIGNATURE: Prevent floating issues */
+    .signature-section {
+        display: flex !important;
+        justify-content: flex-end !important;
+        margin-top: 30px !important;
+        page-break-inside: avoid !important;
+    }
+
+   /* 7. PAGE BREAK & SECOND PAGE HEADER */
+    .page-break {
+        display: block !important;
+        page-break-before: always !important;
+        height: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Target ONLY the header that appears after the break */
+    .page-break + .print-only-header {
+        display: block !important;
+        margin-bottom: 20px !important;
+        margin-top: 40px;
     }
 }

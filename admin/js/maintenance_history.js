@@ -1,362 +1,195 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const searchInput = document.querySelector(".search-input");
+    const searchInput = document.getElementById("main-search-input");
 
-  // 1. DYNAMIC SEARCH (Searches only the currently active tab)
-  searchInput.addEventListener("keyup", function () {
-    const searchTerm = this.value.toLowerCase();
+    // 1. DYNAMIC SEARCH
+    if (searchInput) {
+        searchInput.addEventListener("keyup", applyFilters);
+    }
 
-    // Safely find the visible tab instead of relying on inline styles
-    const tabs = document.querySelectorAll(".tab-content");
-    let activeTab = null;
-    tabs.forEach((tab) => {
-      if (window.getComputedStyle(tab).display !== "none") {
-        activeTab = tab;
-      }
+    // 2. UNIFIED CLICK HANDLER FOR TABLE ROWS
+    document.addEventListener("click", function (e) {
+        const row = e.target.closest(".selectable-row");
+        if (!row) return;
+
+        // Highlight selected row
+        document.querySelectorAll(".selectable-row").forEach((r) => r.classList.remove("active-row"));
+        row.classList.add("active-row");
+
+        // Hide all right-side panels initially
+        document.querySelectorAll(".history-view").forEach((v) => (v.style.display = "none"));
+
+        const type = row.dataset.type;
+        const id = row.dataset.id;
+
+        if (type === "archive") {
+            const archivePanel = document.getElementById("view-archives-details");
+            if (archivePanel) archivePanel.style.display = "block";
+            fetchArchiveData(id);
+        } else if (type === "retired") {
+            const retiredPanel = document.getElementById("view-retired-timeline");
+            if (retiredPanel) {
+                retiredPanel.style.display = "block";
+                const retiredBody = retiredPanel.querySelector(".data-body");
+                if (retiredBody) retiredBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;"><em>Loading history...</em></td></tr>`;
+            }
+            fetchTimelineData(id, "retired");
+        } else {
+            const fullPanel = document.getElementById("view-full-timeline");
+            const timelineHead = document.getElementById("timeline-thead");
+
+            if (fullPanel) {
+                fullPanel.style.display = "block";
+
+                // Dynamic Header for Inventory vs Logs
+                if (type === "inventory") {
+                    if (timelineHead) {
+                        timelineHead.innerHTML = `<tr><th>Date</th><th>Activity</th><th>By</th><th>Remarks</th></tr>`;
+                    }
+                } else {
+                    if (timelineHead) {
+                        timelineHead.innerHTML = `<tr><th>Date</th><th>By</th><th>Affected</th><th>Action</th><th>Remarks</th><th>Status</th></tr>`;
+                    }
+                }
+                fetchTimelineData(id, type);
+            }
+        }
     });
 
-    if (activeTab) {
-      const rows = activeTab.querySelectorAll("tbody tr");
-      rows.forEach((row) => {
-        row.style.display = row.textContent.toLowerCase().includes(searchTerm)
-          ? ""
-          : "none";
-      });
-    }
-  });
+    selectFirstVisibleRow();
+});
 
-  // 2. UNIFIED CLICK HANDLER
-  document.addEventListener("click", function (e) {
-    const row = e.target.closest(".selectable-row");
-    if (!row) return;
+/**
+ * TOGGLE VIEW LOGIC (Text Only)
+ */
+function toggleNavView(btn) {
+    const logNav = document.getElementById('log-nav-container');
+    const retNav = document.getElementById('retirement-nav-container');
+    const title = document.getElementById('nav-title');
+    
+    const isShowingLogs = logNav.style.display !== 'none';
 
-    // Highlight Row
-    document
-      .querySelectorAll(".selectable-row")
-      .forEach((r) => r.classList.remove("active-row"));
-    row.classList.add("active-row");
-
-    // Hide all right-side views
-    document
-      .querySelectorAll(".history-view")
-      .forEach((v) => (v.style.display = "none"));
-
-    // Identify the active Tab Type
-    const activeTab = document
-      .querySelector(".toggle-link.active")
-      .getAttribute("onclick");
-
-    if (activeTab.includes("archives")) {
-      // Show Archive Mode
-      const view = document.getElementById("view-archives-details");
-      if (view) view.style.display = "block";
-
-      // Set the Room Number in the Header
-      const roomId = row.dataset.roomNum;
-      document.getElementById("archive-room-id").textContent =
-        `[Room ${roomId}]`;
-      fetchArchiveData(roomId);
-    } else if (activeTab.includes("retired")) {
-      // Show Retired Mode (4 Columns)
-      const view = document.getElementById("view-retired-timeline");
-      if (view) view.style.display = "block";
-      updateTagLabels(row);
-
-      // --- Trigger the AJAX Fetch ---
-      const targetId = row.dataset.id || row.dataset.propId;
-      fetchTimelineData(targetId, "retired");
+    if (isShowingLogs) {
+        logNav.style.display = 'none';
+        retNav.style.display = 'flex';
+        title.textContent = "Retirement History";
+        btn.textContent = "View Activity Logs"; // Simplified text
+        
+        const firstRetBtn = retNav.querySelector('.main-nav-btn');
+        switchHistoryTab('retired-units', firstRetBtn);
     } else {
-      // Show Full Maintenance Mode (6 Columns)
-      const view = document.getElementById("view-full-timeline");
-      if (view) view.style.display = "block";
-      updateTagLabels(row);
-
-      // --- Trigger the AJAX Fetch ---
-      const targetId = row.dataset.unitId || row.dataset.propId;
-      fetchTimelineData(targetId, "maintenance");
+        logNav.style.display = 'flex';
+        retNav.style.display = 'none';
+        title.textContent = "Activity Logs";
+        btn.textContent = "View Retirement"; // Simplified text
+        
+        const firstLogBtn = logNav.querySelector('.main-nav-btn');
+        switchHistoryTab('unit', firstLogBtn);
     }
-  });
-});
-
-// =========================================
-// MODAL LOGIC (Condemn Unit)
-// =========================================
-
-function openCondemnModal() {
-  // Find the currently selected row
-  const activeRow = document.querySelector(".selectable-row.active-row");
-
-  if (!activeRow) {
-    alert("Please select an item from the table first.");
-    return;
-  }
-
-  // Extract data from the selected row
-  const tag = activeRow.dataset.tag || activeRow.cells[1].innerText;
-  // It checks for unit-id first, then falls back to prop-id for assets
-  const id =
-    activeRow.dataset.unitId ||
-    activeRow.dataset.propId ||
-    activeRow.cells[2].innerText;
-
-  // Populate the modal fields
-  document.getElementById("modal-tag-display").textContent = `[${tag}]`;
-  document.getElementById("modal-set-tag").value = tag;
-  document.getElementById("modal-set-id").value = id;
-
-  // Show the modal
-  document.getElementById("condemn-modal").style.display = "flex";
 }
 
-function closeCondemnModal() {
-  document.getElementById("condemn-modal").style.display = "none";
-
-  // Reset the form so it's clean for the next time
-  document.getElementById("condemn-form").reset();
-}
-
-// Close modal if user clicks outside the white box
-document
-  .getElementById("condemn-modal")
-  .addEventListener("click", function (e) {
-    if (e.target === this) {
-      closeCondemnModal();
-    }
-  });
-
-function submitCondemn() {
-  const id = document.getElementById("modal-set-id").value;
-  const remarks = document.getElementById("modal-remarks").value;
-
-  const checkedBoxes = document.querySelectorAll(
-    'input[name="action_taken"]:checked',
-  );
-  const actions = Array.from(checkedBoxes)
-    .map((cb) => cb.value)
-    .join(", ");
-
-  if (!actions) {
-    alert("Please select at least one Action Taken.");
-    return;
-  }
-
-  console.log(
-    "Submitting Condemn for ID:",
-    id,
-    "Actions:",
-    actions,
-    "Remarks:",
-    remarks,
-  );
-  // TODO: Add AJAX call to process_condemn.php here
-
-  // Close the modal after submission
-  alert("Unit condemned successfully.");
-  closeCondemnModal();
-}
-
-// =========================================
-// GLOBAL FUNCTIONS
-// =========================================
-
-function updateTagLabels(row) {
-  const tag = row.dataset.tag || row.cells[1].innerText;
-  document.querySelectorAll(".selected-tag-label").forEach((el) => {
-    el.textContent = `[${tag}]`;
-  });
-}
-
-// Tab Switcher (The Pill Buttons)
+/**
+ * MAIN TAB SWITCHER
+ */
 function switchHistoryTab(tabName, btnElement) {
-  // 1. Toggle Active Button UI
-  document
-    .querySelectorAll(".toggle-link")
-    .forEach((btn) => btn.classList.remove("active"));
-  btnElement.classList.add("active");
+    document.querySelectorAll(".main-nav-btn").forEach((btn) => btn.classList.remove("active"));
+    if (btnElement) btnElement.classList.add("active");
 
-  // 2. Show selected left-side table
-  document
-    .querySelectorAll(".tab-content")
-    .forEach((tab) => (tab.style.display = "none"));
-  const activeTab = document.getElementById(tabName + "-tab");
-  if (activeTab) activeTab.style.display = "block";
+    document.querySelectorAll(".tab-content").forEach((tab) => tab.style.display = "none");
 
-  // 3. Update Placeholder
-  const searchInput = document.querySelector(".search-input");
-  if (tabName === "archives") {
-    searchInput.placeholder = "Search room number...";
-  } else if (tabName === "asset") {
-    searchInput.placeholder = "Search Property ID...";
-  } else {
-    searchInput.placeholder = "Search a set tag...";
-  }
-
-  // 4. RESET RIGHT PANEL SKELETONS
-  // Hide all right views first
-  document
-    .querySelectorAll(".history-view")
-    .forEach((v) => (v.style.display = "none"));
-
-  // Clear any active row highlights
-  document
-    .querySelectorAll(".selectable-row")
-    .forEach((r) => r.classList.remove("active-row"));
-
-  // Show the correct skeleton based on the tab clicked
-  if (tabName === "archives") {
-    document.getElementById("view-archives-details").style.display = "block";
-    // Reset text back to placeholder state
-    document.getElementById("archive-room-id").textContent = "";
-    document.getElementById("archive-reason-text").innerHTML =
-      "<em>Click a room on the left to view archive details.</em>";
-    document.getElementById("archived-by-name").textContent = "-";
-  } else if (tabName.includes("retired")) {
-    document.getElementById("view-retired-timeline").style.display = "block";
-    document
-      .querySelectorAll(".selected-tag-label")
-      .forEach((el) => (el.textContent = ""));
-  } else {
-    // Unit Logs and Asset Logs
-    document.getElementById("view-full-timeline").style.display = "block";
-    document
-      .querySelectorAll(".selected-tag-label")
-      .forEach((el) => (el.textContent = ""));
-  }
+    const targetTab = document.getElementById(tabName + "-tab");
+    if (targetTab) {
+        targetTab.style.display = "block";
+        const searchInput = document.getElementById("main-search-input");
+        if (searchInput) searchInput.value = "";
+        
+        targetTab.querySelectorAll(".selectable-row").forEach(r => r.style.display = "");
+        selectFirstVisibleRow();
+    }
 }
 
-// Function to fetch and display table rows
-function fetchTimelineData(id, type) {
-  // Target the correct table body based on the type
-  const tbodyId =
-    type === "retired"
-      ? "#view-retired-timeline .data-body"
-      : "#view-full-timeline .data-body";
-  const tbody = document.querySelector(tbodyId);
-
-  // Show loading state while fetching data
-  const colSpan = type === "retired" ? "4" : "6";
-  tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding: 20px;"><em>Loading history...</em></td></tr>`;
-
-  // Fetch the data from your new PHP script
-  fetch(`fetch_timeline.php?id=${id}&type=${type}`)
-    .then((response) => response.text())
-    .then((htmlData) => {
-      tbody.innerHTML = htmlData;
-    })
-    .catch((error) => {
-      console.error("Error fetching data:", error);
-      tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; color: red;">Failed to load data. Please check your connection.</td></tr>`;
-    });
+/**
+ * AUTO-SELECT FIRST VISIBLE ROW
+ */
+function selectFirstVisibleRow() {
+    const activeTab = Array.from(document.querySelectorAll(".tab-content")).find(tab => tab.style.display !== "none");
+    if (activeTab) {
+        const visibleRows = Array.from(activeTab.querySelectorAll(".selectable-row")).filter(row => row.style.display !== "none");
+        if (visibleRows.length > 0) {
+            visibleRows[0].click();
+        } else {
+            document.querySelectorAll(".history-view").forEach(v => v.style.display = "none");
+            document.querySelectorAll(".data-body").forEach(body => {
+                body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#999;">No records found.</td></tr>`;
+            });
+        }
+    }
 }
 
-// Function to fetch and display Archive Details (JSON)
+/**
+ * AJAX: FETCH ARCHIVE
+ */
 function fetchArchiveData(roomId) {
-  const reasonBox = document.getElementById("archive-reason-text");
-  const adminBox = document.getElementById("archived-by-name");
+    const reasonBox = document.getElementById("archive-reason-text");
+    const adminBox = document.getElementById("archived-by-name");
+    const roomHeader = document.getElementById("archive-room-id");
 
-  // Show loading state
-  reasonBox.innerHTML = "<em>Loading archive details...</em>";
-  adminBox.innerHTML = "<em>Loading...</em>";
+    if (!reasonBox) return;
+    reasonBox.innerHTML = "<em>Loading archive details...</em>";
 
-  // Fetch the data from PHP
-  fetch(`fetch_timeline.php?id=${roomId}&type=archive`)
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.status === "success") {
-        reasonBox.textContent = data.reason;
-        adminBox.textContent = data.admin;
-      } else {
-        reasonBox.innerHTML = `<em>${data.reason}</em>`;
-        adminBox.textContent = data.admin;
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching archive data:", error);
-      reasonBox.innerHTML =
-        "<em style='color: red;'>Failed to load archive details.</em>";
-      adminBox.textContent = "-";
+    fetch(`${window.location.pathname}?id=${encodeURIComponent(roomId)}&type=archive`)
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.status === "success") {
+                reasonBox.textContent = data.reason || "No reason specified.";
+                if (adminBox) adminBox.textContent = data.admin || "System Administrator";
+                if (roomHeader && data.lab_name) {
+                    roomHeader.textContent = `Room ${data.lab_room} (${data.lab_name})`;
+                }
+            } else {
+                reasonBox.innerHTML = `<span style="color:red;">${data.reason}</span>`;
+            }
+        })
+        .catch(() => {
+            reasonBox.innerHTML = "<em>Failed to load details.</em>";
+        });
+}
+
+/**
+ * AJAX: FETCH TIMELINE
+ */
+function fetchTimelineData(id, type) {
+    const isRetired = (type === "retired");
+    const isInventory = (type === "inventory");
+    const tbodySelector = isRetired ? "#view-retired-timeline .data-body" : "#view-full-timeline .data-body";
+    const tbody = document.querySelector(tbodySelector);
+    
+    if (!tbody) return;
+
+    const loadingColSpan = isInventory ? 4 : (isRetired ? 4 : 6);
+    tbody.innerHTML = `<tr><td colspan="${loadingColSpan}" style="text-align:center; padding: 20px;"><em>Loading history...</em></td></tr>`;
+
+    fetch(`${window.location.pathname}?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`)
+        .then((res) => res.text())
+        .then((html) => {
+            tbody.innerHTML = html;
+        })
+        .catch(() => {
+            const errorColSpan = isInventory ? 4 : (isRetired ? 4 : 6);
+            tbody.innerHTML = `<tr><td colspan="${errorColSpan}" style="text-align:center; color:red;">Error loading history.</td></tr>`;
+        });
+}
+
+/**
+ * SEARCH FILTERING
+ */
+function applyFilters() {
+    const searchTerm = document.getElementById("main-search-input").value.toLowerCase();
+    const activeTab = Array.from(document.querySelectorAll(".tab-content")).find(tab => tab.style.display !== "none");
+    if (!activeTab) return;
+
+    const rows = activeTab.querySelectorAll(".selectable-row");
+    rows.forEach((row) => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? "" : "none";
     });
 }
-
-// =========================================
-// FILTER LOGIC (Text + Date combined)
-// =========================================
-
-function toggleDateFilter() {
-  const popover = document.getElementById("date-filter-popover");
-  popover.style.display = popover.style.display === "none" ? "block" : "none";
-}
-
-function clearDateFilter() {
-  document.getElementById("filter-start-date").value = "";
-  document.getElementById("filter-end-date").value = "";
-  applyFilters();
-  toggleDateFilter();
-}
-
-function applyFilters() {
-  const searchTerm = document
-    .getElementById("main-search-input")
-    .value.toLowerCase();
-  const startDateVal = document.getElementById("filter-start-date").value;
-  const endDateVal = document.getElementById("filter-end-date").value;
-
-  // Convert date inputs to Date objects for comparison
-  const start = startDateVal ? new Date(startDateVal) : null;
-  const end = endDateVal ? new Date(endDateVal) : null;
-  if (end) end.setHours(23, 59, 59);
-
-  // Safely find the visible tab
-  const tabs = document.querySelectorAll(".tab-content");
-  let activeTab = null;
-  tabs.forEach((tab) => {
-    if (window.getComputedStyle(tab).display !== "none") {
-      activeTab = tab;
-    }
-  });
-
-  if (!activeTab) return;
-
-  // Default to column 4 (index 3) for Maintenance/Retirement Date, but Archives and Retired Logs use column 3 (index 2)
-  let dateColIndex = 3; // Default to column 4 (Maintenance/Retirement Date)
-  if (activeTab.id === "archives-tab" || activeTab.id.includes("retired")) {
-    dateColIndex = 2; // Archives and Retired Logs (Retirement/Archival Date)
-  }
-
-  // Filter the rows
-  const rows = activeTab.querySelectorAll("tbody tr");
-  rows.forEach((row) => {
-    // Text Match
-    const textMatch = row.textContent.toLowerCase().includes(searchTerm);
-
-    // Date Match
-    let dateMatch = true;
-    if (start || end) {
-      const dateCell = row.cells[dateColIndex];
-      if (dateCell) {
-        const rowDate = new Date(dateCell.textContent.trim());
-
-        if (start && rowDate < start) dateMatch = false;
-        if (end && rowDate > end) dateMatch = false;
-      }
-    }
-
-    // Show row ONLY if it matches BOTH text search and date range
-    row.style.display = textMatch && dateMatch ? "" : "none";
-  });
-
-  // Optional: Hide the popover after clicking Apply
-  document.getElementById("date-filter-popover").style.display = "none";
-}
-
-// Close date popover if clicked outside
-document.addEventListener("click", function (e) {
-  const popover = document.getElementById("date-filter-popover");
-  const filterBtn = document.querySelector(".btn-filter-date");
-  if (
-    popover.style.display === "block" &&
-    !popover.contains(e.target) &&
-    !filterBtn.contains(e.target)
-  ) {
-    popover.style.display = "none";
-  }
-});
