@@ -118,6 +118,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,6 +127,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/troubleshooting.css?v=<?php echo time(); ?>">
 </head>
+
 <body>
     <?php include 'includes/sidebar.php'; ?>
     <div id="notification-container" class="notification-container"></div>
@@ -152,7 +154,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                     <input type="text" id="searchInput" class="search-input" placeholder="Search a guide">
                     <select id="categoryFilter" class="filter-dropdown">
                         <option value="">All Categories</option>
-                        <?php foreach($categories as $cat): ?>
+                        <?php foreach ($categories as $cat): ?>
                             <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -189,7 +191,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 <div class="form-group"><label>Issue Title</label><input type="text" name="issue_title" placeholder="Input field" required></div>
                 <div class="form-group"><label>Category</label>
                     <select name="issue_catego">
-                        <?php foreach($categories as $cat): ?>
+                        <?php foreach ($categories as $cat): ?>
                             <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -225,6 +227,8 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             </div>
         </div>
     </div>
+    <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/troubleshooting.js"></script>
 </body>
+
 </html>
