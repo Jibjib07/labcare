@@ -122,6 +122,72 @@
   border-color: #7b1fa2;
 }
 
+.btn-purple-reset.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* MODALS  */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  animation: modalFadeIn 0.2s ease-out;
+  box-sizing: border-box;
+}
+.modal-large {
+  max-width: 500px;
+}
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+#reset-modal h2 {
+  color: #7B1FA2;
+}
+
+.btn-cancel-new {
+  background: white;
+  border: 1px solid #ddd;
+  color: #333;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btn-cancel-new:hover {
+  background-color: #e0e0e0;
+}
+
 /* --- Right Column: System Info --- */
 .info-block {
   margin-bottom: 40px;
@@ -154,4 +220,77 @@
 
 .disclaimer strong {
   font-weight: 700;
+}
+
+/* --- Toast Container --- */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- Toast Styles --- */
+/* TOAST BASE */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 280px;
+  max-width: 350px;
+
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  border-left: 5px solid #4CAF50; /* Default Green Success Border */
+
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+
+  transition: all 0.3s ease;
+  z-index: 9999;
+}
+
+/* ACTIVE STATE - Used to trigger visibility via JavaScript */
+.toast.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ICON */
+#toast-icon {
+  font-size: 18px;
+  color: #4CAF50;
+}
+
+/* TEXT CONTENT */
+#toast-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+#toast-message {
+  font-size: 12px;
+  color: #555;
+}
+
+/* ERROR STATE OVERRIDES */
+#toast-icon.error {
+  color: #e74c3c; /* Red Icon */
+}
+
+.toast.error {
+  border-left-color: #e74c3c; /* Red Border */
 }

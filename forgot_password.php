@@ -75,8 +75,7 @@ if (isset($_POST['send_link_btn'])) {
         $stmt->execute();
 
         // --- STEP 6: Build reset link ---
-        // Uses the BASE_URL defined in includes/db.php!
-        $resetLink = BASE_URL . "password_resets.php?token=" . $rawToken;
+        $resetLink = "http://localhost/labcare-main/password_resets.php?token=" . $rawToken;
 
         // --- STEP 7: Send email via PHPMailer ---
         try {
@@ -86,14 +85,16 @@ if (isset($_POST['send_link_btn'])) {
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'cvsuccclabcare26@gmail.com';
-            $mail->Password = 'ftla jdqz yifw jejl';  // <-- Don't forget to generate a new app password and put it here!
+        $mail->Password = 'ftla jdqz yifw jejl';  // <-- Don't forget to generate a new app password and put it here!
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
 
             $mail->setFrom('cvsuccclabcare26@gmail.com', 'LabCare');
             $mail->addAddress($email, $user['user_name']);
 
-            $mail->Subject = 'LabCare Password Reset';
+            // Uses the BASE_URL defined in includes/db.php!
+            $resetLink = BASE_URL . "password_resets.php?token=" . $rawToken;
+
             $mail->Body = "Hello {$user['user_name']},\n\nClick this link to reset your password:\n\n{$resetLink}\n\nLink expires in 1 hour.";
 
             $mail->send();
