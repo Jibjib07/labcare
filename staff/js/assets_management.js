@@ -28,6 +28,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (assetId) selectFacilityAsset(this, assetId);
       });
     });
+
+  // Trigger initial auto-select on page load
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetTab = urlParams.get("tab");
+
+  if (targetTab === "assets") {
+    switchView("facility");
+  } else {
+    switchView("computer"); // Defaults to computer
+  }
 });
 
 function showNotification(title, message, type = "success") {
@@ -95,8 +105,11 @@ function switchView(viewName) {
   const computerView = document.getElementById("view-computer");
   const facilityView = document.getElementById("view-facility");
 
+  // Reset states to prevent leakage
   currentEditingSetId = null;
   currentSelectedFAId = null;
+  currentHasIssues = false;
+  pendingAffectedString = "";
 
   document
     .querySelectorAll(".asset-item")
@@ -105,11 +118,13 @@ function switchView(viewName) {
   if (viewName === "computer") {
     computerView.style.display = "block";
     facilityView.style.display = "none";
+    autoSelectFirstVisibleItem("computer");
   } else if (viewName === "facility") {
     computerView.style.display = "none";
     facilityView.style.display = "block";
     const right = document.getElementById("view-facility-right");
     if (right) right.style.display = "block";
+    autoSelectFirstVisibleItem("facility");
   }
 }
 
@@ -168,6 +183,77 @@ function closeMobileDetails() {
 
   if (computerView) computerView.classList.remove("mobile-show-details");
   if (facilityView) facilityView.classList.remove("mobile-show-details");
+}
+
+// ==========================================
+// AUTO-SELECT HELPER
+// ==========================================
+
+// ==========================================
+// AUTO-SELECT HELPER (UPGRADED FOR DASHBOARD URL PARAMS)
+// ==========================================
+
+function autoSelectFirstVisibleItem(viewType) {
+  if (window.innerWidth <= 768) return;
+
+  const containerId =
+    viewType === "computer" ? "assetListContainer" : "facilityListContainer";
+  const items = document.querySelectorAll(`#${containerId} .asset-item`);
+
+  // 1. Check the URL for parameters sent by the Dashboard
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetId = urlParams.get("id");
+  const targetTab = urlParams.get("tab");
+
+  let itemToSelect = null;
+
+  // 2. If the URL has an ID for the current tab, find that exact row
+  if (targetId) {
+    if (
+      (viewType === "computer" && targetTab === "units") ||
+      (viewType === "facility" && targetTab === "assets")
+    ) {
+      const targetAttr =
+        viewType === "computer" ? "data-set-id" : "data-asset-id";
+      itemToSelect = document.querySelector(
+        `#${containerId} .asset-item[${targetAttr}="${targetId}"]`,
+      );
+    }
+  }
+
+  // 3. Fallback: If no URL ID (or item wasn't found), just pick the first visible item
+  if (!itemToSelect) {
+    for (let item of items) {
+      if (item.style.display !== "none") {
+        itemToSelect = item;
+        break;
+      }
+    }
+  }
+
+  // 4. Click the item and scroll it into view!
+  if (itemToSelect) {
+    if (viewType === "computer") {
+      const setId = itemToSelect.getAttribute("data-set-id");
+      if (setId) selectUnit(itemToSelect, setId);
+    } else {
+      const assetId = itemToSelect.getAttribute("data-asset-id");
+      if (assetId) selectFacilityAsset(itemToSelect, assetId);
+    }
+
+    // Smoothly scroll down the list so the selected item is perfectly centered
+    setTimeout(() => {
+      itemToSelect.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+  } else {
+    // Failsafe if the list is completely empty
+    const headerQuery =
+      viewType === "computer"
+        ? "#view-computer .right-panel .section-header-row h3"
+        : "#view-facility-right .section-header-row h3";
+    const rightPanelHeader = document.querySelector(headerQuery);
+    if (rightPanelHeader) rightPanelHeader.innerHTML = "No Items Found";
+  }
 }
 
 // ==========================================
@@ -232,6 +318,8 @@ function applyComputerFilters() {
 
     item.style.display = matchesSearch && matchesFilter ? "flex" : "none";
   });
+
+  autoSelectFirstVisibleItem("computer");
 }
 
 function applyFAFilters() {
@@ -254,6 +342,8 @@ function applyFAFilters() {
 
     item.style.display = matchesSearch && matchesFilter ? "flex" : "none";
   });
+
+  autoSelectFirstVisibleItem("facility");
 }
 
 // ==========================================
@@ -283,7 +373,7 @@ function selectUnit(element, setId) {
         populateRightPanel(data.data);
         resetUIToViewMode();
 
-        // --- POPULATE RECENT ACTIVITY LOGS (MOBILE-SAFE CARD FEED) ---
+        // --- POPULATE RECENT ACTIVITY LOGS ---
         const historyBody = document.getElementById("pc_activity_log_body");
         if (historyBody) {
           historyBody.innerHTML = "";
@@ -604,8 +694,9 @@ function openLogStatusModal() {
     avr_status: "AVR",
   };
 
+  // Strictly target #view-computer to avoid state leakage
   document
-    .querySelectorAll(".specs-content-box .status-toggle-group")
+    .querySelectorAll("#view-computer .specs-content-box .status-toggle-group")
     .forEach((group) => {
       if (group.style.display !== "none") {
         const dbColumn = group.id.replace("toggle_", "");
@@ -641,7 +732,7 @@ function openLogStatusModal() {
   pendingAffectedString =
     statusChanges.length > 0
       ? statusChanges.map((c) => c.name).join(", ")
-      : "Entire Unit  ";
+      : "Entire Unit";
 
   const activeItem = document.querySelector(
     "#assetListContainer .asset-item.active .item-name",
@@ -661,7 +752,7 @@ function openLogStatusModal() {
       const placeholderText = isRepair
         ? "REQUIRED: Why is this marked for repair?"
         : "Optional: General notes...";
-      const bgTint = isRepair ? "#fffbfa" : "#fff"; // Light red tint to encourage typing
+      const bgTint = isRepair ? "#fffbfa" : "#fff";
 
       htmlContent += `
         <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
@@ -705,6 +796,7 @@ function openLogStatusModal() {
   document.getElementById("logStatusChangeList").innerHTML = htmlContent;
   openModal("logStatusModal");
 }
+
 // --- FACILITY ASSETS REPORT ---
 function toggleFAReportMode() {
   if (!currentSelectedFAId) {
@@ -834,7 +926,7 @@ function openFALogStatusModal() {
   document.getElementById("logStatusChangeList").innerHTML = htmlContent;
   openModal("logStatusModal");
 }
-// --- SUBMIT WORKFLOW FOR BOTH ---
+
 // --- SUBMISSION HANDLER ---
 function confirmLogStatus() {
   const saveBtn = document.querySelector("#logStatusModal .btn-confirm");
@@ -934,7 +1026,7 @@ function confirmLogStatus() {
 
   // B. IF COMPUTER UNIT
   if (currentReportType === "pc") {
-    let componentLogs = []; // We will build a JSON array of individual logs!
+    let componentLogs = []; // JSON array of individual logs
 
     if (currentHasIssues) {
       // Log each broken component individually
@@ -981,11 +1073,13 @@ function confirmLogStatus() {
       "overall_status",
       currentHasIssues ? "For Repair" : "Working",
     );
-    formData.append("component_logs", JSON.stringify(componentLogs)); // Pass as JSON!
+    formData.append("component_logs", JSON.stringify(componentLogs));
 
-    // Append physical statuses for the other tables
+    // Scoped query to avoid FA leakage into PC data
     document
-      .querySelectorAll(".specs-content-box .status-toggle-group")
+      .querySelectorAll(
+        "#view-computer .specs-content-box .status-toggle-group",
+      )
       .forEach((group) => {
         if (group.style.display !== "none") {
           const dbColumn = group.id.replace("toggle_", "");

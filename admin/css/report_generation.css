@@ -39,38 +39,53 @@
 }
 
 /* =========================================
-   2. TABS & BUTTONS
+   2. TABS & BUTTONS (ENHANCED)
    ========================================= */
 .main-tabs {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 25px;
 }
 
 .tab-btn {
     flex: 1;
-    padding: 10px;
+    padding: 12px;
     border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    border-radius: 10px;
     background: white;
     font-size: 13px;
     font-weight: 600;
     color: #555;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-btn:hover {
+    background: #f8f9fa;
+    border-color: #4CAF50;
+    color: #4CAF50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
 .tab-btn.active {
     background: #4CAF50;
     color: white;
     border-color: #4CAF50;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.tab-btn:active, .sub-tab:active, .btn-generate:active, .btn-export:active {
+    transform: scale(0.96); /* "Press" animation */
 }
 
 .sub-tabs-wrapper {
     display: flex;
     background: #f1f3f4;
     padding: 5px;
-    border-radius: 10px;
+    border-radius: 12px;
     margin: 20px 0;
 }
 
@@ -80,32 +95,64 @@
     padding: 10px;
     font-size: 12px;
     font-weight: 700;
-    border-radius: 8px;
+    border-radius: 9px;
     cursor: pointer;
     background: transparent;
     color: #666;
-    transition: 0.3s;
+    transition: all 0.2s ease;
+}
+
+.sub-tab:hover:not(.active) {
+    background: rgba(0,0,0,0.05);
+    color: #333;
 }
 
 .sub-tab.active {
     background: #4CAF50;
     color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+/* Primary Action Buttons */
 .btn-generate, .btn-export {
     background: #4CAF50;
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
+    padding: 10px 20px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
-    transition: background 0.3s;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.2);
+}
+
+.btn-generate:hover {
+    background: #43A047;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Icon Spin Animation on Generate */
+.btn-generate:hover i {
+    animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.btn-export {
+    background: #2196F3; /* Distinct color for export */
+}
+
+.btn-export:hover {
+    background: #1976D2;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
 }
 
 .btn-generate:hover { background: #43A047; }
@@ -117,6 +164,12 @@
     display: flex; 
     flex-direction: column; 
     gap: 15px; 
+}
+
+#dateRangeGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .form-group label {
@@ -139,7 +192,7 @@
 }
 
 /* =========================================
-   4. VISUALIZATIONs
+   4. VISUALIZATIONS
    ========================================= */
 .chart-container {
     display: flex;
@@ -173,26 +226,75 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
-    border: 1px solid #f0f0f0;
+    padding: 12px 16px;
+    border: 1px solid #edf0f2;
     border-radius: 10px;
     margin-bottom: 8px;
-    width: 250px;
+    width: 280px;
+    background: #fff;
 }
 
-.condemned-number {
-    font-size: 80px;
-    font-weight: 800;
-    color: #f44336;
-    margin: 0;
-
-
-
-    
+.legend-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
+
+.dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.dot.green { background-color: #4CAF50; }
+.dot.yellow { background-color: #FFC107; }
+.dot.red { background-color: #F44336; }
+
+.condemned-display-panel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 25px;
+    border-top: 1px dashed #eee;
+    width: 100%;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.chart-container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.donut-chart {
+    /* Base styles already in memory */
+    transition: transform 0.3s ease;
+}
+
+.donut-chart:hover {
+    transform: scale(1.05); /* Slight grow on hover */
+}
+
+/* "Pop" effect for the count numbers */
+.legend-pill .count {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tab-btn.active + .visualization-area .legend-pill .count {
+    transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.condemned-card { text-align: center; width: 100%; }
+.condemned-number { font-size: 80px; font-weight: 800; color: #f44336; margin: 0; line-height: 1; }
+.condemned-label { font-size: 14px; font-weight: 600; color: #444; margin-top: 10px; }
 
 /* =========================================
-   5. REPORT DOCUMENT CONTAINER (THE DESK)
+   5. REPORT DOCUMENT CONTAINER
    ========================================= */
 .preview-panel {
     background-color: #fff;
@@ -203,74 +305,54 @@
 
 .report-document-container {
     background-color: #f0f2f5; 
-    padding: 40px 15px;
+    padding: 20px;
     border-radius: 8px;
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    min-height: 600px;
+}
+
+.report-document-container:has(.report-paper) {
+    justify-content: flex-start;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #7f8c8d;
+    text-align: center;
+    width: 100%;
+    height: 100%;
 }
 
 /* =========================================
-   6. THE REPORT PAPER (A4 STYLE)
+   6. THE REPORT PAPER (WEB PREVIEW STYLE)
    ========================================= */
 .report-paper {
     background: white;
     width: 800px;
-    padding: 0.5in;
-    font-family: "Arial", sans-serif;
+    padding: 0.7in;
+    font-family: "Times New Roman", Times, serif;
     color: #000;
     box-sizing: border-box;
     margin-bottom: 30px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    
+    /* Enabled Flexbox for bottom-push logic in preview */
+    display: flex;
+    flex-direction: column;
+    min-height: 1056px; 
 }
 
-/* HEADER LOGIC: Preview vs Print */
-.print-only-header {
-    display: none; /* Hidden in web preview */
-}
-
-.page-break {
-    page-break-before: always;
-    margin: 30px 0;
-}
-
-/* Header & Typography */
-.doc-header { 
-    text-align: center; 
-    line-height: 1.2; 
-    margin-bottom: 5px; 
-}
-
-.doc-header p { font-size: 14px; margin: 2px 0; }
-.doc-header h2 { font-size: 18px; font-weight: bold; margin: 0; color: #000; }
-.doc-header h3 { font-size: 16px; font-weight: bold; margin: 0; color: #000; }
-
-.doc-divider { 
-    border-bottom: 1.5px solid #000; 
-    margin: 10px 0 20px 0; 
-}
-
-/* Title Block Styles */
-.report-title-block {
-    text-align: center;
-    margin-bottom: 30px;
-    font-weight: bold;
-    line-height: 1.3;
-}
-
-.report-main-title { font-size: 16px; }
-.report-sub-title { font-size: 15px; }
-.report-room { font-size: 15px; margin-top: 5px; }
-.report-date { font-size: 15px; font-weight: normal; margin-top: 10px; }
-
-/* Table Styling */
-.table-label { 
-    text-align: left; 
-    font-size: 14px; 
-    font-weight: bold; 
-    margin-bottom: 8px; 
-}
+.doc-header { text-align: center; line-height: 1.2; margin-bottom: 5px; position: relative; }
+.doc-divider { border-bottom: 1.5px solid #000; margin: 10px 0 20px 0; }
+.table-label { text-align: left; font-size: 14px; font-weight: bold; margin-bottom: 8px; }
 
 .doc-table {
     width: 100%;
@@ -281,69 +363,38 @@
 .doc-table th, .doc-table td {
     border: 1px solid #ccc;
     padding: 8px 12px;
-    text-align: left;
     font-size: 13px;
-}
-
-.doc-table th {
-    color: rgb(0, 0, 0);
-    font-weight: bold;
-}
-
-.doc-table tr.row-total {
-    font-weight: bold;
-    background-color: #f8f9fa;
-}
-
-/* Signature Section */
-.signature-section {
-    margin-top: 60px;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.sig-box {
     text-align: center;
-    width: 250px;
 }
 
-.sig-line {
-    border-top: 1px solid #000;
-    margin-top: 45px;
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 13px;
-    padding-top: 5px;
-}
-
-.empty-state {
+.signature-section {
+    margin-top: auto; /* This pushes signatures to the bottom */
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding-top: 100px;
-    color: #7f8c8d;
+    align-items: flex-start;
+    gap: 30px;
+    page-break-inside: avoid;
 }
 
-/* Responsive Grid */
-@media (max-width: 1100px) {
-    .report-layout { grid-template-columns: 1fr; }
-}
+.sig-box { width: 300px; text-align: center; }
 
 /* =========================================
-   FINAL PRINT OVERRIDE - FIXED FOR 1 PAGE
+   7. UNIVERSAL DYNAMIC PRINT ENGINE
    ========================================= */
 @media print {
-    /* 1. THE KILL LIST: This removes the filters and the left panel */
-    header, nav, .sidebar, .navbar, .page-header, .panel-header-row,
+    @page {
+        margin: 0.5in;
+        size: auto;
+    }
+
+    /* KILL LIST: Hide all interface UI */
+    header, nav, .sidebar, .navbar, .page-header, .panel-header-row, .empty-state,
     .main-tabs, .sub-tabs-wrapper, .btn-generate, .btn-export,
-    .no-print, .mobile-header, .mobile-nav, .hamburger, .menu-toggle,
-    .lab-logo-container, .logo-wrapper, .top-bar, .visualization-area,
-    .filter-form, .white-panel:not(.preview-panel) { 
+    .visualization-area, .filter-form, .white-panel:not(.preview-panel) { 
         display: none !important;
     }
 
-    /* 2. THE "FORCE SHOW" PATH: Ensure ONLY the report path is visible */
+    /* RESET CONTAINERS: Allow natural paper flow */
     html, body, .main-content, .report-layout, 
     .preview-panel, .report-document-container, #reportPreviewArea {
         display: block !important;
@@ -358,61 +409,41 @@
         overflow: visible !important;
     }
 
-    /* 3. TARGET THE PREVIEW AREA (The Wrapper) */
-    #reportPreviewArea {
-        display: block !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* 4. THE PAPER */
+    /* THE PAPER: Pushes signature to bottom of last page */
     .report-paper {
-        display: block !important;
+        display: flex !important;
+        flex-direction: column !important;
         width: 100% !important;
-        min-height: 0 !important;
+        /* 98vh adapts to any paper type (A4, Letter, etc.) */
+        min-height: 98vh !important; 
         margin: 0 !important;
-        padding: 0 !important; /* We will use the header's margin instead */
-        border: none;
+        padding: 0.2in !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-family: "Times New Roman", Times, serif !important;
     }
 
-    /* 5. FIX TABLES: Ensure they stay visible and crisp */
+    /* FORMAL PRINT TABLES: Solid black borders */
     .doc-table {
         width: 100% !important;
         border-collapse: collapse !important;
-        display: table !important;
     }
     .doc-table th, .doc-table td {
         border: 1px solid #000 !important;
         padding: 8px !important;
-        display: table-cell !important;
+        color: #000 !important;
     }
 
-    .doc-header {
-        margin-bottom: 20px !important;
-        margin-top: 40px;
-    }
-
-    /* 6. SIGNATURE: Prevent floating issues */
+    /* Target the signature block to anchor it to bottom margin */
     .signature-section {
-        display: flex !important;
-        justify-content: flex-end !important;
-        margin-top: 30px !important;
+        margin-top: auto !important;
+        padding-top: 50px;
+        padding-bottom: 20px;
         page-break-inside: avoid !important;
     }
 
-   /* 7. PAGE BREAK & SECOND PAGE HEADER */
     .page-break {
         display: block !important;
         page-break-before: always !important;
-        height: 0 !important;
-        margin: 0 !important;
-    }
-
-    /* Target ONLY the header that appears after the break */
-    .page-break + .print-only-header {
-        display: block !important;
-        margin-bottom: 20px !important;
-        margin-top: 40px;
     }
 }

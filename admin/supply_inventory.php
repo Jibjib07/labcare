@@ -2,6 +2,9 @@
 session_start();
 include '../includes/db.php';
 
+// NEW: Set timezone to your local time
+date_default_timezone_set('Asia/Manila');
+
 // --- 1. AJAX FETCH HANDLER (MUST BE AT THE VERY TOP) ---
 if (isset($_GET['fetch_id'])) {
     header('Content-Type: application/json');
@@ -21,7 +24,8 @@ if (isset($_GET['fetch_id'])) {
     if ($log_res) {
         while ($log = mysqli_fetch_assoc($log_res)) {
             $history[] = [
-                'date' => date('m/d/Y', strtotime($log['suphisto_date'])),
+                // Display the exact time (e.g., 03/26/2026 11:52 PM) in the UI feed
+                'date' => date('m/d/Y h:i A', strtotime($log['suphisto_date'])),
                 'activity' => $log['suphisto_act'],
                 'user' => $log['suphisto_actor'],
                 'remarks' => $log['suphisto_remarks']
@@ -45,7 +49,12 @@ if (isset($_POST['submit_supply'])) {
         exit();
     }
 
-    $insert_query = "INSERT INTO supply (supply_name, supply_status, supply_avail) VALUES ('$supply_name', '$status', 'Current')";
+    // Set the exact current time
+    $date = date('Y-m-d H:i:s');
+
+    // FIXED: Insert the $date into latest_activity instead of the word 'Added'
+    $insert_query = "INSERT INTO supply (supply_name, supply_status, supply_avail, latest_activity) 
+                     VALUES ('$supply_name', '$status', 'Current', '$date')";
 
     if (mysqli_query($conn, $insert_query)) {
         // Get last ID to auto-select the newly created item
@@ -53,7 +62,6 @@ if (isset($_POST['submit_supply'])) {
 
         // --- NEW: INSTANT HISTORY LOG ---
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
-        $date = date('Y-m-d');
         $activity = ($status === "In Stock") ? "Marked In Stock" : "Marked Out of Stock";
         $remarks = "Added"; // Automatically set remarks to "Added"
 
@@ -79,22 +87,23 @@ if (isset($_POST['submit_update'])) {
         $new_status = $old_status;
     }
 
-    // --- FIXED: ACTOR SESSION ---
     $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
-    $date = date('Y-m-d');
+    $date = date('Y-m-d H:i:s');
 
-    $update_query = "UPDATE supply SET supply_name = '$new_name', supply_status = '$new_status' WHERE supply_id = '$id'";
+    $activity_text = "Details Updated";
+    if ($new_status !== $old_status) {
+        $activity_text = ($new_status === "In Stock") ? "Marked In Stock" : "Marked Out of Stock";
+    }
+
+    // FIXED: Update latest_activity with the timestamp $date
+    $update_query = "UPDATE supply SET supply_name = '$new_name', supply_status = '$new_status', latest_activity = '$date' WHERE supply_id = '$id'";
 
     if (mysqli_query($conn, $update_query)) {
         if ($new_status !== $old_status) {
-            $activity = ($new_status === "In Stock") ? "Marked In Stock" : "Marked Out of Stock";
-
-            // --- FIXED: Added suphisto_stat and $new_status to the INSERT query ---
             $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
-                           VALUES ('$date', '$activity', '$new_status', '$actor', '$remarks', '$id')";
+                           VALUES ('$date', '$activity_text', '$new_status', '$actor', '$remarks', '$id')";
             mysqli_query($conn, $hist_query);
         }
-        // MODIFIED: Pass ID for auto-selection after reload
         header("Location: supply_inventory.php?success=updated&id=$id");
         exit();
     } else {
@@ -106,10 +115,17 @@ if (isset($_POST['submit_update'])) {
 // C. Handle Archival Logic (Silent Mode)
 if (isset($_POST['submit_archive'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
-    $archive_query = "UPDATE supply SET supply_avail = 'Archived', supply_status = 'Out of Stock' WHERE supply_id = '$id'";
+    $date = date('Y-m-d H:i:s');
+
+    // FIXED: Update latest_activity with timestamp
+    $archive_query = "UPDATE supply SET supply_avail = 'Archived', supply_status = 'Out of Stock', latest_activity = '$date' WHERE supply_id = '$id'";
 
     if (mysqli_query($conn, $archive_query)) {
-        // FIXED: Removed tab=Archived so it stays on Current Laboratory by default
+        $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
+        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
+                       VALUES ('$date', 'Archived', 'Out of Stock', '$actor', 'Item moved to archive', '$id')";
+        mysqli_query($conn, $hist_query);
+
         header("Location: supply_inventory.php?success=archived");
         exit();
     }
@@ -118,16 +134,21 @@ if (isset($_POST['submit_archive'])) {
 // D. Handle Restore Logic
 if (isset($_POST['submit_restore'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
-    // Restore the item to 'Current' status
-    $restore_query = "UPDATE supply SET supply_avail = 'Current' WHERE supply_id = '$id'";
+    $date = date('Y-m-d H:i:s');
+
+    // FIXED: Update latest_activity with timestamp
+    $restore_query = "UPDATE supply SET supply_avail = 'Current', latest_activity = '$date' WHERE supply_id = '$id'";
 
     if (mysqli_query($conn, $restore_query)) {
-        // REDIRECT: Returns to the default tab (Current) but passes the ID for selection
+        $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
+        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
+                       VALUES ('$date', 'Restored', 'Out of Stock', '$actor', 'Item restored from archive', '$id')";
+        mysqli_query($conn, $hist_query);
+
         header("Location: supply_inventory.php?success=restored&id=$id");
         exit();
     }
 }
-
 
 ?>
 <!DOCTYPE html>
@@ -195,11 +216,7 @@ if (isset($_POST['submit_restore'])) {
                         while ($row = mysqli_fetch_assoc($result)) {
                             $id = $row['supply_id'];
                             $badge = ($row['supply_status'] === 'In Stock') ? 'badge green' : 'badge red';
-
-                            // Ensure logic matches exactly what your JS expects
                             $avail = $row['supply_avail'];
-
-                            // FIX: We must echo this variable inside the div tag
                             $displayClass = ($avail === 'Archived') ? 'style="display:none;"' : '';
 
                             echo "

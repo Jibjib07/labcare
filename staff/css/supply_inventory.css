@@ -1,0 +1,377 @@
+/* =========================================
+   1. SHARED UTILITIES & LAYOUT
+   ========================================= */
+.page-header {
+  margin-bottom: 25px;
+}
+.page-header h1 {
+  font-size: 28px;
+  color: #000;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+.page-header p {
+  color: #555;
+  font-size: 14px;
+  margin-top: 5px;
+  margin-bottom: 0;
+}
+
+.white-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  height: 100%;
+}
+
+.supply-layout {
+  display: grid !important;
+  grid-template-columns: 40% 1fr !important;
+  gap: 20px;
+  align-items: stretch !important;
+}
+
+.panel-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+.panel-header-row h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+}
+
+/* =========================================
+   2. SCROLLBARS & PANEL SIZES
+   ========================================= */
+.left-list-panel,
+.right-detail-panel {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 25px;
+}
+
+#view-mode {
+  width: 100%;
+}
+
+/* =========================================
+   3. LEFT PANEL: SUPPLY LIST & FILTERS
+   ========================================= */
+/* REMOVED: .switch-filter and .switch-btn styles as staff only see Current Inventory */
+
+.search-filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+.search-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.filter-dropdown {
+  flex: 0.5;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #555;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.supply-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+}
+
+.supply-status-cell {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0; 
+}
+.supply-row:hover {
+  background-color: #fafafa;
+}
+
+/* SELECTED STATE */
+.supply-row.active-row {
+  background-color: #f1f8f5 !important;
+  border-left: 4px solid #4caf50;
+  padding-left: 16px; 
+}
+
+.item-name {
+  font-size: 13px !important;
+  font-weight: 700;
+  color: #000;
+}
+
+/* Custom Scrollbars */
+.list-scroll-container::-webkit-scrollbar,
+.activity-feed-container::-webkit-scrollbar {
+  width: 4px;
+}
+.list-scroll-container::-webkit-scrollbar-thumb,
+.activity-feed-container::-webkit-scrollbar-thumb {
+  background: #d1d1d1;
+  border-radius: 10px;
+}
+.list-scroll-container::-webkit-scrollbar-thumb:hover,
+.activity-feed-container::-webkit-scrollbar-thumb:hover {
+  background: #4caf50;
+}
+
+.list-scroll-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 550px; 
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 5px;
+}
+
+.supply-row.asset-item {
+  height: 50px;
+  min-height: 50px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-block;
+  padding: 4px 12px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  width: fit-content;
+  text-align: center;
+}
+.badge.green {
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+}
+.badge.red {
+  background-color: #f44336 !important;
+  color: #ffffff !important;
+}
+
+/* =========================================
+   4. RIGHT PANEL: DETAILS VIEW
+   ========================================= */
+#view-mode {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  animation: slideUpFade 0.3s ease-out;
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 25px;
+  flex-shrink: 0;
+}
+.detail-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.detail-box {
+  background: #efefef;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+
+/* Activity Feed */
+.activity-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.activity-feed-container {
+  max-height: 550px;
+  min-height: 200px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #f2f2f2;
+  border-radius: 8px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-card {
+  flex-shrink: 0;
+  padding: 15px 20px;
+  border-bottom: 1px solid #f9f9f9;
+  background: white;
+}
+
+.activity-remark-bubble {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #555;
+  font-style: italic;
+}
+
+/* Status Pills (Detail View) */
+.status-pill {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid transparent;
+}
+.status-pill.green {
+  background-color: #dffbe2;
+  color: #2e7d32;
+  border: 1px solid #c3e6cb;
+}
+.status-pill.red {
+  background-color: #fce4ec;
+  color: #c62828;
+  border: 1px solid #f8bbd0;
+}
+
+/* Empty State */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #bbb;
+  text-align: center;
+}
+.empty-state-container i {
+  font-size: 50px;
+  margin-bottom: 15px;
+  color: #eee;
+}
+
+/* =========================================
+   5. TOAST NOTIFICATIONS (Kept for View Errors)
+   ========================================= */
+.toast-container {
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.toast {
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 320px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+.toast-success .toast-icon { color: #4caf50; }
+.toast-error .toast-icon { color: #f44336; }
+
+/* =========================================================
+   6. RESPONSIVE DESIGN (MOBILE TRANSITIONS)
+   ========================================================= */
+.mobile-back-row {
+  display: none;
+}
+
+@media screen and (max-width: 768px) {
+  .supply-layout {
+    display: block !important;
+    padding: 10px;
+  }
+  .left-list-panel {
+    display: block;
+    width: 100% !important;
+  }
+  .right-detail-panel {
+    display: none;
+    width: 100% !important;
+  }
+  .supply-layout.mobile-show-details .left-list-panel {
+    display: none !important;
+  }
+  .supply-layout.mobile-show-details .right-detail-panel {
+    display: block !important;
+  }
+  .mobile-back-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  .mobile-back-btn {
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-right: 15px;
+    cursor: pointer;
+  }
+  .detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+}

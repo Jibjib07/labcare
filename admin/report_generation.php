@@ -10,16 +10,18 @@ if (isset($_POST['action'])) {
     require_once dirname(__FILE__) . '/../includes/db.php';
     session_start();
 
-    // Metadata for the report signature
     $response = ['success' => false, 'data' => [], 'prepared_by' => 'System Administrator'];
 
     if (isset($_SESSION['user_fname']) && isset($_SESSION['user_lname'])) {
         $response['prepared_by'] = $_SESSION['user_fname'] . ' ' . $_SESSION['user_lname'];
     }
 
+    // Capture Date Parameters
     $asOfDate = $_POST['asOfDate'] ?? date('Y-m-d');
-    $subTab = $_POST['subTab'] ?? 'units';
-    $type = $_POST['type'] ?? 'status';
+    $fromDate = $_POST['fromDate'] ?? date('Y-m-d');
+    $toDate   = $_POST['toDate'] ?? date('Y-m-d');
+    $subTab   = $_POST['subTab'] ?? 'units'; 
+    $type     = $_POST['type'] ?? 'status';
 
     try {
         if (!isset($conn) || $conn->connect_error) {
@@ -30,19 +32,28 @@ if (isset($_POST['action'])) {
          * ACTION: fetch_snapshot_rooms
          */
         if ($_POST['action'] === 'fetch_snapshot_rooms') {
+            $dateConstraint = ($type === 'condemned') 
+                ? "log_date BETWEEN ? AND ?" 
+                : "log_date <= ?";
+
             $query = "
                 SELECT DISTINCT l.lab_id, l.lab_room 
                 FROM laboratories l
                 WHERE l.lab_id IN (
-                    SELECT DISTINCT lab_id FROM units_log WHERE log_date <= ?
+                    SELECT DISTINCT lab_id FROM units_log WHERE $dateConstraint
                     UNION
-                    SELECT DISTINCT lab_id FROM assets_log WHERE log_date <= ?
+                    SELECT DISTINCT lab_id FROM assets_log WHERE $dateConstraint
                 )
                 ORDER BY l.lab_room ASC
             ";
 
             $stmt = $conn->prepare($query);
-            $stmt->bind_param("ss", $asOfDate, $asOfDate);
+            if ($type === 'condemned') {
+                $stmt->bind_param("ssss", $fromDate, $toDate, $fromDate, $toDate);
+            } else {
+                $stmt->bind_param("ss", $asOfDate, $asOfDate);
+            }
+            
             $stmt->execute();
             $result = $stmt->get_result();
             $response['data'] = $result->fetch_all(MYSQLI_ASSOC);
@@ -55,8 +66,10 @@ if (isset($_POST['action'])) {
         if ($_POST['action'] === 'generate_snapshot_report') {
 
             if ($type === 'inventory') {
+                // FIXED: ID removed from supply name for Inventory Reports
                 $query = "
-                    SELECT sl.supply_name AS set_tag, sl.supply_status AS set_status, 
+                    SELECT sl.supply_name AS set_tag, 
+                           sl.supply_status AS set_status, 
                            'N/A' AS lab_room, sl.log_date
                     FROM supply_log sl
                     INNER JOIN (
@@ -75,37 +88,52 @@ if (isset($_POST['action'])) {
                 $idCol = ($subTab === 'assets') ? 'asset_id' : 'set_id';
                 $tagCol = ($subTab === 'assets') ? 'asset_tag' : 'set_tag';
                 $statusCol = ($subTab === 'assets') ? 'asset_status' : 'set_status';
+                
+                $prefix = ($subTab === 'assets') ? 'FA-' : 'PC-';
                 $labId = $_POST['labId'] ?? 'all';
 
-                $query = "
-                    SELECT log.$tagCol AS set_tag, log.$statusCol AS set_status, log.lab_room, log.log_date
-                    FROM $table log
-                    INNER JOIN (
-                        SELECT $idCol, MAX(log_id) as max_log_id
-                        FROM $table
-                        WHERE log_date <= ?
-                        GROUP BY $idCol
-                    ) latest ON log.log_id = latest.max_log_id
-                    WHERE 1=1
-                ";
+                if ($type === 'condemned') {
+                    $query = "
+                        SELECT CONCAT('$prefix', log.$tagCol, ' <small style=\"color: #777; font-weight: normal;\">(', log.$idCol, ')</small>') AS set_tag, 
+                               log.$statusCol AS set_status, log.lab_room, log.log_date
+                        FROM $table log
+                        WHERE log.$statusCol = 'Condemned'
+                        AND log.log_date BETWEEN ? AND ?
+                    ";
+                } else {
+                    $query = "
+                        SELECT CONCAT('$prefix', log.$tagCol, ' <small style=\"color: #777; font-weight: normal;\">(', log.$idCol, ')</small>') AS set_tag, 
+                               log.$statusCol AS set_status, log.lab_room, log.log_date
+                        FROM $table log
+                        INNER JOIN (
+                            SELECT $idCol, MAX(log_id) as max_log_id
+                            FROM $table
+                            WHERE log_date <= ?
+                            GROUP BY $idCol
+                        ) latest ON log.log_id = latest.max_log_id
+                        WHERE log.$statusCol IN ('Working', 'For Repair')
+                    ";
+                }
 
                 if (!empty($labId) && $labId !== 'all') {
                     $query .= " AND log.lab_id = ? ";
                 }
 
-                if ($type === 'status') {
-                    $query .= " AND log.$statusCol IN ('Working', 'For Repair')";
-                } else if ($type === 'condemned') {
-                    $query .= " AND log.$statusCol = 'Condemned'";
-                }
-
                 $query .= " ORDER BY log.$tagCol ASC";
                 $stmt = $conn->prepare($query);
-
-                if (!empty($labId) && $labId !== 'all') {
-                    $stmt->bind_param("si", $asOfDate, $labId);
+                
+                if ($type === 'condemned') {
+                    if (!empty($labId) && $labId !== 'all') {
+                        $stmt->bind_param("ssi", $fromDate, $toDate, $labId);
+                    } else {
+                        $stmt->bind_param("ss", $fromDate, $toDate);
+                    }
                 } else {
-                    $stmt->bind_param("s", $asOfDate);
+                    if (!empty($labId) && $labId !== 'all') {
+                        $stmt->bind_param("si", $asOfDate, $labId);
+                    } else {
+                        $stmt->bind_param("s", $asOfDate);
+                    }
                 }
             }
 
@@ -145,7 +173,7 @@ session_start();
     <div class="main-content">
         <div class="page-header">
             <h1>Report Generation Management</h1>
-            <p>Snapshot Analytics: Performance and conditions as of a specific date.</p>
+            <p>Analytics and Formal Documentation System</p>
         </div>
 
         <div class="report-layout">
@@ -164,9 +192,20 @@ session_start();
                 </div>
 
                 <form class="filter-form" onsubmit="return false;">
-                    <div class="form-group">
+                    <div class="form-group" id="snapshotDateGroup">
                         <label>As of Date (Snapshot)</label>
                         <input type="date" id="snapshotDate" class="form-input" value="<?php echo date('Y-m-d'); ?>">
+                    </div>
+
+                    <div id="dateRangeGroup" style="display: none; gap: 10px; flex-direction: column;">
+                        <div class="form-group">
+                            <label>From Date</label>
+                            <input type="date" id="fromDate" class="form-input" value="<?php echo date('Y-m-01'); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label>To Date</label>
+                            <input type="date" id="toDate" class="form-input" value="<?php echo date('Y-m-d'); ?>">
+                        </div>
                     </div>
 
                     <div class="form-group" id="labRoomGroup">
