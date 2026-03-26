@@ -40,12 +40,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const email = profileForm.querySelector('input[name="email"]').value.trim();
 
       if (!name || !email) {
-        e.preventDefault(); // stop form submission
+        e.preventDefault();
         showToast("Missing Fields", "Please fill out all required fields.", "error");
         return;
       }
 
-      // optional: basic email format check
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         e.preventDefault();
@@ -61,18 +60,46 @@ document.addEventListener("DOMContentLoaded", function () {
     showToast("Profile Saved", "Your personal details have been updated.");
   }
 
-  // 🔹 PHP SERVER-SIDE EMPTY FIELDS ERROR
+  // 🔹 PHP ERROR
   const phpError = document.getElementById("php_error");
   if (phpError && phpError.value) {
-      showToast("Missing Fields", phpError.value, "error");
+    showToast("Missing Fields", phpError.value, "error");
   }
 
+  // 🔥 EDIT → SAVE LOGIC (ADDED ONLY THIS PART)
+  const editSaveBtn = document.getElementById("editSaveBtn");
+  const hiddenSubmit = document.getElementById("hiddenSubmit");
+  const fullNameInput = document.getElementById("full_name");
+  const emailInput = document.getElementById("email");
+
+  if (editSaveBtn && hiddenSubmit && fullNameInput && emailInput) {
+    let isEditing = false;
+
+    editSaveBtn.addEventListener("click", function () {
+      if (!isEditing) {
+        // Enable editing
+        fullNameInput.removeAttribute("readonly");
+        emailInput.removeAttribute("readonly");
+
+        editSaveBtn.innerHTML = `
+          <i class="fas fa-save"></i>
+          <span>Save</span>
+        `;
+
+        isEditing = true;
+      } else {
+        // Submit form
+        hiddenSubmit.click();
+      }
+    });
+  }
+
+  // 🔐 RESET MODAL LOGIC (UNCHANGED)
   const resetBtn = document.getElementById("resetBtn");
   const resetModal = document.getElementById("reset-modal");
   const btnCancelReset = document.getElementById("btn-cancel-reset");
   const confirmResetBtn = document.getElementById("btn-confirm-reset");
 
-  // OPEN MODAL
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
       document.getElementById("reset-name").value =
@@ -85,77 +112,66 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // CLOSE via button
   btnCancelReset.addEventListener("click", () => {
     resetModal.style.display = "none";
   });
 
-  // CLOSE via outside click
   resetModal.addEventListener("click", (e) => {
     if (e.target === resetModal) {
       resetModal.style.display = "none";
     }
   });
 
-  // CLOSE via ESC key
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       resetModal.style.display = "none";
     }
   });
 
-  // SEND RESET LINK FROM MODAL
-if (confirmResetBtn) {
-  confirmResetBtn.addEventListener("click", async () => {
-    confirmResetBtn.disabled = true;
-    confirmResetBtn.classList.add("loading");
+  // SEND RESET LINK
+  if (confirmResetBtn) {
+    confirmResetBtn.addEventListener("click", async () => {
+      confirmResetBtn.disabled = true;
+      confirmResetBtn.classList.add("loading");
 
-    const email = document.getElementById("reset-email").value;
-    const body = new URLSearchParams({
-      action: "self_send_reset",
-      csrf_token: window.csrfToken,
-      email: email
-    });
-
-    try {
-      const res = await fetch(window.location.href, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString()
+      const email = document.getElementById("reset-email").value;
+      const body = new URLSearchParams({
+        action: "self_send_reset",
+        csrf_token: window.csrfToken,
+        email: email
       });
 
-      const data = await res.json();
+      try {
+        const res = await fetch(window.location.href, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString()
+        });
 
-      if (data.status === "success") {
-        // ✅ Email confirmed sent
-        showToast(
-          "Email Sent",
-          `A password reset link has been sent to <strong>${email}</strong>. Check your inbox.`,
-          "success",
-          "fa-envelope"
-        );
+        const data = await res.json();
 
-        // 🔑 Close modal immediately
-        resetModal.style.display = "none";
+        if (data.status === "success") {
+          showToast(
+            "Email Sent",
+            `A password reset link has been sent to <strong>${email}</strong>. Check your inbox.`,
+            "success"
+          );
 
-        // 🔄 Update CSRF token for next request
-        if (data.csrf_token) window.csrfToken = data.csrf_token;
+          resetModal.style.display = "none";
 
-      } else {
-        // ⚠️ Server-side error
-        showToast(
-          "Request Failed",
-          data.message || "Unable to send email. Try again later.",
-          "error",
-          "fa-circle-exclamation"
-        );
+          if (data.csrf_token) window.csrfToken = data.csrf_token;
+
+        } else {
+          showToast(
+            "Request Failed",
+            data.message || "Unable to send email. Try again later.",
+            "error"
+          );
+        }
+      } finally {
+        confirmResetBtn.disabled = false;
+        confirmResetBtn.classList.remove("loading");
       }
-    } finally {
-      confirmResetBtn.disabled = false;
-      confirmResetBtn.classList.remove("loading");
-    }
-  });
-}
-
-
+    });
+  }
 });

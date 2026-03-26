@@ -213,22 +213,20 @@ $stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings - LabCare</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/account_settings.css?v=<?php echo time(); ?>">
 </head>
-
 <body>
     <?php include 'includes/sidebar.php'; ?>
 
-    <!-- Toast Container -->
     <div id="authToast" class="toast">
         <div id="toast-icon"></div>
-        <div>
+        <div class="toast-text">
             <div id="toast-title"></div>
             <div id="toast-message"></div>
         </div>
@@ -239,6 +237,10 @@ $stmt->close();
         <input type="hidden" id="php_success" value="<?php echo htmlspecialchars($success); ?>">
     <?php endif; ?>
 
+    <?php if (!empty($error)) : ?>
+        <input type="hidden" id="php_error" value="<?php echo htmlspecialchars($error); ?>">
+    <?php endif; ?>
+
     <div class="main-content">
         <div class="page-header">
             <h1>Account Settings</h1>
@@ -246,27 +248,25 @@ $stmt->close();
         </div>
 
         <div class="account-grid">
-
             <div class="left-stack">
 
                 <div class="panel white-panel">
-                    <h3>Profile Details</h3>
+                    <div class="panel-header-row">
+                        <h3>Profile Details</h3>
+                    </div>
                     <div class="divider"></div>
 
-                    <!-- PHP error trigger for empty username/email -->
-                    <?php if (!empty($error) && $error === "Full Name and Email Address are required.") : ?>
-                        <input type="hidden" id="php_error" value="<?php echo htmlspecialchars($error); ?>">
-                    <?php endif; ?>
-
-                    <form method="POST" action="">
+                    <form method="POST" action="" id="profileForm">
                         <div class="form-group">
                             <label>Full Name</label>
                             <input
                                 type="text"
                                 name="full_name"
+                                id="full_name"
                                 class="input-field"
-                                value="<?php echo htmlspecialchars($user['user_name']); ?>"
-                                >
+                                value="<?php echo htmlspecialchars($user['user_name'] ?? ''); ?>"
+                                readonly
+                            >
                         </div>
 
                         <div class="form-group">
@@ -274,21 +274,28 @@ $stmt->close();
                             <input
                                 type="email"
                                 name="email"
+                                id="email"
                                 class="input-field"
-                                value="<?php echo htmlspecialchars($user['user_email']); ?>"
-                                >
+                                value="<?php echo htmlspecialchars($user['user_email'] ?? ''); ?>"
+                                readonly
+                            >
                         </div>
 
                         <div class="save-btn-container">
-                            <button type="submit" name="save_profile" class="btn-green-save">
-                                <i class="fas fa-save"></i> Save
+                            <button type="button" id="editSaveBtn" class="btn-green-save">
+                                <i class="fas fa-edit"></i>
+                                <span>Edit</span>
                             </button>
+
+                            <button type="submit" name="save_profile" id="hiddenSubmit" style="display: none;"></button>
                         </div>
                     </form>
                 </div>
 
                 <div class="panel white-panel security-panel">
-                    <h3>Security & Login</h3>
+                    <div class="panel-header-row">
+                        <h3>Security & Login</h3>
+                    </div>
                     <div class="divider"></div>
 
                     <div class="security-content">
@@ -297,15 +304,16 @@ $stmt->close();
                         </p>
 
                         <button type="button" id="resetBtn" class="btn-purple-reset">
-                            <i class="fas fa-paper-plane"></i> Send Reset Link
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Send Password Reset Link</span>
                         </button>
                     </div>
                 </div>
-
             </div>
 
             <div class="panel white-panel info-panel">
-                <h3>System Information</h3>
+                <div class="panel-header-row">
+                </div>
 
                 <div class="info-block">
                     <h4>CVSU Mission</h4>
@@ -344,41 +352,71 @@ $stmt->close();
                     <strong>Disclaimer:</strong> This system is for Computer Laboratory Use Only.
                 </div>
             </div>
-
         </div>
     </div>
 
-    <!-- RESET CONFIRM MODAL -->
     <div id="reset-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h2 style="color:#7B1FA2;">Send Password Reset</h2>
+        <div class="modal-content">
+            <h2>Send Password Reset</h2>
 
-        <p style="color: #666; font-size: 0.85rem; margin-bottom: 20px;">
-        A secure reset link will be sent to your registered email.
-        </p>
+            <p class="modal-subtext">
+                A secure reset link will be sent to your registered email.
+            </p>
 
-        <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="reset-name" class="input-field readonly-input" readonly>
-        </div>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="reset-name" class="input-field readonly-input" readonly>
+            </div>
 
-        <div class="form-group">
-        <label>Email Address</label>
-        <input type="text" id="reset-email" class="input-field readonly-input" readonly>
-        </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="text" id="reset-email" class="input-field readonly-input" readonly>
+            </div>
 
-        <div class="modal-actions">
-        <button id="btn-cancel-reset" class="btn-cancel-new">Cancel</button>
-        <button id="btn-confirm-reset" class="btn-purple-reset">
-            <i class="fas fa-paper-plane"></i> Send Link
-        </button>
+            <div class="modal-actions">
+                <button type="button" id="btn-cancel-reset" class="btn-cancel-new">Cancel</button>
+                <button type="button" id="btn-confirm-reset" class="btn-purple-reset">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send Link</span>
+                </button>
+            </div>
         </div>
     </div>
-    </div>
+
     <script>
         window.csrfToken = "<?php echo $_SESSION['csrf_token']; ?>";
     </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const editSaveBtn = document.getElementById("editSaveBtn");
+            const hiddenSubmit = document.getElementById("hiddenSubmit");
+            const fullNameInput = document.getElementById("full_name");
+            const emailInput = document.getElementById("email");
+
+            if (editSaveBtn && hiddenSubmit && fullNameInput && emailInput) {
+                let isEditing = false;
+
+                editSaveBtn.addEventListener("click", function () {
+                    if (!isEditing) {
+                        fullNameInput.removeAttribute("readonly");
+                        emailInput.removeAttribute("readonly");
+
+                        editSaveBtn.innerHTML = `
+                            <i class="fas fa-save"></i>
+                            <span>Save</span>
+                        `;
+
+                        isEditing = true;
+                    } else {
+                        hiddenSubmit.click();
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/account_settings.js?v=<?php echo time(); ?>"></script>
 </body>
-
 </html>
