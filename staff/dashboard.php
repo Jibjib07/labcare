@@ -1,5 +1,49 @@
 <?php
+session_start();
 include '../includes/db.php';
+
+// --- NEW: QUICK SEARCH AJAX ENDPOINT ---
+if (isset($_GET['ajax_quick_search'])) {
+    header('Content-Type: application/json');
+    $q = trim($_GET['ajax_quick_search']);
+
+    // Regex matches formats like PC-01(104) or FA-02(104)
+    if (preg_match('/^(PC|FA)-(.+)\((.+)\)$/i', $q, $matches)) {
+        $type = strtoupper($matches[1]); // PC or FA
+        $tag = mysqli_real_escape_string($conn, trim($matches[2]));
+        $room = mysqli_real_escape_string($conn, trim($matches[3]));
+
+        // 1. Find the Lab ID based on the room number
+        $lab_res = mysqli_query($conn, "SELECT lab_id FROM laboratories WHERE lab_room = '$room'");
+        if ($lab_res && $lab_res->num_rows > 0) {
+            $lab_id = $lab_res->fetch_assoc()['lab_id'];
+
+            // 2. Find the Specific Unit/Asset ID
+            if ($type === 'PC') {
+                $item_res = mysqli_query($conn, "SELECT set_id FROM units WHERE set_tag = '$tag' AND lab_id = '$lab_id'");
+                if ($item_res && $item_res->num_rows > 0) {
+                    $item_id = $item_res->fetch_assoc()['set_id'];
+                    // Change 'tab=units' if your actual tab parameter is named differently
+                    echo json_encode(['success' => true, 'url' => "assets_management.php?lab_id=$lab_id&tab=units&id=$item_id"]);
+                    exit;
+                }
+            } else if ($type === 'FA') {
+                $item_res = mysqli_query($conn, "SELECT asset_id FROM assets WHERE asset_tag = '$tag' AND lab_id = '$lab_id'");
+                if ($item_res && $item_res->num_rows > 0) {
+                    $item_id = $item_res->fetch_assoc()['asset_id'];
+                    // Change 'tab=assets' if your actual tab parameter is named differently
+                    echo json_encode(['success' => true, 'url' => "assets_management.php?lab_id=$lab_id&tab=assets&id=$item_id"]);
+                    exit;
+                }
+            }
+        }
+    }
+    // If we reach here, the format was wrong or the item doesn't exist
+    echo json_encode(['success' => false, 'message' => 'Item not found. Please ensure format is exactly PC-XX(Room) or FA-XX(Room).']);
+    exit;
+}
+// ---------------------------------------
+
 $workingCount = 0;
 $repairCount = 0;
 $condemnCount = 0;
@@ -19,7 +63,7 @@ if ($unitsResult && $unitsResult->num_rows > 0) {
 
     while ($row = $unitsResult->fetch_assoc()) {
         $status = strtolower(trim($row['set_status']));
-        $purchase_date = $row['specs_purchase']; // Now grabbing from the joined specs table
+        $purchase_date = $row['specs_purchase'];
 
         // A. Age Check (Global "For Condemn" calculation)
         if (!empty($purchase_date)) {
@@ -54,12 +98,10 @@ $labsResult = $conn->query($labsQuery);
 $totalLabs = ($labsResult) ? $labsResult->fetch_assoc()['total'] : 0;
 
 // 4. Total Active Users (Table: users)
-// Assuming you have a 'status' column. If not, just use: SELECT COUNT(*) as total FROM users
 $usersQuery = "SELECT COUNT(*) as total FROM users WHERE user_status = 'Active'";
 $usersResult = $conn->query($usersQuery);
 $totalUsers = ($usersResult) ? $usersResult->fetch_assoc()['total'] : 0;
 
-// Optional: Format numbers to have a leading zero if they are single digits (e.g., "8" becomes "08")
 $totalLabsFormatted = str_pad($totalLabs, 2, '0', STR_PAD_LEFT);
 $totalAssetsFormatted = str_pad($totalAssets, 2, '0', STR_PAD_LEFT);
 $totalUsersFormatted = str_pad($totalUsers, 2, '0', STR_PAD_LEFT);
@@ -187,7 +229,7 @@ if ($roomsResult) {
                     <div class="search-container" style="margin-top: 35px; display: flex; flex-direction: column; flex: 1; justify-content: flex-start;">
                         <label for="quickSearchInput" style="display: block; font-size: 13px; font-weight: 700; color: #000; margin-bottom: 8px;">Enter Property ID:</label>
 
-                        <input type="text" id="quickSearchInput" placeholder="e.g., 24841218452128"
+                        <input type="text" id="quickSearchInput" placeholder="e.g., PC-01(104) or FA-01(104)"
                             style="width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #eaeaea; background-color: #f4f4f4; margin-bottom: 20px; box-sizing: border-box; font-size: 14px; color: #333; outline: none;">
 
                         <button onclick="performQuickSearch()"
@@ -201,8 +243,6 @@ if ($roomsResult) {
                     <h3 class="section-title">Supply Inventory Summary</h3>
                     <div class="supply-list-container">
                         <?php
-                        // Query the supplies table.
-                        // The ORDER BY CASE statement forces "Out of Stock" items to appear at the top of the list
                         $supplyQuery = "SELECT supply_name, supply_status 
                 FROM supply 
                 WHERE supply_avail = 'Current'
@@ -216,17 +256,14 @@ if ($roomsResult) {
                                 $name = htmlspecialchars($supply['supply_name']);
                                 $status = htmlspecialchars($supply['supply_status']);
 
-                                // Determine CSS classes based on the text status
                                 if ($status === 'In Stock') {
                                     $itemClass = "in-stock";
                                     $statusSpan = "<span class='green-text'>In Stock</span>";
                                 } else {
                                     $itemClass = "out-stock";
-                                    // Out of stock doesn't get the green-text class
                                     $statusSpan = "<span>Out of Stock</span>";
                                 }
 
-                                // Output the dynamic HTML block
                                 echo "
                             <div class='supply-item {$itemClass}'>
                                 <div class='supply-accent'></div>
@@ -237,7 +274,6 @@ if ($roomsResult) {
                             </div>";
                             }
                         } else {
-                            // Fallback if the table is empty
                             echo "<div style='padding: 15px; color: #888; text-align: center;'>No supply data available.</div>";
                         }
                         ?>
@@ -249,11 +285,9 @@ if ($roomsResult) {
                 <div class="panel white-panel table-panel">
                     <div class="panel-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3 class="section-title" style="margin: 0; font-size: 16px;">Recent Report</h3>
-                        <a href="maintenance_history.php" class="view-all" style="color: #4caf50; font-size: 13px; text-decoration: underline;">View All</a>
                     </div>
 
                     <?php
-                    // 1. Fetch the data ONCE and store it in an array
                     $recentReportsQuery = "
                         (SELECT uh.report_actor AS reporter, uh.report_date AS report_date, l.lab_room AS room, CONCAT('PC-', u.set_tag) AS tag, u.set_status AS status 
                         FROM units u JOIN laboratories l ON u.lab_id = l.lab_id
@@ -284,8 +318,6 @@ if ($roomsResult) {
                                 $formattedDate = date('M d, Y', strtotime($report['report_date']));
                                 $reporterName = htmlspecialchars($report['reporter'] ?: 'System');
                                 $badgeClass = ($report['status'] === 'For Repair') ? 'yellow' : (($report['status'] === 'Condemned') ? 'red' : 'green');
-
-                                // Add a bottom border to all cards except the very last one
                                 $borderStyle = ($index < $totalReports - 1) ? 'border-bottom: 1px solid #eaeaea;' : '';
                             ?>
                                 <div style="padding: 15px 20px; background-color: #fff; <?php echo $borderStyle; ?>">
@@ -366,26 +398,20 @@ if ($roomsResult) {
             if (!roomSelect) return;
 
             const labId = roomSelect.value;
-
-            // --- NEW: UPDATE THE LINK URL ---
             const detailsLink = document.getElementById('viewLabDetailsLink');
             if (detailsLink) {
                 detailsLink.href = `assets_management.php?lab_id=${encodeURIComponent(labId)}`;
             }
 
             try {
-                // CHANGED: Send lab_id to the PHP script instead of room string
                 const response = await fetch(`../includes/get_room_stats.php?lab_id=${encodeURIComponent(labId)}`);
-
                 const rawText = await response.text();
                 const data = JSON.parse(rawText);
 
-                // Update the Legend Numbers
                 document.getElementById('dashLegendWorking').innerText = data.working;
                 document.getElementById('dashLegendRepair').innerText = data.repair;
                 document.getElementById('dashLegendCondemn').innerText = data.condemn;
 
-                // Pass numbers to update the CSS Donut Chart
                 updateDonutChartVisual(data.working, data.repair, data.condemn);
 
             } catch (error) {
@@ -397,58 +423,59 @@ if ($roomsResult) {
             const chart = document.getElementById('dashboardDonutChart');
             if (!chart) return;
 
-            // Convert to integers
             const w = parseInt(working) || 0;
             const r = parseInt(repair) || 0;
-
-            // IMPORTANT: 'Condemn' is excluded from the total to prevent breaking 100%
-            // since those units are already counted inside 'w' or 'r'
             const total = w + r;
 
             if (total === 0) {
-                // If room is completely empty, make the chart solid gray
                 chart.style.background = `conic-gradient(#e0e0e0 0% 100%)`;
                 return;
             }
 
-            // Calculate percentages for the two physical states
             const workPct = (w / total) * 100;
+            const colorGreen = '#4caf50';
+            const colorYellow = '#ffc107';
 
-            // Exact colors from your CSS
-            const colorGreen = '#4caf50'; // Working
-            const colorYellow = '#ffc107'; // For Repair
-
-            // Inject the new 2-color gradient
-            // 0% to workPct is Green. workPct to 100% is Yellow.
             chart.style.background = `conic-gradient(
         ${colorGreen} 0% ${workPct}%, 
         ${colorYellow} ${workPct}% 100%
     )`;
         }
 
-        // Run it once immediately when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("Dashboard loaded, initializing chart...");
             if (document.getElementById('dashboardRoomSelect')) {
                 updateDashboardLabStats();
             }
         });
 
-        // --- NEW: QUICK SEARCH FUNCTIONALITY ---
-        function performQuickSearch() {
+        // --- FIXED: QUICK SEARCH FUNCTIONALITY USING AJAX ---
+        async function performQuickSearch() {
             const searchInput = document.getElementById('quickSearchInput');
             const query = searchInput.value.trim();
 
             if (query) {
-                // Pass the search term to the assets page via URL parameters
-                window.location.href = 'assets_management.php?search=' + encodeURIComponent(query);
+                try {
+                    // Send query to the PHP AJAX handler at the top of this file
+                    const response = await fetch(`dashboard.php?ajax_quick_search=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Redirect to the exact unit/asset URL returned by PHP
+                        window.location.href = data.url;
+                    } else {
+                        alert(data.message);
+                        searchInput.focus();
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    alert("An error occurred while searching. Please try again.");
+                }
             } else {
                 alert("Please enter a Property ID first.");
                 searchInput.focus();
             }
         }
 
-        // Allow pressing "Enter" inside the input to trigger the search
         document.getElementById('quickSearchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 performQuickSearch();

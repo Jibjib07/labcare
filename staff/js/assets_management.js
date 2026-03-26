@@ -30,7 +30,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
   // Trigger initial auto-select on page load
-  autoSelectFirstVisibleItem("computer");
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetTab = urlParams.get("tab");
+
+  if (targetTab === "assets") {
+    switchView("facility");
+  } else {
+    switchView("computer"); // Defaults to computer
+  }
 });
 
 function showNotification(title, message, type = "success") {
@@ -182,6 +189,10 @@ function closeMobileDetails() {
 // AUTO-SELECT HELPER
 // ==========================================
 
+// ==========================================
+// AUTO-SELECT HELPER (UPGRADED FOR DASHBOARD URL PARAMS)
+// ==========================================
+
 function autoSelectFirstVisibleItem(viewType) {
   if (window.innerWidth <= 768) return;
 
@@ -189,24 +200,53 @@ function autoSelectFirstVisibleItem(viewType) {
     viewType === "computer" ? "assetListContainer" : "facilityListContainer";
   const items = document.querySelectorAll(`#${containerId} .asset-item`);
 
-  let firstVisibleItem = null;
+  // 1. Check the URL for parameters sent by the Dashboard
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetId = urlParams.get("id");
+  const targetTab = urlParams.get("tab");
 
-  for (let item of items) {
-    if (item.style.display !== "none") {
-      firstVisibleItem = item;
-      break;
+  let itemToSelect = null;
+
+  // 2. If the URL has an ID for the current tab, find that exact row
+  if (targetId) {
+    if (
+      (viewType === "computer" && targetTab === "units") ||
+      (viewType === "facility" && targetTab === "assets")
+    ) {
+      const targetAttr =
+        viewType === "computer" ? "data-set-id" : "data-asset-id";
+      itemToSelect = document.querySelector(
+        `#${containerId} .asset-item[${targetAttr}="${targetId}"]`,
+      );
     }
   }
 
-  if (firstVisibleItem) {
-    if (viewType === "computer") {
-      const setId = firstVisibleItem.getAttribute("data-set-id");
-      if (setId) selectUnit(firstVisibleItem, setId);
-    } else {
-      const assetId = firstVisibleItem.getAttribute("data-asset-id");
-      if (assetId) selectFacilityAsset(firstVisibleItem, assetId);
+  // 3. Fallback: If no URL ID (or item wasn't found), just pick the first visible item
+  if (!itemToSelect) {
+    for (let item of items) {
+      if (item.style.display !== "none") {
+        itemToSelect = item;
+        break;
+      }
     }
+  }
+
+  // 4. Click the item and scroll it into view!
+  if (itemToSelect) {
+    if (viewType === "computer") {
+      const setId = itemToSelect.getAttribute("data-set-id");
+      if (setId) selectUnit(itemToSelect, setId);
+    } else {
+      const assetId = itemToSelect.getAttribute("data-asset-id");
+      if (assetId) selectFacilityAsset(itemToSelect, assetId);
+    }
+
+    // Smoothly scroll down the list so the selected item is perfectly centered
+    setTimeout(() => {
+      itemToSelect.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
   } else {
+    // Failsafe if the list is completely empty
     const headerQuery =
       viewType === "computer"
         ? "#view-computer .right-panel .section-header-row h3"

@@ -28,7 +28,6 @@ if (isset($_GET['ajax_filter'])) {
         $isFirst = true;
         while ($row = mysqli_fetch_assoc($result)) {
             $firstClass = $isFirst ? 'auto-click' : '';
-            // Matches your exact reference structure
             echo "
             <div class='supply-row asset-item guide-item $firstClass' data-id='{$row['guide_id']}'>
                 <div class='item-info'>
@@ -126,6 +125,58 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/troubleshooting.css?v=<?php echo time(); ?>">
+
+    <style>
+        .back-btn {
+            background: white;
+            border: 1px solid #ddd;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #f5f5f5;
+        }
+
+        @media (max-width: 768px) {
+            .troubleshoot-layout {
+                display: block;
+                width: 100%;
+            }
+
+            .left-list-panel {
+                width: 100%;
+                display: block;
+            }
+
+            .right-detail-panel {
+                width: 100%;
+                display: none;
+                margin: 0;
+            }
+
+            .troubleshoot-layout.show-mobile-detail .left-list-panel {
+                display: none;
+            }
+
+            .troubleshoot-layout.show-mobile-detail .right-detail-panel {
+                display: block;
+            }
+
+            .mobile-back-row {
+                display: flex !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -159,11 +210,19 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                         <?php endforeach; ?>
                     </select>
                 </div>
+
                 <div class="table-container list-container" id="guideTableBody">
-                    </div>
+                </div>
             </div>
-            
+
             <div class="panel white-panel right-detail-panel">
+                <div class="mobile-back-row" style="display: none; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <button type="button" class="back-btn" onclick="closeMobileDetails()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h3 style="margin:0; font-size:16px;">Back to List</h3>
+                </div>
+
                 <div class="panel-header-row">
                     <h3>Guide Full Details</h3>
                     <div id="actionButtons" class="action-buttons" style="display:none;">

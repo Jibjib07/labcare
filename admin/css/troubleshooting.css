@@ -2,30 +2,30 @@
    1. SHARED UTILITIES
    ========================================= */
 .page-header {
-    margin-bottom: 25px;
+  margin-bottom: 25px;
 }
 .page-header h1 {
-    font-size: 28px;
-    color: #000;
-    margin: 0;
-    font-weight: 900;
-    letter-spacing: -0.5px;
+  font-size: 28px;
+  color: #000;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.5px;
 }
 .page-header p {
-    color: #555;
-    font-size: 14px;
-    margin-top: 5px;
-    margin-bottom: 0;
+  color: #555;
+  font-size: 14px;
+  margin-top: 5px;
+  margin-bottom: 0;
 }
 
 .white-panel {
-    background: white;
-    border-radius: 8px;
-    padding: 25px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .troubleshoot-layout {
@@ -44,332 +44,476 @@
   flex-shrink: 0;
 }
 .panel-header-row h3 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 700;
-    color: #222;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
 }
 
 /* =========================================
    2. BUTTONS & ACTIONS
    ========================================= */
 .action-buttons {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .btn-green-add,
 .btn-edit,
 .btn-save,
 .btn-restore {
-    background-color: #4caf50 !important;
-    color: #ffffff !important;
-    border: none;
-    height: 38px;
-    padding: 0 16px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: background 0.2s;
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+  border: none;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s;
 }
 
 .btn-archive {
-    background: #ff5722;
-    color: white;
-    border: none;
-    padding: 8px 18px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
+  background: #ff5722;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.btn-cancel, .btn-cancel-edit {
-    background: transparent;
-    border: none;
-    color: #666;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 0 10px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    transition: color 0.2s;
+.btn-cancel,
+.btn-cancel-edit {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 10px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s;
 }
 
-.btn-edit:hover, .btn-archive:hover, .btn-save:hover, .btn-restore:hover { opacity: 0.9; }
-.btn-cancel:hover, .btn-cancel-edit:hover { color: #222; }
+.btn-edit:hover,
+.btn-archive:hover,
+.btn-save:hover,
+.btn-restore:hover {
+  opacity: 0.9;
+}
+.btn-cancel:hover,
+.btn-cancel-edit:hover {
+  color: #222;
+}
 
-.btn-save:disabled, .btn-edit:disabled, .btn-archive:disabled, .btn-restore:disabled, .btn-green-add:disabled {
-    background-color: #ccc !important;
-    cursor: not-allowed !important;
-    opacity: 0.6;
+.btn-save:disabled,
+.btn-edit:disabled,
+.btn-archive:disabled,
+.btn-restore:disabled,
+.btn-green-add:disabled {
+  background-color: #ccc !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
 }
 
 /* =========================================
    3. LEFT PANEL & RIGHT PANEL LOGIC
    ========================================= */
 .right-detail-panel {
-    animation: slideUpFade 0.3s ease-out;
-    overflow: hidden;
+  animation: slideUpFade 0.3s ease-out;
+  overflow: hidden;
 }
 
 .left-list-panel {
-    height: 700px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  height: 700px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .status-toggle-row {
-    display: flex;
-    margin-bottom: 15px;
+  display: flex;
+  margin-bottom: 15px;
 }
 
 .toggle-group {
-    display: flex;
-    background-color: #f0f0f0;
-    padding: 4px;
-    border-radius: 10px;
-    width: 100%;
+  display: flex;
+  background-color: #f0f0f0;
+  padding: 4px;
+  border-radius: 10px;
+  width: 100%;
 }
 
 .status-toggle-btn {
-    flex: 1;
-    border: none;
-    padding: 10px;
-    border-radius: 7px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 700;
-    transition: all 0.3s ease;
-    background: transparent;
-    color: #666;
-    font-family: inherit;
+  flex: 1;
+  border: none;
+  padding: 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  background: transparent;
+  color: #666;
+  font-family: inherit;
 }
 
 .status-toggle-btn.active {
-    background-color: #4caf50;
-    color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #4caf50;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.search-filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
-.search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
-.filter-dropdown { padding: 0 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; color: #555; min-width: 140px; }
+.search-filter-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.search-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.filter-dropdown {
+  padding: 0 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #555;
+  min-width: 140px;
+}
 
 /* =========================================
    4. LIST CONTAINER STYLING (Final Reference)
    ========================================= */
 
 .list-container {
-    flex: 1;
-    overflow-y: auto;
-    border: none; /* Change from 1px solid #f0f0f0 to none */
-    border-radius: 6px;
-    background: #fff;
+  flex: 1;
+  overflow-y: auto;
+  border: none; /* Change from 1px solid #f0f0f0 to none */
+  border-radius: 6px;
+  background: #fff;
 }
 
 .supply-row.asset-item {
-    height: 50px;
-    min-height: 50px;
-    flex-shrink: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-    transition: background 0.2s ease;
+  height: 50px;
+  min-height: 50px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .supply-row.asset-item:hover {
-    background-color: #fafafa;
+  background-color: #fafafa;
 }
 
 /* Selected State */
 .supply-row.asset-item.active-row {
-    background-color: #f1f8f1 !important;
-    border-left: 4px solid #4caf50;
+  background-color: #f1f8f1 !important;
+  border-left: 4px solid #4caf50;
 }
 
 /* Left side Title Container */
 .item-info {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  overflow: hidden;
 }
 
 .item-name {
-    font-weight: 700;
-    color: #333;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-weight: 700;
+  color: #333;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Right side Category Container */
 .supply-status-cell {
-    display: flex;
-    align-items: center;
-    margin-left: 15px;
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
 }
 
 .badge-text {
-    color: #888;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 /* CUSTOM SCROLLBAR FOR LIST */
-.list-container::-webkit-scrollbar { width: 6px; }
-.list-container::-webkit-scrollbar-track { background: transparent; }
-.list-container::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+.list-container::-webkit-scrollbar {
+  width: 6px;
+}
+.list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.list-container::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 10px;
+}
 
 /* =========================================
    5. DETAIL VIEW & TEXTAREAS
    ========================================= */
 .detail-content {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .detail-group label {
-    display: block;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: #1b4d3e;
-    margin-bottom: 8px;
-    font-weight: 800;
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #1b4d3e;
+  margin-bottom: 8px;
+  font-weight: 800;
 }
 
-.detail-input, .detail-textarea, .detail-select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    background-color: #fcfcfc;
-    color: #444;
-    font-size: 14px;
-    font-family: inherit;
-    line-height: 1.5;
-    box-sizing: border-box;
-    display: block;
-    resize: none; /* Disables manual resize */
+.detail-input,
+.detail-textarea,
+.detail-select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fcfcfc;
+  color: #444;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  box-sizing: border-box;
+  display: block;
+  resize: none; /* Disables manual resize */
 }
 
-.detail-input, .detail-select { height: 45px; }
+.detail-input,
+.detail-select {
+  height: 45px;
+}
 
-.detail-textarea { 
-    min-height: 45px; 
-    height: auto;
-    overflow: hidden; 
+.detail-textarea {
+  min-height: 45px;
+  height: auto;
+  overflow: hidden;
 }
 
 /* =========================================
    6. MODALS & ANIMATIONS
    ========================================= */
 .modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 9999;
-    backdrop-filter: blur(2px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
 }
 
 .modal-content {
-    width: 600px;
-    max-width: 90%;
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-    animation: slideIn 0.3s ease;
+  width: 600px;
+  max-width: 90%;
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease;
 }
 
 @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUpFade {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Notification Toast */
 .notification-container {
-    position: fixed;
-    top: 25px;
-    right: 25px;
-    z-index: 100000;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .toast {
-    background: #ffffff;
-    min-width: 320px;
-    padding: 16px 20px;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-    border-left: 5px solid #ddd;
+  background: #ffffff;
+  min-width: 320px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  border-left: 5px solid #ddd;
 }
 
-.toast-success { border-left-color: #4caf50; }
-.toast-archive { border-left-color: #ff5722; }
+.toast-success {
+  border-left-color: #4caf50;
+}
+.toast-archive {
+  border-left-color: #ff5722;
+}
 
-.toast-icon { font-size: 20px; display: flex; align-items: center; }
-.toast-success .toast-icon { color: #4caf50; }
-.toast-archive .toast-icon { color: #ff5722; }
+.toast-icon {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+}
+.toast-success .toast-icon {
+  color: #4caf50;
+}
+.toast-archive .toast-icon {
+  color: #ff5722;
+}
 
-.toast-title { font-weight: 800; font-size: 14px; color: #333; }
-.toast-sub { font-size: 12px; color: #777; }
+.toast-title {
+  font-weight: 800;
+  font-size: 14px;
+  color: #333;
+}
+.toast-sub {
+  font-size: 12px;
+  color: #777;
+}
 
 @keyframes slideInRight {
-    from { transform: translateX(120%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; transform: translateY(-10px); }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
 }
 
 /* Modal Form Specifics */
-.modal-form { display: flex; flex-direction: column; gap: 15px; }
-.form-group label { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 5px; }
-.form-group input, .form-group textarea, .form-group select {
-    padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%;
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
-.form-group textarea { min-height: 80px; }
+.form-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 5px;
+}
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+}
+.form-group textarea {
+  min-height: 80px;
+}
 
 /* =========================================
    7. RESPONSIVENESS
    ========================================= */
 @media (max-width: 1024px) {
-    .troubleshoot-layout { grid-template-columns: 1fr; }
-    .left-list-panel { height: auto; max-height: 400px; }
+  .troubleshoot-layout {
+    grid-template-columns: 1fr;
+  }
+  .left-list-panel {
+    height: auto;
+    max-height: 400px;
+  }
+}
+
+/* --- MOBILE RESPONSIVE VIEW (Instant Toggle) --- */
+@media (max-width: 768px) {
+  .troubleshoot-layout {
+    display: block;
+    width: 100%;
+  }
+
+  .left-list-panel {
+    width: 100%;
+    display: block;
+  }
+
+  .right-detail-panel {
+    width: 100%;
+    display: none; /* Hide details by default on mobile */
+    margin: 0;
+  }
+
+  /* When a row is clicked, instantly swap visibility */
+  .troubleshoot-layout.show-mobile-detail .left-list-panel {
+    display: none;
+  }
+
+  .troubleshoot-layout.show-mobile-detail .right-detail-panel {
+    display: block;
+  }
+
+  /* Show the back button ONLY on mobile */
+  .mobile-back-row {
+    display: flex !important;
+  }
 }
