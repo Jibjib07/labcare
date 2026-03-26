@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Core UI Elements
-    const tableBody = document.getElementById('guideTableBody');
+    const tableBody = document.getElementById('guideTableBody'); // This is the .list-container div
     const searchInput = document.getElementById('searchInput');
     const categoryFilter = document.getElementById('categoryFilter');
     const statusToggleBtns = document.querySelectorAll('.status-toggle-btn');
@@ -68,13 +68,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- TABLE LOGIC ---
+    // Helper: Restore original UI state after editing/canceling
+    function exitEditMode() {
+        const inputs = detailView.querySelectorAll('.detail-input, .detail-textarea');
+        const select = detailView.querySelector('.detail-select');
+        const cancelBtn = document.getElementById('editCancelBtn');
+
+        inputs.forEach(el => el.setAttribute('readonly', true));
+        if(select) select.setAttribute('disabled', true);
+        
+        resetEditButton();
+        archiveToggleBtn.style.display = 'inline-flex'; 
+        if (cancelBtn) cancelBtn.remove();
+    }
+
+    // Helper: Discard unsaved text and revert to stored data
+    function cancelEdit() {
+        if (currentGuideData) {
+            renderDetails(currentGuideData);
+            exitEditMode();
+            detailView.querySelectorAll('.detail-textarea').forEach(adjustTextareaHeight);
+        }
+    }
+
+    // --- LIST LOGIC ---
     function refreshTable(autoSelectFirst = true) {
         const search = searchInput.value;
         const category = categoryFilter.value;
         const status = statusValueInput ? statusValueInput.value : 'Available';
 
-        // Trigger skip flag for filter/search operations
+        // Clear Edit state if refreshing
+        if (document.getElementById('editCancelBtn')) {
+            exitEditMode();
+        }
+
         skipAnimation = true;
 
         if (status === 'Archived') {
@@ -91,7 +118,9 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.text())
             .then(html => { 
                 tableBody.innerHTML = html; 
-                const firstRow = tableBody.querySelector('.guide-row');
+                
+                // Target the new .guide-item class
+                const firstRow = tableBody.querySelector('.guide-item');
                 
                 if (autoSelectFirst && firstRow) {
                     firstRow.click();
@@ -99,21 +128,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     detailView.innerHTML = '';
                     actionButtons.style.display = 'none';
                 } else if (currentGuideId) {
-                    const activeRow = tableBody.querySelector(`[data-id="${currentGuideId}"]`);
+                    const activeRow = tableBody.querySelector(`.guide-item[data-id="${currentGuideId}"]`);
                     if (activeRow) activeRow.classList.add('active-row');
                 }
-                // Reset flag after click event has processed
                 setTimeout(() => { skipAnimation = false; }, 50);
             })
-            .catch(err => console.error('Error loading table:', err));
+            .catch(err => console.error('Error loading list:', err));
     }
 
     // --- SELECTION & RENDERING ---
     tableBody.onclick = (e) => {
-        const row = e.target.closest('.guide-row');
+        // Target the new .guide-item container
+        const row = e.target.closest('.guide-item');
         if (!row) return;
 
-        // Apply animation ONLY if not skipping
+        // If clicking a new row while editing, cancel the current edit
+        if (document.getElementById('editCancelBtn')) {
+            exitEditMode();
+        }
+
         if (!skipAnimation) {
             const rightPanel = document.querySelector('.right-detail-panel');
             rightPanel.style.animation = 'none';
@@ -121,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             rightPanel.style.animation = null;
         }
 
-        document.querySelectorAll('.guide-row').forEach(r => r.classList.remove('active-row'));
+        document.querySelectorAll('.guide-item').forEach(r => r.classList.remove('active-row'));
         row.classList.add('active-row');
         
         currentGuideId = row.getAttribute('data-id');
@@ -168,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // --- EDIT & SAVE ACTION ---
+    // --- EDIT, SAVE & CANCEL ACTION ---
     if (editBtn) {
         editBtn.onclick = () => {
             const inputs = detailView.querySelectorAll('.detail-input, .detail-textarea');
@@ -176,12 +209,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const isEditing = editBtn.classList.contains('btn-save');
 
             if (!isEditing) {
+                // ENTERING EDIT MODE
                 inputs.forEach(el => el.removeAttribute('readonly'));
                 if(select) select.removeAttribute('disabled');
+                
                 editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
                 editBtn.classList.replace('btn-edit', 'btn-save');
+                
+                // Switch Archive button to Cancel button
+                archiveToggleBtn.style.display = 'none';
+                if (!document.getElementById('editCancelBtn')) {
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.id = 'editCancelBtn';
+                    cancelBtn.className = 'btn-cancel-edit'; // Matches your CSS
+                    cancelBtn.innerHTML = 'Cancel';
+                    cancelBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        cancelEdit();
+                    };
+                    editBtn.parentNode.insertBefore(cancelBtn, editBtn);
+                }
+                
                 detailView.querySelectorAll('.detail-textarea').forEach(adjustTextareaHeight);
             } else {
+                // SAVING
                 const formData = new FormData();
                 formData.append('update_guide', '1');
                 formData.append('guide_id', currentGuideId);
@@ -192,9 +243,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(result => {
                     if (result.status === 'success') {
                         showNotification('success', 'Guide Updated', 'Changes saved successfully.');
-                        inputs.forEach(el => el.setAttribute('readonly', true));
-                        if(select) select.setAttribute('disabled', true);
-                        resetEditButton();
+                        // Capture the new values locally so Cancel doesn't revert to old data
+                        const updatedData = {};
+                        formData.forEach((value, key) => { updatedData[key] = value; });
+                        currentGuideData = { ...currentGuideData, ...updatedData };
+                        
+                        exitEditMode();
                         refreshTable(false); 
                     }
                 });

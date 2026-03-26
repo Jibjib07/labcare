@@ -28,20 +28,20 @@ if (isset($_GET['ajax_filter'])) {
         $isFirst = true;
         while ($row = mysqli_fetch_assoc($result)) {
             $firstClass = $isFirst ? 'auto-click' : '';
-            echo "<tr class='guide-row $firstClass' data-id='{$row['guide_id']}'>
-                    <td>
-                        <div class='guide-info-wrapper'>
-                            <span class='guide-title-text'>" . htmlspecialchars($row['issue_title']) . "</span>
-                            <div class='badge-container'>
-                                <span class='guide-category-badge'>" . htmlspecialchars($row['issue_catego']) . "</span>
-                            </div>
-                        </div>
-                    </td>
-                  </tr>";
+            // Matches your exact reference structure
+            echo "
+            <div class='supply-row asset-item guide-item $firstClass' data-id='{$row['guide_id']}'>
+                <div class='item-info'>
+                    <span class='supply-name-cell item-name'>" . htmlspecialchars($row['issue_title']) . "</span>
+                </div>
+                <div class='supply-status-cell'>
+                    <span class='badge-text'>" . htmlspecialchars($row['issue_catego']) . "</span>
+                </div>
+            </div>";
             $isFirst = false;
         }
     } else {
-        echo "<tr><td style='text-align:center; padding: 20px;'>No results found.</td></tr>";
+        echo "<div style='text-align:center; padding: 40px; color: #999; font-size: 13px;'>No results found.</div>";
     }
     exit;
 }
@@ -157,12 +157,10 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="table-container">
-                    <table class="guide-table">
-                        <tbody id="guideTableBody"></tbody>
-                    </table>
-                </div>
+                <div class="table-container list-container" id="guideTableBody">
+                    </div>
             </div>
+            
             <div class="panel white-panel right-detail-panel">
                 <div class="panel-header-row">
                     <h3>Guide Full Details</h3>
@@ -175,6 +173,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             </div>
         </div>
     </div>
+
     <div id="addGuideModal" class="modal-overlay" style="display:none;">
         <div class="modal-content white-panel">
             <div class="panel-header-row">
@@ -201,6 +200,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             </form>
         </div>
     </div>
+
     <div id="archiveConfirmModal" class="modal-overlay" style="display:none;">
         <div class="modal-content white-panel modal-confirm">
             <h3>Archive this Troubleshooting Guide?</h3>
@@ -213,6 +213,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             </div>
         </div>
     </div>
+
     <div id="restoreConfirmModal" class="modal-overlay" style="display:none;">
         <div class="modal-content white-panel modal-confirm">
             <h3>Restore Troubleshooting Guide?</h3>

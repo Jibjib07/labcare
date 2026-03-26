@@ -230,6 +230,23 @@ body {
     padding-right: 15px;
 }
 
+.history-table tr.no-data-row {
+    border-left: none !important;
+    cursor: default;
+}
+
+.history-table tr.no-data-row td {
+    flex: 1; /* Forces the cell to take up 100% of the row width */
+    width: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px !important; /* Increased padding to push it toward the vertical center */
+    color: #999;
+    font-size: 12px;
+}
+
 /* =========================================
    5. RIGHT TABLE (Timeline)
    ========================================= */

@@ -29,8 +29,15 @@ document.addEventListener("DOMContentLoaded", function () {
             const retiredPanel = document.getElementById("view-retired-timeline");
             if (retiredPanel) {
                 retiredPanel.style.display = "block";
+                
+                // Set Header for Retired/Condemned (6 Columns)
+                const retiredHead = retiredPanel.querySelector("thead");
+                if (retiredHead) {
+                    retiredHead.innerHTML = `<tr><th>Date</th><th>By</th><th>Affected</th><th>Action</th><th>Remarks</th><th>Status</th></tr>`;
+                }
+
                 const retiredBody = retiredPanel.querySelector(".data-body");
-                if (retiredBody) retiredBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;"><em>Loading history...</em></td></tr>`;
+                if (retiredBody) retiredBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;"><em>Loading history...</em></td></tr>`;
             }
             fetchTimelineData(id, "retired");
         } else {
@@ -40,13 +47,15 @@ document.addEventListener("DOMContentLoaded", function () {
             if (fullPanel) {
                 fullPanel.style.display = "block";
 
-                // Dynamic Header for Inventory vs Logs
+                // UPDATED: Dynamic Header Switching
                 if (type === "inventory") {
                     if (timelineHead) {
-                        timelineHead.innerHTML = `<tr><th>Date</th><th>Activity</th><th>By</th><th>Remarks</th></tr>`;
+                        // Inventory uses 5 Columns
+                        timelineHead.innerHTML = `<tr><th>Date</th><th>Activity</th><th>By</th><th>Remarks</th><th>Status</th></tr>`;
                     }
                 } else {
                     if (timelineHead) {
+                        // Standard Logs use 6 Columns
                         timelineHead.innerHTML = `<tr><th>Date</th><th>By</th><th>Affected</th><th>Action</th><th>Remarks</th><th>Status</th></tr>`;
                     }
                 }
@@ -55,6 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // Initial Load
     selectFirstVisibleRow();
 });
 
@@ -72,7 +82,7 @@ function toggleNavView(btn) {
         logNav.style.display = 'none';
         retNav.style.display = 'flex';
         title.textContent = "Retirement History";
-        btn.textContent = "View Activity Logs"; // Simplified text
+        btn.textContent = "View Activity Logs";
         
         const firstRetBtn = retNav.querySelector('.main-nav-btn');
         switchHistoryTab('retired-units', firstRetBtn);
@@ -80,7 +90,7 @@ function toggleNavView(btn) {
         logNav.style.display = 'flex';
         retNav.style.display = 'none';
         title.textContent = "Activity Logs";
-        btn.textContent = "View Retirement"; // Simplified text
+        btn.textContent = "View Retirement";
         
         const firstLogBtn = logNav.querySelector('.main-nav-btn');
         switchHistoryTab('unit', firstLogBtn);
@@ -109,18 +119,54 @@ function switchHistoryTab(tabName, btnElement) {
 
 /**
  * AUTO-SELECT FIRST VISIBLE ROW
+ * UPDATED: Handles dynamic headers and colspans for empty states
  */
 function selectFirstVisibleRow() {
     const activeTab = Array.from(document.querySelectorAll(".tab-content")).find(tab => tab.style.display !== "none");
+    
     if (activeTab) {
         const visibleRows = Array.from(activeTab.querySelectorAll(".selectable-row")).filter(row => row.style.display !== "none");
+        
         if (visibleRows.length > 0) {
             visibleRows[0].click();
         } else {
             document.querySelectorAll(".history-view").forEach(v => v.style.display = "none");
-            document.querySelectorAll(".data-body").forEach(body => {
-                body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#999;">No records found.</td></tr>`;
-            });
+
+            let targetViewId = "view-full-timeline";
+            const tabId = activeTab.id;
+
+            if (tabId === "archives-tab") {
+                targetViewId = "view-archives-details";
+            } else if (tabId.includes("retired")) {
+                targetViewId = "view-retired-timeline";
+            }
+
+            const targetView = document.getElementById(targetViewId);
+            if (targetView) {
+                targetView.style.display = "block";
+                
+                // Inject correct header even for empty state
+                const thead = targetView.querySelector("thead");
+                if (thead) {
+                    if (tabId === "inventory-tab") {
+                        thead.innerHTML = `<tr><th>Date</th><th>Activity</th><th>By</th><th>Remarks</th><th>Status</th></tr>`;
+                    } else if (tabId !== "archives-tab") {
+                        thead.innerHTML = `<tr><th>Date</th><th>By</th><th>Affected</th><th>Action</th><th>Remarks</th><th>Status</th></tr>`;
+                    }
+                }
+
+                const tbody = targetView.querySelector(".data-body");
+                if (tbody) {
+                    // colSpan is 5 for inventory, 6 for others
+                    const colSpan = (tabId === "inventory-tab") ? 5 : 6;
+                    tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding:40px; color:#999;">No records found to display.</td></tr>`;
+                }
+
+                if (targetViewId === "view-archives-details") {
+                    if (document.getElementById("archive-reason-text")) document.getElementById("archive-reason-text").textContent = "No data available.";
+                    if (document.getElementById("archived-by-name")) document.getElementById("archived-by-name").textContent = "-";
+                }
+            }
         }
     }
 }
@@ -165,7 +211,8 @@ function fetchTimelineData(id, type) {
     
     if (!tbody) return;
 
-    const loadingColSpan = isInventory ? 4 : (isRetired ? 4 : 6);
+    // UPDATED colspans for loading indicator
+    const loadingColSpan = isInventory ? 5 : 6;
     tbody.innerHTML = `<tr><td colspan="${loadingColSpan}" style="text-align:center; padding: 20px;"><em>Loading history...</em></td></tr>`;
 
     fetch(`${window.location.pathname}?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`)
@@ -174,7 +221,7 @@ function fetchTimelineData(id, type) {
             tbody.innerHTML = html;
         })
         .catch(() => {
-            const errorColSpan = isInventory ? 4 : (isRetired ? 4 : 6);
+            const errorColSpan = isInventory ? 5 : 6;
             tbody.innerHTML = `<tr><td colspan="${errorColSpan}" style="text-align:center; color:red;">Error loading history.</td></tr>`;
         });
 }
@@ -192,4 +239,6 @@ function applyFilters() {
         const text = row.textContent.toLowerCase();
         row.style.display = text.includes(searchTerm) ? "" : "none";
     });
+
+    selectFirstVisibleRow();
 }
