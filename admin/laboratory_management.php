@@ -454,8 +454,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
             <div class="modal-body">
                 <p class="archive-warning-text">
                     Are you sure you want to archive <strong id="archive_room_name_display">[Room Name]</strong>?
-                    This will hide the laboratory from the active dashboard and Staff view.
-                    All associated records and maintenance history will be preserved in the <strong>History Management</strong> section.
+                    This record cannot be restored. All logs will be saved in History Management for audit purposes. New labs must be created manually if the room number is reused.
                 </p>
                 <form id="archiveLabForm">
                     <input type="hidden" id="archive_lab_id">
@@ -479,9 +478,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                             <div class="form-group">
                                 <label>Reason for Archiving:</label>
                                 <div class="checkbox-group" id="archive_reasons_group">
-                                    <label class="checkbox-item"><input type="checkbox" value="Room Renovation/Maintenance"> Room Renovation/Maintenance</label>
-                                    <label class="checkbox-item"><input type="checkbox" value="End of Semester/Academic Year"> End of Semester/Academic Year</label>
-                                    <label class="checkbox-item"><input type="checkbox" value="Relocation of Assets"> Relocation of Assets</label>
+                                    <label class="checkbox-item"><input type="checkbox" value="Permanent Decommision"> Permanent Decommision</label>
+                                    <label class="checkbox-item"><input type="checkbox" value="Room Repurposed"> Room Repurposed</label>
+                                    <label class="checkbox-item"><input type="checkbox" value="Combined with another Lab"> Combined with another Lab</label>
                                     <label class="checkbox-item"><input type="checkbox" value="Other"> Other (Please specify...)</label>
                                 </div>
                             </div>
