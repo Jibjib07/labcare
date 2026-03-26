@@ -19,30 +19,30 @@
 }
 
 .white-panel {
-  background: white;
-  border-radius: 8px;
-  padding: 25px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-sizing: border-box;
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
+    box-sizing: border-box;
 }
 
 .troubleshoot-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 20px;
-  align-items: start;
-  align-content: start;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 20px;
+    align-items: start;
+    align-content: start;
 }
 
 .panel-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
 }
 .panel-header-row h3 {
   margin: 0;
@@ -55,9 +55,9 @@
    2. BUTTONS & ACTIONS
    ========================================= */
 .action-buttons {
-  display: flex;
-  gap: 15px;
-  align-items: center;
+    display: flex;
+    gap: 15px;
+    align-items: center;
 }
 
 .btn-green-add,
@@ -130,7 +130,7 @@
    3. LEFT PANEL & RIGHT PANEL LOGIC
    ========================================= */
 .right-detail-panel {
-  animation: floatUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+    animation: floatUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
 
 .search-filter-row {
@@ -182,32 +182,16 @@
   font-family: inherit;
 }
 
+
 .status-toggle-btn.active {
   background-color: #4caf50;
   color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.search-filter-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-.search-input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-}
-.filter-dropdown {
-  padding: 0 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #555;
-  min-width: 140px;
-}
+.search-filter-row { display: flex; gap: 10px; margin-bottom: 15px; }
+.search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+.filter-dropdown { padding: 0 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; color: #555; min-width: 140px; }
 
 /* =========================================
    4. TABLE ROW STYLING
@@ -385,16 +369,16 @@
 }
 
 /* Fixed height ONLY for single-line elements */
-.detail-input,
+.detail-input, 
 .detail-select {
-  height: 45px;
+    height: 45px; 
 }
 
 /* Auto-extending logic for Textarea */
-.detail-textarea {
-  min-height: 45px;
-  height: auto;
-  overflow: hidden; /* Removes the side scrollbar */
+.detail-textarea { 
+    min-height: 45px; 
+    height: auto;
+    overflow: hidden; /* Removes the side scrollbar */
 }
 
 /* --- Notification System Design --- */
@@ -421,40 +405,21 @@
 }
 
 /* Specific Notification Themes */
-.toast-success {
-  border-left-color: #4caf50;
-}
-.toast-archive {
-  border-left-color: #ff5722;
-}
+.toast-success { border-left-color: #4caf50; }
+.toast-archive { border-left-color: #ff5722; }
 
-.toast-icon {
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.toast-icon { 
+    font-size: 20px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.toast-success .toast-icon {
-  color: #4caf50;
-}
-.toast-archive .toast-icon {
-  color: #ff5722;
-}
+.toast-success .toast-icon { color: #4caf50; }
+.toast-archive .toast-icon { color: #ff5722; }
 
-.toast-content {
-  display: flex;
-  flex-direction: column;
-}
-.toast-title {
-  font-weight: 800;
-  font-size: 14px;
-  color: #333;
-}
-.toast-sub {
-  font-size: 12px;
-  color: #777;
-  margin-top: 2px;
-}
+.toast-content { display: flex; flex-direction: column; }
+.toast-title { font-weight: 800; font-size: 14px; color: #333; }
+.toast-sub { font-size: 12px; color: #777; margin-top: 2px; }
 
 @keyframes slideInRight {
   from {

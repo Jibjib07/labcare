@@ -1595,6 +1595,7 @@ function openAdminLogModal(type) {
   const specChanges = []; // For grouped general updates (Brands, IDs, etc.)
   const statusChanges = []; // For individual broken components
 
+  // Ensures all database columns translate to beautiful text
   const nameMap = {
     specs_property: "Property ID",
     specs_cpu: "CPU",
@@ -1604,6 +1605,7 @@ function openAdminLogModal(type) {
     specs_ram: "RAM",
     specs_storage: "Storage Type",
     specs_capacity: "Storage Capacity",
+    specs_purchase: "Purchase Date", // Fixed translation!
     monitor_property: "Monitor Prop ID",
     monitor_brand: "Monitor Brand",
     mouse_brand: "Mouse Brand",
@@ -1625,6 +1627,9 @@ function openAdminLogModal(type) {
     keyboard_status: "Keyboard",
     avr_status: "AVR",
     set_status: "Overall Unit Status",
+    fa_property: "Property ID",
+    fa_name: "Asset Name",
+    fa_brand: "Brand",
   };
 
   if (type === "pc") {
@@ -1635,9 +1640,9 @@ function openAdminLogModal(type) {
     const unitNameEl = document.getElementById("logStatusUnitName");
     if (unitNameEl) unitNameEl.innerText = `[${activeItemText}]`;
 
-    // 1. SCAN STATUS TOGGLES (Only goes to statusChanges)
+    // 1. SCAN STATUS TOGGLES (STRICTLY SCOPED TO #view-computer)
     document
-      .querySelectorAll(".specs-content-box .status-toggle-group")
+      .querySelectorAll("#view-computer .status-toggle-group")
       .forEach((group) => {
         if (group.style.display !== "none") {
           const dbColumn = group.id.replace("toggle_", "");
@@ -1668,9 +1673,9 @@ function openAdminLogModal(type) {
         }
       });
 
-    // 2. SCAN SPEC INPUTS (Only goes to specChanges)
+    // 2. SCAN SPEC INPUTS (STRICTLY SCOPED TO #view-computer)
     document
-      .querySelectorAll('.specs-content-box input[id^="edit_"]')
+      .querySelectorAll('#view-computer input[id^="edit_"]')
       .forEach((input) => {
         const dbColumn = input.id.replace("edit_", "");
         if (["com_age", "num_repair"].includes(dbColumn)) return;
@@ -1722,7 +1727,7 @@ function openAdminLogModal(type) {
 
     // 2. FA TEXT INPUT SCANNER
     const faInputs = [
-      { id: "fa_name", label: "Device Name" },
+      { id: "fa_name", label: "Asset Name" },
       { id: "fa_property", label: "Property ID" },
       { id: "fa_brand", label: "Brand" },
     ];
@@ -1742,7 +1747,7 @@ function openAdminLogModal(type) {
     });
   }
 
-  // 3. SET THE GLOBAL AFFECTED STRING FOR THE DB (Cleaned up)
+  // 3. SET THE GLOBAL AFFECTED STRING FOR THE DB
   window.pendingAffectedString =
     specChanges.length > 0 ? specChanges.join(", ") : "General Update";
 
@@ -1758,18 +1763,18 @@ function openAdminLogModal(type) {
         ? specChanges.join("<br>")
         : "General / Minor Edits";
     htmlContent += `
-            <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
-                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Details & Specifications Updated:</h4>
-                <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
-                        <strong>Affected Fields:</strong><br>${affectedList}
-                    </div>
-                    <div style="flex: 2;">
-                        <textarea id="general_remarks" class="log-remark-input" data-name="Details Update" placeholder="Optional: Notes for these changes..." style="width: 100%; height: 100%; min-height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px;"></textarea>
-                    </div>
-                </div>
-            </div>
-        `;
+      <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+          <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Details & Specifications Updated:</h4>
+          <div style="display: flex; gap: 20px;">
+              <div style="flex: 1; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
+                  <strong>Affected Fields:</strong><br>${affectedList}
+              </div>
+              <div style="flex: 2;">
+                  <textarea id="general_remarks" class="log-remark-input" data-name="Details Update" placeholder="Optional: Notes for these changes..." style="width: 100%; height: 100%; min-height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px;"></textarea>
+              </div>
+          </div>
+      </div>
+    `;
   }
 
   // 5. B. Individual Status Blocks
@@ -1779,27 +1784,27 @@ function openAdminLogModal(type) {
       const pillColor = "#e65100";
 
       htmlContent += `
-                <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
-                        <h4 style="margin: 0; font-size: 14px; color: #f57f17;">
-                            <i class="fas fa-exclamation-circle"></i> Status Update
-                        </h4>
-                        <span style="background-color: ${pillBg}; color: ${pillColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;">
-                            ${stat.new}
-                        </span>
-                    </div>
-                    <div style="display: flex; gap: 20px;">
-                        <div style="flex: 1; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
-                            <strong>Affected:</strong><br>
-                            <span style="display: inline-block; margin-top: 5px;">${stat.name}</span>
-                        </div>
-                        <div style="flex: 2; display: flex; flex-direction: column; gap: 5px;">
-                            <label style="font-size: 13px; font-weight: 600; color: #333;">Remarks:</label>
-                            <textarea class="log-remark-input status-remark-field" data-name="${stat.name}" placeholder="Optional: Why is this marked for repair?" style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box;"></textarea>
-                        </div>
-                    </div>
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <h4 style="margin: 0; font-size: 14px; color: #f57f17;">
+                    <i class="fas fa-exclamation-circle"></i> Status Update
+                </h4>
+                <span style="background-color: ${pillBg}; color: ${pillColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;">
+                    ${stat.new}
+                </span>
+            </div>
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
+                    <strong>Affected:</strong><br>
+                    <span style="display: inline-block; margin-top: 5px;">${stat.name}</span>
                 </div>
-            `;
+                <div style="flex: 2; display: flex; flex-direction: column; gap: 5px;">
+                    <label style="font-size: 13px; font-weight: 600; color: #333;">Remarks:</label>
+                    <textarea class="log-remark-input status-remark-field" data-name="${stat.name}" placeholder="Optional: Why is this marked for repair?" style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box;"></textarea>
+                </div>
+            </div>
+        </div>
+      `;
     });
   }
 
@@ -1843,10 +1848,7 @@ function confirmLogStatus() {
     let userNotes = input.value.trim();
     const fieldName = input.getAttribute("data-name");
     let finalStatus = `Status Update. Notes: ${userNotes || "None provided"}`;
-    statusLogsArray.push({
-      component: fieldName,
-      remark: finalStatus,
-    });
+    statusLogsArray.push({ component: fieldName, remark: finalStatus });
   });
 
   formData.append("status_logs", JSON.stringify(statusLogsArray));
@@ -1857,35 +1859,63 @@ function confirmLogStatus() {
   saveBtn.disabled = true;
   saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-  // --- 4. GATHER DB DATA ---
+  // --- 4. GATHER DB DATA (STRICTLY SCOPED!) ---
+  const containerSelector =
+    currentReportType === "pc" ? "#view-computer" : "#view-facility-right";
+
+  // Grabs ONLY the inputs belonging to the current view
   document
-    .querySelectorAll('.specs-content-box input[id^="edit_"]')
+    .querySelectorAll(`${containerSelector} input[id^="edit_"]`)
     .forEach((input) => {
       formData.append(input.id.replace("edit_", ""), input.value);
     });
 
-  document
-    .querySelectorAll(".specs-content-box .status-toggle-group")
-    .forEach((group) => {
-      const dbColumn = group.id.replace("toggle_", "");
-      const activeBtn = group.querySelector(".status-btn.active");
+  if (currentReportType === "pc") {
+    // PC-Specific Status Toggles
+    document
+      .querySelectorAll(`${containerSelector} .status-toggle-group`)
+      .forEach((group) => {
+        const dbColumn = group.id.replace("toggle_", "");
+        const activeBtn = group.querySelector(".status-btn.active");
 
-      if (group.style.display !== "none" && activeBtn) {
-        let val =
-          activeBtn.getAttribute("data-type") === "repair"
-            ? "For Repair"
-            : "Working";
-        if (dbColumn === "disk_health")
-          val =
+        if (group.style.display !== "none" && activeBtn) {
+          let val =
             activeBtn.getAttribute("data-type") === "repair"
-              ? "Poor"
-              : "Healthy";
-        formData.append(dbColumn, val);
-      } else {
-        const pill = document.getElementById("pill_" + dbColumn);
-        formData.append(dbColumn, pill ? pill.innerText.trim() : "For Repair");
-      }
-    });
+              ? "For Repair"
+              : "Working";
+          if (dbColumn === "disk_health")
+            val =
+              activeBtn.getAttribute("data-type") === "repair"
+                ? "Poor"
+                : "Healthy";
+          formData.append(dbColumn, val);
+        } else {
+          const pill = document.getElementById("pill_" + dbColumn);
+          formData.append(
+            dbColumn,
+            pill ? pill.innerText.trim() : "For Repair",
+          );
+        }
+      });
+  } else {
+    // FA-Specific Status Toggles
+    const group = document.getElementById("toggle_fa_status");
+    const activeBtn = group ? group.querySelector(".status-btn.active") : null;
+    if (group && group.style.display !== "none" && activeBtn) {
+      formData.append(
+        "asset_status",
+        activeBtn.getAttribute("data-type") === "repair"
+          ? "For Repair"
+          : "Working",
+      );
+    } else {
+      const pill = document.getElementById("pill_fa_status");
+      formData.append(
+        "asset_status",
+        pill ? pill.innerText.trim() : "For Repair",
+      );
+    }
+  }
 
   // --- 5. SEND TO THE CORRECT PHP SCRIPT ---
   fetch(targetUrl, { method: "POST", body: formData })
