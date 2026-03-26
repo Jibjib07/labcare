@@ -1,8 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // --- STATE VARIABLES ---
+    let currentUserPreparedBy = "COMPUTER LAB CUSTODIAN"; // Default fallback
+
     // --- UI ELEMENTS ---
     const tabBtns = document.querySelectorAll('.tab-btn');
     const subTabBtns = document.querySelectorAll('.sub-tab');
+    
     const snapshotDateInput = document.getElementById('snapshotDate');
+    const fromDateInput = document.getElementById('fromDate');
+    const toDateInput = document.getElementById('toDate');
+    
+    const snapshotDateGroup = document.getElementById('snapshotDateGroup');
+    const dateRangeGroup = document.getElementById('dateRangeGroup');
+    
     const labRoomSelect = document.getElementById('labRoomSelect');
     const generateBtn = document.getElementById('generateReportBtn');
     const reportPreviewArea = document.getElementById('reportPreviewArea');
@@ -16,15 +26,51 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusLegend = document.getElementById('statusLegend');
 
     /**
-     * 1. CORE FETCH UTILITY
+     * 1. DATA AGGREGATOR HELPER
+     */
+    function getPerRoomBreakdown(units, assets, isCondemned = false) {
+        const rooms = {};
+        const initRoom = (name) => {
+            if (!rooms[name]) rooms[name] = { name, uw: 0, ur: 0, aw: 0, ar: 0, uc: 0, ac: 0 };
+        };
+
+        units.forEach(u => {
+            initRoom(u.lab_room);
+            if (isCondemned) rooms[u.lab_room].uc++;
+            else {
+                if (u.set_status.includes('Working') || u.set_status.includes('In Stock')) rooms[u.lab_room].uw++;
+                else rooms[u.lab_room].ur++;
+            }
+        });
+
+        assets.forEach(a => {
+            initRoom(a.lab_room);
+            if (isCondemned) rooms[a.lab_room].ac++;
+            else {
+                if (a.set_status.includes('Working') || a.set_status.includes('In Stock')) rooms[a.lab_room].aw++;
+                else rooms[a.lab_room].ar++;
+            }
+        });
+
+        return Object.values(rooms).sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    /**
+     * 2. CORE FETCH UTILITY
      */
     function fetchReportData(type, subTab) {
         const formData = new FormData();
         formData.append('action', 'generate_snapshot_report');
-        formData.append('asOfDate', snapshotDateInput.value);
-        formData.append('labId', labRoomSelect.value);
         formData.append('type', type);
         formData.append('subTab', subTab);
+        formData.append('labId', labRoomSelect.value);
+
+        if (type === 'condemned') {
+            formData.append('fromDate', fromDateInput.value);
+            formData.append('toDate', toDateInput.value);
+        } else {
+            formData.append('asOfDate', snapshotDateInput.value);
+        }
 
         return fetch(window.location.href, {
             method: 'POST',
@@ -33,16 +79,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * 2. REFRESH ROOM LIST
+     * 3. REFRESH ROOM LIST
      */
     function refreshRoomList() {
-        const selectedDate = snapshotDateInput.value;
         const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-tab');
         const savedRoomId = labRoomSelect.value;
 
-        if (!selectedDate) return;
-
-        // Refresh visuals immediately if in Inventory (no rooms to fetch)
         if (activeTab === 'inventory') {
             updateVisualsOnly();
             return;
@@ -50,13 +92,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         formData.append('action', 'fetch_snapshot_rooms');
-        formData.append('asOfDate', selectedDate);
+        formData.append('type', activeTab);
+
+        if (activeTab === 'condemned') {
+            formData.append('fromDate', fromDateInput.value);
+            formData.append('toDate', toDateInput.value);
+        } else {
+            formData.append('asOfDate', snapshotDateInput.value);
+        }
 
         fetch(window.location.href, { method: 'POST', body: formData })
         .then(r => r.json())
         .then(res => {
             labRoomSelect.innerHTML = '<option value="all">All Laboratories</option>';
-            
             if (res.success && res.data.length > 0) {
                 res.data.forEach(room => {
                     const opt = document.createElement('option');
@@ -64,7 +112,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     opt.textContent = room.lab_room; 
                     labRoomSelect.appendChild(opt);
                 });
-
                 if (savedRoomId && savedRoomId !== 'all') {
                     const exists = res.data.some(r => r.lab_id == savedRoomId);
                     if (exists) labRoomSelect.value = savedRoomId;
@@ -75,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * 3. MAIN GENERATION LOGIC
+     * 4. MAIN GENERATION DISPATCHER
      */
     function generateFormalReport() {
         const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-tab');
@@ -88,275 +135,82 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetchReportData(activeTab, 'units'),
                 fetchReportData(activeTab, 'assets')
             ]).then(([unitsRes, assetsRes]) => {
+                
+                if (unitsRes.prepared_by) currentUserPreparedBy = unitsRes.prepared_by;
+
                 const data = {
                     units: unitsRes.success ? unitsRes.data : [],
                     assets: assetsRes.success ? assetsRes.data : []
                 };
                 
                 if (activeTab === 'status') {
-                    if (isAllLabs) renderSummaryOnlyReport(data);
-                    else renderDetailedRoomReport(data);
+                    if (isAllLabs) renderSummaryOnlyReport(data, currentUserPreparedBy);
+                    else renderDetailedRoomReport(data, currentUserPreparedBy);
                 } else if (activeTab === 'condemned') {
-                    if (isAllLabs) renderCondemnedSummaryOnly(data);
-                    else renderCondemnedDetailed(data);
+                    if (isAllLabs) renderCondemnedSummaryOnly(data, currentUserPreparedBy);
+                    else renderCondemnedDetailed(data, currentUserPreparedBy);
                 }
             });
         } else if (activeTab === 'inventory') {
             fetchReportData('inventory', 'units').then(res => {
-                if (res.success) {
-                    renderInventoryReport(res.data);
-                }
+                if (res.prepared_by) currentUserPreparedBy = res.prepared_by;
+                if (res.success) renderInventoryReport(res.data, currentUserPreparedBy);
             });
         }
     }
 
-    /**
-     * 4A. STATUS SUMMARY RENDERER
-     */
-    function renderSummaryOnlyReport(data) {
-        const dateObj = new Date(snapshotDateInput.value);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        const u = calculateStats(data.units);
-        const a = calculateStats(data.assets);
-
-        let html = `<div class="report-paper" style="min-height: auto;">`;
-        html += getReportHeaderHTML();
-        html += `
-            <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; margin: 0; font-weight: 800;">COMPUTER LABORATORY REPORT</h2>
-                <h3 style="font-size: 16px; margin: 0; font-weight: 800;">CONSOLIDATED SUMMARY</h3>
-                <p style="font-size: 16px; margin: 5px 0;">All Laboratories</p>
-                <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
-            </div>
-            ${generateSummaryTableHTML("Computer Units Summary", u)}
-            ${generateSummaryTableHTML("Assets Summary", a)}
-            ${generateSignatureHTML()}
-        </div>`;
-        reportPreviewArea.innerHTML = html;
-    }
-
-    /**
-     * 4B. STATUS DETAILED RENDERER
-     */
-    function renderDetailedRoomReport(data) {
-        const dateObj = new Date(snapshotDateInput.value);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        const labName = labRoomSelect.options[labRoomSelect.selectedIndex].text;
-        const u = calculateStats(data.units);
-        const a = calculateStats(data.assets);
-
-        let html = `<div class="report-paper" style="min-height: auto;">`;
-        html += getReportHeaderHTML();
-        html += `
-            <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; margin: 0; font-weight: 800;">COMPUTER LABORATORY REPORT</h2>
-                <h3 style="font-size: 16px; margin: 0; font-weight: 800;">UNITS AND ASSETS STATUS</h3>
-                <p style="font-size: 16px; margin: 5px 0;">Room: ${labName}</p>
-                <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
-            </div>
-            ${generateSummaryTableHTML("Computer Units Summary", u)}
-            ${generateSummaryTableHTML("Assets Summary", a)}
-            <div class="page-break" style="page-break-before: always; margin-top: 20px;"></div>
-            <div class="print-only-header">${getReportHeaderHTML()}</div>
-            <h4 class="table-label">Computer Units List</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead><tr><th style="width: 60%;">Tag</th><th>Status</th></tr></thead>
-                <tbody>${renderListRows(data.units)}</tbody>
-            </table>
-            <h4 class="table-label">Facility Assets List</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead><tr><th style="width: 60%;">Tag</th><th>Status</th></tr></thead>
-                <tbody>${renderListRows(data.assets)}</tbody>
-            </table>
-            ${generateSignatureHTML()}
-        </div>`;
-        reportPreviewArea.innerHTML = html;
-    }
-
-    /**
-     * 4C. CONDEMNED SUMMARY RENDERER
-     */
-    function renderCondemnedSummaryOnly(data) {
-        const dateObj = new Date(snapshotDateInput.value);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        const uCount = data.units.length;
-        const aCount = data.assets.length;
-
-        let html = `<div class="report-paper" style="min-height: auto;">`;
-        html += getCondemnedHeaderHTML(); 
-        html += `
-            <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; margin: 0; font-weight: 800;">COMPUTER LABORATORY REPORT</h2>
-                <h3 style="font-size: 16px; margin: 0; font-weight: 800;">CONDEMNED STATUS SUMMARY</h3>
-                <p style="font-size: 16px; margin: 5px 0;">All Laboratories</p>
-                <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
-            </div>
-            <h4 class="table-label">Computer Units Summary</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead><tr><th style="width: 40%;">Status</th><th style="width: 30%;">Count</th><th style="width: 30%;">Percentage %</th></tr></thead>
-                <tbody>
-                    <tr><td>Condemned</td><td style="text-align:center;">${uCount}</td><td style="text-align:center;">100%</td></tr>
-                    <tr class="row-total"><td>Total</td><td style="text-align:center;">${uCount}</td><td style="text-align:center;">100%</td></tr>
-                </tbody>
-            </table>
-            <h4 class="table-label">Assets Summary</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead><tr><th style="width: 40%;">Status</th><th style="width: 30%;">Count</th><th style="width: 30%;">Percentage %</th></tr></thead>
-                <tbody>
-                    <tr><td>Condemned</td><td style="text-align:center;">${aCount}</td><td style="text-align:center;">100%</td></tr>
-                    <tr class="row-total"><td>Total</td><td style="text-align:center;">${aCount}</td><td style="text-align:center;">100%</td></tr>
-                </tbody>
-            </table>
-            ${generateSignatureHTML()}
-        </div>`;
-        reportPreviewArea.innerHTML = html;
-    }
-
-    /**
-     * 4D. CONDEMNED DETAILED RENDERER
-     */
-    function renderCondemnedDetailed(data) {
-        const dateObj = new Date(snapshotDateInput.value);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        const labName = labRoomSelect.options[labRoomSelect.selectedIndex].text;
-
-        let html = `<div class="report-paper" style="min-height: auto;">`;
-        html += getCondemnedHeaderHTML();
-        html += `
-            <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; margin: 0; font-weight: 800;">COMPUTER LABORATORY REPORT</h2>
-                <h3 style="font-size: 16px; margin: 0; font-weight: 800;">CONDEMNED STATUS</h3>
-                <p style="font-size: 16px; margin: 5px 0;">Room: ${labName}</p>
-                <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
-            </div>
-            <h4 class="table-label">Computer Units Summary</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead><tr><th style="width: 40%;">Status</th><th style="width: 30%;">Count</th><th style="width: 30%;">Percentage %</th></tr></thead>
-                <tbody>
-                    <tr><td>Condemned</td><td style="text-align:center;">${data.units.length}</td><td style="text-align:center;">100%</td></tr>
-                    <tr class="row-total"><td>Total</td><td style="text-align:center;">${data.units.length}</td><td style="text-align:center;">100%</td></tr>
-                </tbody>
-            </table>
-            <h4 class="table-label">Assets Summary</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead><tr><th style="width: 40%;">Status</th><th style="width: 30%;">Count</th><th style="width: 30%;">Percentage %</th></tr></thead>
-                <tbody>
-                    <tr><td>Condemned</td><td style="text-align:center;">${data.assets.length}</td><td style="text-align:center;">100%</td></tr>
-                    <tr class="row-total"><td>Total</td><td style="text-align:center;">${data.assets.length}</td><td style="text-align:center;">100%</td></tr>
-                </tbody>
-            </table>
-            <div class="page-break" style="page-break-before: always; margin-top: 20px;"></div>
-            <div class="print-only-header">${getCondemnedHeaderHTML()}</div>
-            <h4 class="table-label">Computer Units List</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead><tr><th style="width: 60%;">Tag</th><th>Status</th></tr></thead>
-                <tbody>${renderListRows(data.units)}</tbody>
-            </table>
-            <h4 class="table-label">Facility Assets List</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead><tr><th style="width: 60%;">Tag</th><th>Status</th></tr></thead>
-                <tbody>${renderListRows(data.assets)}</tbody>
-            </table>
-            ${generateSignatureHTML()}
-        </div>`;
-        reportPreviewArea.innerHTML = html;
-    }
-
-    /**
-     * 4E. INVENTORY REPORT RENDERER
-     */
-    function renderInventoryReport(data) {
-        const dateObj = new Date(snapshotDateInput.value);
-        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        
-        let inStock = 0, outStock = 0;
-        data.forEach(item => {
-            if (item.set_status === 'In Stock') inStock++;
-            else outStock++;
-        });
-        const total = data.length;
-        const stats = {
-            total, inStock, outStock,
-            ip: total > 0 ? Math.round((inStock / total) * 100) : 0,
-            op: total > 0 ? Math.round((outStock / total) * 100) : 0
-        };
-
-        let html = `<div class="report-paper" style="min-height: auto;">`;
-        html += getReportHeaderHTML();
-        html += `
-            <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; margin: 0; font-weight: 800;">COMPUTER LABORATORY REPORT</h2>
-                <h3 style="font-size: 16px; margin: 0; font-weight: 800;">SUPPLY INVENTORY SUMMARY</h3>
-                <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
-            </div>
-            <h4 class="table-label">Inventory Summary</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead>
-                    <tr><th style="width: 40%;">Status</th><th style="width: 30%;">Count</th><th style="width: 30%;">Percentage %</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>In Stock</td><td style="text-align:center;">${stats.inStock}</td><td style="text-align:center;">${stats.ip}%</td></tr>
-                    <tr><td>Out of Stock</td><td style="text-align:center;">${stats.outStock}</td><td style="text-align:center;">${stats.op}%</td></tr>
-                    <tr class="row-total"><td>Total Items</td><td style="text-align:center;">${stats.total}</td><td style="text-align:center;">100%</td></tr>
-                </tbody>
-            </table>
-            <h4 class="table-label">Detailed Supply List</h4>
-            <table class="doc-table">
-                <thead><tr><th style="width: 60%;">Supply Name</th><th>Status</th></tr></thead>
-                <tbody>
-                    ${renderListRows(data)}
-                </tbody>
-            </table>
-            ${generateSignatureHTML()}
-        </div>`;
-        reportPreviewArea.innerHTML = html;
-    }
-
-    // --- REUSABLE HTML FRAGMENTS ---
+    // --- REUSABLE HELPERS ---
 
     function getReportHeaderHTML() {
         return `
             <div class="doc-header" style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; font-family: 'Times New Roman', Times, serif;">
-                <img src="../assets/cvsu_logo.png" style="width: 80px; height: 80px; position: absolute; left: 120px;">
+                <img src="../assets/cvsu_logo.png" style="width: 80px; height: 80px; position: absolute; left: 100px;">
                 <div style="text-align: center;">
                     <p style="margin: 0; font-size: 14px;">Republic of the Philippines</p>
-                    <h2 style="margin: 0; font-size: 20px; font-weight: 800; text-transform: uppercase;">CAVITE STATE UNIVERSITY</h2>
-                    <h3 style="margin: 0; font-size: 16px; font-weight: bold;">Cavite City Campus</h3>
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 800; text-transform: uppercase; font-family: 'Times New Roman', Times, serif;">
+                        CAVITE STATE UNIVERSITY
+                    </h2>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: bold; font-family: 'Times New Roman', Times, serif;">
+                        Cavite City Campus
+                    </h3>
                     <p style="margin: 0; font-size: 13px;">Pulo II, Dalahican, Cavite City</p>
                 </div>
             </div>
             <div class="doc-divider" style="border-bottom: 1.5px solid black; margin: 10px 0 20px 0;"></div>`;
     }
 
-    function getCondemnedHeaderHTML() { return getReportHeaderHTML(); }
+    function generateSignatureHTML(preparedBy) {
+        return `
+            <div class="signature-section" style="margin-top: auto; padding-top: 50px; display: flex; flex-direction: column; align-items: flex-start; gap: 35px; page-break-inside: avoid;">
+                <div class="sig-box" style="width: 300px;">
+                    <p style="margin-bottom: 5px; font-size: 14px; font-weight: bold; text-align: left;">Prepared By:</p>
+                    <div style="text-align: center;">
+                        <div style="height: 45px;"></div> 
+                        <div style="border-top: 1.5px solid black; margin-bottom: 2px;"></div>
+                        <div style="font-family: 'Times New Roman', serif; font-size: 14px; font-weight: bold; text-transform: uppercase;">
+                            ${preparedBy}
+                        </div>
+                        <div style="font-size: 12px; color: #444;">Computer Lab Custodian</div>
+                    </div>
+                </div>
+                <div class="sig-box" style="width: 300px;">
+                    <p style="margin-bottom: 5px; font-size: 14px; font-weight: bold; text-align: left;">Approved By:</p>
+                    <div style="text-align: center;">
+                        <div style="height: 45px;"></div> 
+                        <div style="border-top: 1.5px solid black; margin-bottom: 2px;"></div>
+                    </div>
+                </div>
+            </div>`;
+    }
 
     function calculateStats(items) {
         let working = 0, repair = 0;
         (items || []).forEach(i => {
-            if (['Working', 'In Stock'].includes(i.set_status)) working++;
+            if (i.set_status.includes('Working') || i.set_status.includes('In Stock')) working++;
             else repair++;
         });
         const total = (items || []).length;
-        return {
-            total, working, repair,
-            wp: total > 0 ? Math.round((working / total) * 100) : 0,
-            rp: total > 0 ? Math.round((repair / total) * 100) : 0
-        };
-    }
-
-    function generateSummaryTableHTML(title, s) {
-        return `
-            <h4 class="table-label" style="margin-bottom: 5px;">${title}</h4>
-            <table class="doc-table" style="margin-bottom: 20px;">
-                <thead>
-                    <tr><th style="width: 40%;">Status</th><th style="width: 30%;">Count</th><th style="width: 30%;">Percentage %</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>Working</td><td style="text-align:center;">${s.working}</td><td style="text-align:center;">${s.wp}%</td></tr>
-                    <tr><td>For Repair</td><td style="text-align:center;">${s.repair}</td><td style="text-align:center;">${s.rp}%</td></tr>
-                    <tr class="row-total"><td>Total</td><td style="text-align:center;">${s.total}</td><td style="text-align:center;">100%</td></tr>
-                </tbody>
-            </table>`;
+        return { total, working, repair, wp: total > 0 ? Math.round((working/total)*100) : 0, rp: total > 0 ? Math.round((repair/total)*100) : 0 };
     }
 
     function renderListRows(items) {
@@ -364,124 +218,285 @@ document.addEventListener('DOMContentLoaded', function() {
         return items.map(item => `<tr><td>${item.set_tag}</td><td style="text-align:center;">${item.set_status}</td></tr>`).join('');
     }
 
-    function generateSignatureHTML() {
-        return `
-            <div class="signature-section" style="margin-top: 30px; display: flex; justify-content: flex-end;">
-                <div class="sig-box" style="width: 250px; text-align: center;">
-                    <p style="margin-bottom: 40px; font-size: 13px;">Prepared By:</p>
-                    <div class="sig-line" style="border-top: 1px solid black; font-weight: bold; text-transform: uppercase; padding-top: 5px; font-size: 13px;">COMPUTER LAB CUSTODIAN</div>
-                </div>
-            </div>`;
+    // --- RENDERERS ---
+
+    /**
+     * STATUS - SPECIFIC LABORATORY
+     */
+    function renderDetailedRoomReport(data, preparedBy) {
+        const dateObj = new Date(snapshotDateInput.value);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const labName = labRoomSelect.options[labRoomSelect.selectedIndex].text;
+        const u = calculateStats(data.units);
+        const a = calculateStats(data.assets);
+
+        let html = `<div class="report-paper"><div class="report-body">`;
+        html += getReportHeaderHTML();
+        html += `
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h2 style="font-size: 18px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">COMPUTER LABORATORY REPORT</h2>
+                <h3 style="font-size: 16px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">UNITS AND ASSETS STATUS</h3>
+                <p style="font-size: 16px; margin: 5px 0;">Room: ${labName}</p>
+                <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
+            </div>
+            
+            <table class="doc-table" style="margin-bottom: 30px;">
+                <thead>
+                    <tr>
+                        <th style="width: 40%; text-align: center;">Category</th>
+                        <th style="text-align: center;">Working</th>
+                        <th style="text-align: center;">For Repair</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Computer Units</td>
+                        <td align="center">${u.working}</td>
+                        <td align="center">${u.repair}</td>
+                    </tr>
+                    <tr>
+                        <td>Facility Assets</td>
+                        <td align="center">${a.working}</td>
+                        <td align="center">${a.repair}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h4 class="table-label">Computer Units List</h4>
+            <table class="doc-table" style="margin-bottom: 20px;">
+                <thead><tr><th style="width: 50%; text-align: center;">Tag</th><th style="text-align: center;">Status</th></tr></thead>
+                <tbody>${renderListRows(data.units)}</tbody>
+            </table>
+            
+            <h4 class="table-label">Facility Assets List</h4>
+            <table class="doc-table">
+                <thead><tr><th style="width: 50%; text-align: center;">Tag</th><th style="text-align: center;">Status</th></tr></thead>
+                <tbody>${renderListRows(data.assets)}</tbody>
+            </table>
+        </div>${generateSignatureHTML(preparedBy)}</div>`;
+        reportPreviewArea.innerHTML = html;
     }
 
     /**
-     * 5. QUIET UI UPDATER
+     * CONDEMNED - SPECIFIC LABORATORY
      */
+    function renderCondemnedDetailed(data, preparedBy) {
+        const fDate = new Date(fromDateInput.value).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const tDate = new Date(toDateInput.value).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const labName = labRoomSelect.options[labRoomSelect.selectedIndex].text;
+
+        let html = `<div class="report-paper"><div class="report-body">`;
+        html += getReportHeaderHTML();
+        html += `
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h2 style="font-size: 18px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">COMPUTER LABORATORY REPORT</h2>
+                <h3 style="font-size: 16px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">CONDEMNED STATUS (DETAILED)</h3>
+                <p style="font-size: 16px; margin: 5px 0;">Room: ${labName}</p>
+                <p style="font-size: 15px; margin: 10px 0;">Period: ${fDate} to ${tDate}</p>
+            </div>
+            
+            <table class="doc-table" style="margin-bottom: 30px;">
+                <thead>
+                    <tr>
+                        <th style="width: 40%; text-align: center;">Category</th>
+                        <th style="text-align: center;">Total Condemned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Computer Units</td>
+                        <td align="center">${data.units.length}</td>
+                    </tr>
+                    <tr>
+                        <td>Facility Assets</td>
+                        <td align="center">${data.assets.length}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4 class="table-label">Computer Units List</h4>
+            <table class="doc-table" style="margin-bottom: 20px;">
+                <thead><tr><th style="width: 50%; text-align: center;">Tag</th><th style="text-align: center;">Date Condemned</th></tr></thead>
+                <tbody>${data.units.map(i => `<tr><td>${i.set_tag}</td><td align="center">${i.log_date}</td></tr>`).join('') || '<tr><td colspan="2" align="center">No records</td></tr>'}</tbody>
+            </table>
+            
+            <h4 class="table-label">Facility Assets List</h4>
+            <table class="doc-table">
+                <thead><tr><th style="width: 50%; text-align: center;">Tag</th><th style="text-align: center;">Date Condemned</th></tr></thead>
+                <tbody>${data.assets.map(i => `<tr><td>${i.set_tag}</td><td align="center">${i.log_date}</td></tr>`).join('') || '<tr><td colspan="2" align="center">No records</td></tr>'}</tbody>
+            </table>
+        </div>${generateSignatureHTML(preparedBy)}</div>`;
+        reportPreviewArea.innerHTML = html;
+    }
+
+    /**
+     * STATUS - ALL LABORATORIES
+     */
+    function renderSummaryOnlyReport(data, preparedBy) {
+        const dateObj = new Date(snapshotDateInput.value);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const u = calculateStats(data.units);
+        const a = calculateStats(data.assets);
+        const breakdown = getPerRoomBreakdown(data.units, data.assets);
+
+        let html = `<div class="report-paper"><div class="report-body">` + getReportHeaderHTML() + `
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', serif;">COMPUTER LABORATORY REPORT</h2>
+                <h3 style="font-size: 16px; font-weight: 800; font-family: 'Times New Roman', serif;">CONSOLIDATED SUMMARY</h3>
+                <p>All Laboratories | As of ${formattedDate}</p>
+            </div>
+            
+            <table class="doc-table" style="margin-bottom: 30px;">
+                <thead>
+                    <tr><th style="text-align: center;">Category</th><th align="center">Working</th><th align="center">For Repair</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Computer Units</td><td align="center">${u.working}</td><td align="center">${u.repair}</td></tr>
+                    <tr><td>Facility Assets</td><td align="center">${a.working}</td><td align="center">${a.repair}</td></tr>
+                </tbody>
+            </table>
+
+            <h4 class="table-label">Computer Labs Summary Breakdown</h4>
+            <table class="doc-table">
+                <thead>
+                    <tr><th rowspan="2" style="text-align: center;">Lab Rooms</th><th colspan="2" align="center">Computer Units</th><th colspan="2" align="center">Facility Assets</th></tr>
+                    <tr><th align="center">Working</th><th align="center">For Repair</th><th align="center">Working</th><th align="center">For Repair</th></tr>
+                </thead>
+                <tbody>
+                    ${breakdown.map(r => `<tr><td>${r.name}</td><td align="center">${r.uw}</td><td align="center">${r.ur}</td><td align="center">${r.aw}</td><td align="center">${r.ar}</td></tr>`).join('')}
+                    <tr style="font-weight:bold; background:#f9f9f9;"><td>Total</td><td align="center">${u.working}</td><td align="center">${u.repair}</td><td align="center">${a.working}</td><td align="center">${a.repair}</td></tr>
+                </tbody>
+            </table>
+        </div>${generateSignatureHTML(preparedBy)}</div>`;
+        reportPreviewArea.innerHTML = html;
+    }
+
+    /**
+     * CONDEMNED - ALL LABORATORIES
+     */
+    function renderCondemnedSummaryOnly(data, preparedBy) {
+        const fDate = new Date(fromDateInput.value).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const tDate = new Date(toDateInput.value).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const breakdown = getPerRoomBreakdown(data.units, data.assets, true);
+
+        let html = `<div class="report-paper"><div class="report-body">` + getReportHeaderHTML() + `
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', serif;">COMPUTER LABORATORY REPORT</h2>
+                <h3 style="font-size: 16px; font-weight: 800; font-family: 'Times New Roman', serif;">CONDEMNED STATUS SUMMARY</h3>
+                <p>All Laboratories | Period: ${fDate} to ${tDate}</p>
+            </div>
+
+            <table class="doc-table" style="margin-bottom: 30px;">
+                <thead><tr><th style="text-align: center;">Category</th><th align="center">Total Condemned</th></tr></thead>
+                <tbody>
+                    <tr><td>Computer Units</td><td align="center">${data.units.length}</td></tr>
+                    <tr><td>Facility Assets</td><td align="center">${data.assets.length}</td></tr>
+                </tbody>
+            </table>
+
+            <h4 class="table-label">Computer Labs Summary</h4>
+            <table class="doc-table">
+                <thead>
+                    <tr><th rowspan="2" style="text-align: center;">Lab Rooms</th><th colspan="2" align="center">Number of Condemned</th></tr>
+                    <tr><th align="center">Computer Units</th><th align="center">Facility Assets</th></tr>
+                </thead>
+                <tbody>
+                    ${breakdown.map(r => `<tr><td>${r.name}</td><td align="center">${r.uc}</td><td align="center">${r.ac}</td></tr>`).join('')}
+                    <tr style="font-weight:bold; background:#f9f9f9;"><td>Total</td><td align="center">${data.units.length}</td><td align="center">${data.assets.length}</td></tr>
+                </tbody>
+            </table>
+        </div>${generateSignatureHTML(preparedBy)}</div>`;
+        reportPreviewArea.innerHTML = html;
+    }
+
+    /**
+     * INVENTORY REPORT
+     */
+    function renderInventoryReport(data, preparedBy) {
+        const dateObj = new Date(snapshotDateInput.value);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        let inStock = 0, outStock = 0;
+        data.forEach(item => { if (item.set_status.includes('In Stock')) inStock++; else outStock++; });
+        const total = data.length;
+        const s = { ts: total, is: inStock, os: total - inStock, ip: total > 0 ? Math.round((inStock/total)*100) : 0, op: total > 0 ? Math.round(((total-inStock)/total)*100) : 0 };
+
+        let html = `<div class="report-paper"><div class="report-body">` + getReportHeaderHTML() + `
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', Times, serif;">COMPUTER LABORATORY REPORT</h2>
+                <h3 style="font-size: 16px; font-weight: 800; font-family: 'Times New Roman', Times, serif;">SUPPLY INVENTORY SUMMARY</h3>
+                <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
+            </div>
+            <table class="doc-table">
+                <thead><tr><th width="40%" style="text-align: center;">Status</th><th align="center">Count</th><th align="center">%</th></tr></thead>
+                <tbody>
+                    <tr><td>In Stock</td><td align="center">${s.is}</td><td align="center">${s.ip}%</td></tr>
+                    <tr><td>Out of Stock</td><td align="center">${s.os}</td><td align="center">${s.op}%</td></tr>
+                    <tr class="row-total"><td>Total</td><td align="center">${s.ts}</td><td align="center">100%</td></tr>
+                </tbody>
+            </table>
+            <h4 class="table-label" style="margin-top:20px;">Inventory Supply List</h4>
+            <table class="doc-table">
+                <thead><tr><th width="60%" style="text-align: center;">Supply Name</th><th style="text-align: center;">Status</th></tr></thead>
+                <tbody>${data.map(item => `<tr><td>${item.set_tag}</td><td align="center">${item.set_status}</td></tr>`).join('')}</tbody>
+            </table>
+        </div>${generateSignatureHTML(preparedBy)}</div>`;
+        reportPreviewArea.innerHTML = html;
+    }
+
+    // --- VISUAL UPDATER (DASHBOARD) ---
     function updateVisualsOnly() {
         const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-tab');
         const activeSub = (activeTab === 'inventory') ? 'units' : document.querySelector('.sub-tab.active').getAttribute('data-sub');
-
         fetchReportData(activeTab, activeSub).then(res => {
             if (res.success) {
                 const data = res.data;
-
-                // Handle Condemned Panel
-                if (activeTab === 'condemned') {
-                    const condemnedDisplay = document.getElementById('totalCondemnedCount');
-                    const condemnedLabel = document.getElementById('condemnedLabel');
-                    if (condemnedDisplay) condemnedDisplay.textContent = data.length;
-                    if (condemnedLabel) {
-                        condemnedLabel.textContent = activeSub === 'units' ? 'Number of Condemned Units' : 'Number of Condemned Assets';
-                    }
-                    return;
-                }
-
-                const countLabel1 = document.getElementById('legendText1');
-                const countLabel2 = document.getElementById('legendText2');
+                if (activeTab === 'condemned') { document.getElementById('totalCondemnedCount').textContent = data.length; return; }
+                let posLabel = "Working", negLabel = "For Repair";
+                let posColor = "#4CAF50", negColor = "#FFC107"; 
+                if (activeTab === 'inventory') { posLabel = "In Stock"; negLabel = "Out of Stock"; negColor = "#F44336"; }
+                const label1 = document.getElementById('legendText1');
+                const label2 = document.getElementById('legendText2');
                 const dot1 = document.getElementById('legendColor1');
                 const dot2 = document.getElementById('legendColor2');
-                const countWorking = document.getElementById('countWorking');
-                const countRepair = document.getElementById('countRepair');
-
-                let posLabel = "Working";
-                let negLabel = "For Repair";
-                let posColor = "#4CAF50"; // Green
-                let negColor = "#FFC107"; // Yellow
-
-                // TERM & COLOR OVERRIDE FOR INVENTORY
-                if (activeTab === 'inventory') {
-                    posLabel = "In Stock";
-                    negLabel = "Out of Stock";
-                    negColor = "#F44336"; // Red
-                }
-
-                // Update UI Labels and Legend Colors
-                if (countLabel1) countLabel1.textContent = posLabel;
-                if (countLabel2) countLabel2.textContent = negLabel;
+                if (label1) label1.textContent = posLabel;
+                if (label2) label2.textContent = negLabel;
                 if (dot1) dot1.style.backgroundColor = posColor;
                 if (dot2) dot2.style.backgroundColor = negColor;
-
                 let posCount = 0, negCount = 0;
-                data.forEach(item => {
-                    if (item.set_status === posLabel) posCount++;
-                    else negCount++;
-                });
-
-                if(countWorking) countWorking.textContent = posCount;
-                if(countRepair) countRepair.textContent = negCount;
-                
+                data.forEach(item => { if (item.set_status.includes(posLabel)) posCount++; else negCount++; });
+                const cW = document.getElementById('countWorking');
+                const cR = document.getElementById('countRepair');
+                if(cW) cW.textContent = posCount;
+                if(cR) cR.textContent = negCount;
                 const total = posCount + negCount;
-                
-                // CHART POSITION UPDATE:
-                // We swap the logic so that the "Negative" color (Red/Yellow) 
-                // starts at 0% (top/right) and the "Positive" color (Green) follows.
                 const negPercent = total > 0 ? (negCount / total) * 100 : 0;
-                
-                if (mainDonutChart) {
-                    mainDonutChart.style.background = total > 0 
-                        ? `conic-gradient(${negColor} 0% ${negPercent}%, ${posColor} ${negPercent}% 100%)`
-                        : '#eee';
-                }
+                if (mainDonutChart) mainDonutChart.style.background = total > 0 ? `conic-gradient(${negColor} 0% ${negPercent}%, ${posColor} ${negPercent}% 100%)` : '#eee';
             }
         });
     }
 
-    // --- 6. EVENT LISTENERS ---
-
+    // --- EVENT LISTENERS ---
     tabBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+            tabBtns.forEach(b => b.classList.remove('active')); this.classList.add('active');
             const tab = this.getAttribute('data-tab');
-            
+            snapshotDateGroup.style.display = (tab === 'condemned') ? 'none' : 'block';
+            dateRangeGroup.style.display = (tab === 'condemned') ? 'flex' : 'none';
             labRoomGroup.style.display = (tab === 'inventory') ? 'none' : 'block';
             subTabsWrapper.style.display = (tab === 'inventory') ? 'none' : 'flex';
             statusChartContainer.style.display = (tab === 'condemned') ? 'none' : 'flex';
             condemnedCountPanel.style.display = (tab === 'condemned') ? 'flex' : 'none';
             statusLegend.style.display = (tab === 'condemned') ? 'none' : 'block';
-            
-            // IF INVENTORY: Trigger direct visual update (no rooms needed)
-            // IF OTHER: Refresh room list first
-            if (tab === 'inventory') {
-                updateVisualsOnly();
-            } else {
-                refreshRoomList();
-            }
+            refreshRoomList();
         });
     });
 
-    subTabBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            subTabBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            updateVisualsOnly();
-        });
-    });
-
+    subTabBtns.forEach(btn => { btn.addEventListener('click', function() { subTabBtns.forEach(b => b.classList.remove('active')); this.classList.add('active'); updateVisualsOnly(); }); });
     snapshotDateInput.addEventListener('change', refreshRoomList);
+    fromDateInput.addEventListener('change', refreshRoomList);
+    toDateInput.addEventListener('change', refreshRoomList);
     labRoomSelect.addEventListener('change', updateVisualsOnly);
     generateBtn.addEventListener('click', generateFormalReport);
-
     if (snapshotDateInput.value) refreshRoomList();
     if (exportBtn) exportBtn.addEventListener('click', () => window.print());
 });
