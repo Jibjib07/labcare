@@ -1,17 +1,18 @@
-<?php 
+<?php
+
 /**
  * 1. AJAX HANDLER - MUST BE AT THE ABSOLUTE TOP
  */
 if (isset($_POST['action'])) {
-    ob_start(); 
+    ob_start();
     header('Content-Type: application/json');
-    
-    require_once dirname(__FILE__) . '/../includes/db.php'; 
-    session_start(); 
+
+    require_once dirname(__FILE__) . '/../includes/db.php';
+    session_start();
 
     $response = ['success' => false, 'data' => [], 'prepared_by' => 'System Administrator'];
-    
-    if(isset($_SESSION['user_fname']) && isset($_SESSION['user_lname'])) {
+
+    if (isset($_SESSION['user_fname']) && isset($_SESSION['user_lname'])) {
         $response['prepared_by'] = $_SESSION['user_fname'] . ' ' . $_SESSION['user_lname'];
     }
 
@@ -45,7 +46,7 @@ if (isset($_POST['action'])) {
                 )
                 ORDER BY l.lab_room ASC
             ";
-            
+
             $stmt = $conn->prepare($query);
             if ($type === 'condemned') {
                 $stmt->bind_param("ssss", $fromDate, $toDate, $fromDate, $toDate);
@@ -63,7 +64,7 @@ if (isset($_POST['action'])) {
          * ACTION: generate_snapshot_report
          */
         if ($_POST['action'] === 'generate_snapshot_report') {
-            
+
             if ($type === 'inventory') {
                 // FIXED: ID removed from supply name for Inventory Reports
                 $query = "
@@ -141,22 +142,22 @@ if (isset($_POST['action'])) {
             $response['data'] = $result->fetch_all(MYSQLI_ASSOC);
             $response['success'] = true;
         }
-
     } catch (Exception $e) {
         $response['success'] = false;
         $response['message'] = $e->getMessage();
     }
 
-    ob_end_clean(); 
+    ob_end_clean();
     echo json_encode($response);
-    exit; 
+    exit;
 }
 
-require_once '../includes/db.php'; 
+require_once '../includes/db.php';
 session_start();
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -165,6 +166,7 @@ session_start();
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/report_generation.css?v=<?php echo time(); ?>">
 </head>
+
 <body>
     <?php include 'includes/sidebar.php'; ?>
 
@@ -254,7 +256,7 @@ session_start();
                     <h3 class="panel-title">Report Preview</h3>
                     <button class="btn-export" id="exportReportBtn"><i class="fas fa-file-export"></i> Export Data</button>
                 </div>
-                
+
                 <div class="report-document-container">
                     <div class="preview-content" id="reportPreviewArea">
                         <div class="empty-state">
@@ -266,6 +268,8 @@ session_start();
             </div>
         </div>
     </div>
+    <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/report_generation.js?v=<?php echo time(); ?>"></script>
 </body>
+
 </html>
