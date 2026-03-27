@@ -1101,6 +1101,7 @@ body {
   .log-status-grid {
     grid-template-columns: 1fr; /* Stack vertically on phones */
   }
+
   /* --- 1. TWO-SCREEN TRANSITION --- */
   .desktop-tab-text {
     display: none !important;

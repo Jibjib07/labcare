@@ -1,6 +1,18 @@
 /* =========================================
    1. SHARED UTILITIES & LAYOUT
    ========================================= */
+/* Hide mobile icons on desktop */
+.mobile-icon {
+  display: none !important;
+}
+
+/* Ensure desktop text aligns properly */
+.desktop-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .page-header {
   margin-bottom: 25px;
 }
@@ -74,7 +86,7 @@
 }
 .readonly-input:focus {
   border-color: #e0e0e0;
-} /* Keep border clean on click */
+}
 
 .inline-role-group {
   display: flex;
@@ -146,6 +158,30 @@
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
+}
+
+/* Password Visibility Toggle */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper .form-input {
+  padding-right: 35px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.toggle-password:hover {
+  color: #333;
 }
 
 /* =========================================
@@ -431,7 +467,7 @@
 }
 
 .security-panel {
-  margin-top: 25px; /* <--- THIS ADDS THE SEPARATION GAP */
+  margin-top: 25px;
 }
 /* --- Security Section --- */
 .security-content {
@@ -505,8 +541,13 @@
 }
 
 /* =========================================
-   6. RESPONSIVENESS (MOBILE FRIENDLY)
+   6. RESPONSIVENESS (MOBILE FRIENDLY) & MASTER-DETAIL TOGGLE
    ========================================= */
+/* Desktop State: Hide the mobile header */
+.mobile-detail-header {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .user-layout {
     grid-template-columns: 1fr;
@@ -516,13 +557,121 @@
     padding: 20px;
     margin: auto;
   }
-  .action-buttons {
-    flex-direction: column;
+
+  .search-filter-row {
+    flex-direction: row;
+    gap: 10px;
+  }
+  .search-input {
+    flex: 1;
+    min-width: 0;
+  }
+  .filter-btn {
     width: auto;
-    gap: 5px;
+    padding: 10px 12px;
+  }
+
+  .action-buttons {
+    flex-direction: row;
+    width: auto;
+    gap: 8px;
   }
   .btn-edit,
   .btn-deactivate {
     justify-content: center;
+  }
+
+  /* --- THE MASTER-DETAIL TOGGLE LOGIC --- */
+
+  /* 1. Hide Details by default on mobile */
+  .info-column-right {
+    display: none;
+  }
+
+  /* 2. When active: Hide List, Show Details */
+  .user-layout.show-mobile-details .user-list-panel {
+    display: none;
+  }
+  .user-layout.show-mobile-details .info-column-right {
+    display: flex;
+    flex-direction: column;
+    animation: modalFadeIn 0.3s ease-out;
+  }
+
+  .mobile-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-top: 5px;
+  }
+  .mobile-back-btn {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: #333;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  }
+  #mobile-detail-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #000;
+    margin: 0;
+  }
+
+  /* --- MOBILE ICON BUTTONS --- */
+
+  /* Hide desktop text, show mobile icon */
+  .desktop-text {
+    display: none !important;
+  }
+
+  .mobile-icon {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    font-size: 16px;
+  }
+
+  /* Make buttons square */
+  .panel-header-row .btn-green-add,
+  .action-buttons .btn-edit,
+  .action-buttons .btn-deactivate,
+  .action-buttons .btn-cancel-new,
+  .action-buttons .btn-green-add {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+  }
+
+  .action-buttons .btn-edit {
+    background-color: #fff;
+    color: #4caf50;
+    border: 2px solid #4caf50;
+  }
+
+  .action-buttons .btn-deactivate,
+  .action-buttons .btn-cancel-new {
+    background-color: #fff;
+    color: #666;
+    border: 2px solid #ddd;
+  }
+
+  .panel-header-row .btn-green-add,
+  .action-buttons .btn-green-add {
+    border: none;
   }
 }

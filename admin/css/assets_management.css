@@ -1618,6 +1618,28 @@ body {
     display: none !important;
   }
 
+  .btn-transfer .btn-text,
+  .btn-green-add .btn-text {
+    display: none;
+  }
+
+  .btn-transfer,
+  .btn-green-add {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important; /* Strips out the wide desktop padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .btn-transfer i,
+  .btn-green-add i {
+    margin: 0 !important; /* Removes any margin pushing the icon away from the hidden text */
+    font-size: 16px;
+  }
+
   /* Make the buttons perfectly square */
   .action-buttons button {
     width: 40px !important;

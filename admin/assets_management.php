@@ -135,10 +135,10 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
 
                         <div class="header-actions">
                             <button class="btn-transfer" onclick="openModal('transferModal', <?= $current_lab_id ?>)">
-                                <i class="fas fa-exchange-alt"></i> Transfer
+                                <i class="fas fa-exchange-alt"></i> <span class="btn-text">Transfer</span>
                             </button>
                             <button class="btn-green-add" onclick="openModal('addComputerModal', <?= $current_lab_id ?>)">
-                                <i class="fas fa-plus-circle"></i> Add
+                                <i class="fas fa-plus-circle"></i> <span class="btn-text">Add</span>
                             </button>
                         </div>
                     </div>

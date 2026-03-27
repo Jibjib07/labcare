@@ -1,6 +1,6 @@
 <?php
 include '../includes/db.php';
-require '../includes/admin_auth.php'; // This already handles role checking
+require '../includes/admin_auth.php'; 
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -12,7 +12,7 @@ if (empty($_SESSION['csrf_token'])) {
 $csrf_token = $_SESSION['csrf_token'];
 
 // ===============================
-// 🚀 HANDLE AJAX REQUESTS
+//  HANDLE AJAX REQUESTS
 // ===============================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     // Define only critical limits
     $limits = [
-        'admin_send_reset' => 10, // 1 request every 10 seconds
-        'default' => 0 // no limit for normal actions
+        'admin_send_reset' => 10, 
+        'default' => 0 
     ];
 
     $wait = $limits[$action] ?? $limits['default'];
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             if ($stmt->execute()) {
                 $newUserId = $stmt->insert_id;
-                // ✅ LOG AUDIT: ADD
+                // LOG AUDIT: ADD
                 $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, new_data) VALUES (?, ?, 'Add', ?)");
                 $logData = json_encode(['name' => $name, 'email' => $email, 'role' => $role]);
                 $audit->bind_param("iis", $adminId, $newUserId, $logData);
@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // --- 4. ADMIN SEND RESET LINK (FIXED POSITION) ---
+        // --- 4. ADMIN SEND RESET LINK ---
         if ($action === 'admin_send_reset') {
             $id = (int)$_POST['id'];
 
@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $mail->Host = 'smtp.gmail.com';
                     $mail->SMTPAuth = true;
                     $mail->Username = 'cvsuccclabcare26@gmail.com';
-                    $mail->Password = 'ftla jdqz yifw jejl';  // <-- Don't forget to generate a new app password and put it here!
+                    $mail->Password = 'ftla jdqz yifw jejl'; 
                     $mail->SMTPSecure = 'tls';
                     $mail->Port = 587;
 
@@ -231,14 +231,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $mail->addAddress($user['user_email'], $user['user_name']);
                     $mail->Subject = 'LabCare - Password Reset Initiated by Admin';
                     
-                    // Uses the BASE_URL defined in includes/db.php!
                     $resetLink = BASE_URL . "password_resets.php?token=" . $rawToken;
 
                     $mail->Body = "Hello {$user['user_name']},\n\nAn administrator has initiated a password reset for your account. Please click the link below to set a new password:\n\n{$resetLink}\n\nThis link expires in 1 hour.";
 
                     if ($mail->send()) {
-                    // ✅ LOG AUDIT TRAIL
-                    $actionType = 'Send Password Reset Link'; // match ENUM
+                    // LOG AUDIT TRAIL
+                    $actionType = 'Send Password Reset Link'; 
                     $logData = json_encode([
                         'message' => "Reset link sent to {$user['user_email']} by admin ID {$adminId}",
                         'ip' => $_SERVER['REMOTE_ADDR'],
@@ -295,7 +294,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             <div class="panel white-panel user-list-panel">
                 <div class="panel-header-row">
                     <h3><span id="list-status-title">Active</span> User List</h3>
-                    <button id="btn-open-add-modal" class="btn-green-add"><i class="fas fa-plus-circle"></i> Add</button>
+                    <button id="btn-open-add-modal" class="btn-green-add">
+                        <span class="desktop-text"><i class="fas fa-plus-circle"></i> Add</span>
+                        <span class="mobile-icon"><i class="fas fa-plus"></i></span>
+                    </button>
                 </div>
 
                 <div class="search-filter-row">
@@ -346,12 +348,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
 
             <div class="info-column-right">
+                
+                <div class="mobile-detail-header" id="mobile-detail-header">
+                    <button id="mobile-back-btn" class="mobile-back-btn">
+                        <i class="fas fa-arrow-left"></i> 
+                    </button>
+                    <h2 id="mobile-detail-title">User Details</h2>
+                </div>
                 <div class="panel white-panel user-info-panel" id="user-info-panel">
                     <div class="panel-header-row">
                         <h3>User Information</h3>
                         <div class="action-buttons" id="info-action-buttons">
-                            <button id="btn-edit" class="btn-edit"><i class="fas fa-pen"></i> Edit</button>
-                            <button id="btn-deactivate-trigger" class="btn-deactivate"><i class="fas fa-user-slash"></i> Deactivate</button>
+                            <button id="btn-edit" class="btn-edit">
+                                <span class="desktop-text"><i class="fas fa-pen"></i> Edit</span>
+                                <span class="mobile-icon"><i class="fas fa-pen"></i></span>
+                            </button>
+                            <button id="btn-deactivate-trigger" class="btn-deactivate">
+                                <span class="desktop-text"><i class="fas fa-user-slash"></i> Deactivate</span>
+                                <span class="mobile-icon"><i class="fas fa-user-slash"></i></span>
+                            </button>
                         </div>
                     </div>
 
@@ -415,11 +430,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="add-password" class="form-input" placeholder="Enter password">
+                        <div class="password-wrapper">
+                            <input type="password" id="add-password" class="form-input" placeholder="Enter password">
+                            <i class="fas fa-eye toggle-password" data-target="add-password"></i>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Confirm Password</label>
-                        <input type="password" id="add-confirm-password" class="form-input" placeholder="Re-enter password">
+                        <div class="password-wrapper">
+                            <input type="password" id="add-confirm-password" class="form-input" placeholder="Re-enter password">
+                            <i class="fas fa-eye toggle-password" data-target="add-confirm-password"></i>
+                        </div>
                     </div>
                     <div class="modal-actions" style="margin-top: 30px;">
                         <button type="button" id="btn-cancel-add" class="btn-cancel-new">Cancel</button>

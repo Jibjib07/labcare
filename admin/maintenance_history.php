@@ -41,13 +41,23 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
             while ($row = $res_supply->fetch_assoc()) {
                 $status = $row['suphisto_stat'] ?? '-';
                 $badgeClass = ($status == 'In Stock' || $status == 'Added') ? 'green' : (($status == 'Out of Stock' || $status == 'Removed') ? 'red' : 'orange');
-                echo "<tr>";
-                echo "<td>" . htmlspecialchars(date('m/d/Y', strtotime($row['suphisto_date']))) . "</td>";
-                echo "<td>" . htmlspecialchars($row['suphisto_act']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['suphisto_actor']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['suphisto_remarks']) . "</td>";
-                echo "<td><span class='badge {$badgeClass}'>" . htmlspecialchars($status) . "</span></td>";
-                echo "</tr>";
+                $date = htmlspecialchars(date('M d, Y', strtotime($row['suphisto_date'])));
+                $actor = htmlspecialchars($row['suphisto_actor']);
+                $action = htmlspecialchars($row['suphisto_act']);
+                $remarks = htmlspecialchars($row['suphisto_remarks']);
+
+                echo "<div class='timeline-card'>";
+                echo "  <div class='timeline-card-header'>";
+                echo "      <div class='user-info'><i class='fas fa-user-circle'></i> <strong>{$actor}</strong> <span class='card-date'>&bull; {$date}</span></div>";
+                echo "      <span class='status-pill {$badgeClass}'>{$status}</span>";
+                echo "  </div>";
+                echo "  <div class='timeline-card-subheader'>";
+                echo "      <span class='info-item'><strong>Action:</strong> {$action}</span>";
+                echo "  </div>";
+                echo "  <div class='timeline-card-body'>";
+                echo "      <div class='remarks-box'>\"{$remarks}\"</div>";
+                echo "  </div>";
+                echo "</div>";
             }
         }
     } else {
@@ -61,14 +71,25 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
             while ($row = $res_unit->fetch_assoc()) {
                 $status = $row['report_status'];
                 $badgeClass = ($status == 'Resolved' || $status == 'Working') ? 'green' : (($status == 'Condemned') ? 'red' : 'orange');
-                echo "<tr>";
-                echo "<td>" . htmlspecialchars(date('m/d/Y', strtotime($row['report_date']))) . "</td>";
-                echo "<td>" . htmlspecialchars($row['report_actor']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['report_affected'] ?? '-') . "</td>";
-                echo "<td>" . htmlspecialchars($row['report_action'] ?? '-') . "</td>";
-                echo "<td>" . htmlspecialchars($row['report_remarks']) . "</td>";
-                echo "<td><span class='badge {$badgeClass}'>" . htmlspecialchars($status) . "</span></td>";
-                echo "</tr>";
+                $date = htmlspecialchars(date('M d, Y', strtotime($row['report_date'])));
+                $actor = htmlspecialchars($row['report_actor']);
+                $affected = htmlspecialchars($row['report_affected'] ?? '-');
+                $action = htmlspecialchars($row['report_action'] ?? '-');
+                $remarks = htmlspecialchars($row['report_remarks']);
+
+                echo "<div class='timeline-card'>";
+                echo "  <div class='timeline-card-header'>";
+                echo "      <div class='user-info'><i class='fas fa-user-circle'></i> <strong>{$actor}</strong> <span class='card-date'>&bull; {$date}</span></div>";
+                echo "      <span class='status-pill {$badgeClass}'>{$status}</span>";
+                echo "  </div>";
+                echo "  <div class='timeline-card-subheader'>";
+                echo "      <span class='info-item'><strong>Action:</strong> {$action}</span>";
+                echo "      <span class='info-item'><strong>Affected:</strong> {$affected}</span>";
+                echo "  </div>";
+                echo "  <div class='timeline-card-body'>";
+                echo "      <div class='remarks-box'>\"{$remarks}\"</div>";
+                echo "  </div>";
+                echo "</div>";
             }
         } else {
             $stmt_asset = $conn->prepare("SELECT report_date, report_actor, report_affected, report_action, report_remarks, report_status FROM asset_history WHERE asset_id = ? ORDER BY report_date DESC");
@@ -81,31 +102,33 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
                 while ($row = $res_asset->fetch_assoc()) {
                     $status = $row['report_status'];
                     $badgeClass = ($status == 'Resolved' || $status == 'Working') ? 'green' : (($status == 'Condemned') ? 'red' : 'orange');
-                    echo "<tr>";
-                    echo "<td>" . htmlspecialchars(date('m/d/Y', strtotime($row['report_date']))) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['report_actor']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['report_affected'] ?? '-') . "</td>";
-                    echo "<td>" . htmlspecialchars($row['report_action'] ?? '-') . "</td>";
-                    echo "<td>" . htmlspecialchars($row['report_remarks']) . "</td>";
-                    echo "<td><span class='badge {$badgeClass}'>" . htmlspecialchars($status) . "</span></td>";
-                    echo "</tr>";
+                    $date = htmlspecialchars(date('M d, Y', strtotime($row['report_date'])));
+                    $actor = htmlspecialchars($row['report_actor']);
+                    $affected = htmlspecialchars($row['report_affected'] ?? '-');
+                    $action = htmlspecialchars($row['report_action'] ?? '-');
+                    $remarks = htmlspecialchars($row['report_remarks']);
+
+                    echo "<div class='timeline-card'>";
+                    echo "  <div class='timeline-card-header'>";
+                    echo "      <div class='user-info'><i class='fas fa-user-circle'></i> <strong>{$actor}</strong> <span class='card-date'>&bull; {$date}</span></div>";
+                    echo "      <span class='status-pill {$badgeClass}'>{$status}</span>";
+                    echo "  </div>";
+                    echo "  <div class='timeline-card-subheader'>";
+                    echo "      <span class='info-item'><strong>Action:</strong> {$action}</span>";
+                    echo "      <span class='info-item'><strong>Affected:</strong> {$affected}</span>";
+                    echo "  </div>";
+                    echo "  <div class='timeline-card-body'>";
+                    echo "      <div class='remarks-box'>\"{$remarks}\"</div>";
+                    echo "  </div>";
+                    echo "</div>";
                 }
             }
         }
     }
 
     if (!$foundData) {
-        $colSpan = ($type === 'inventory') ? 5 : 6;
-        echo "<tr class='no-data-row'><td colspan='{$colSpan}'>No activity history found for this item.</td></tr>";
+        echo "<div style='text-align: center; padding: 40px; color: #757575;'>No activity history found for this item.</div>";
     }
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
-    header('Content-Type: application/json');
-    $update = $conn->prepare("UPDATE laboratories SET lab_status = 'Available' WHERE lab_room = ?");
-    $update->bind_param("s", $_POST['restore_room_id']);
-    echo json_encode(["success" => $update->execute()]);
     exit;
 }
 ?>
@@ -146,17 +169,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                         </div>
 
                         <div id="retirement-nav-container" class="pill-container" style="display: none;">
-                            <button class="main-nav-btn" onclick="switchHistoryTab('retired-units', this)">Condemned Units</button>
-                            <button class="main-nav-btn" onclick="switchHistoryTab('retired-assets', this)">Condemned Assets</button>
-                            <button class="main-nav-btn" onclick="switchHistoryTab('archives', this)">Lab Archives</button>
+                            <button class="main-nav-btn" onclick="switchHistoryTab('retired-units', this)">Units</button>
+                            <button class="main-nav-btn" onclick="switchHistoryTab('retired-assets', this)">Assets</button>
+                            <button class="main-nav-btn" onclick="switchHistoryTab('archives', this)">Lab</button>
                         </div>
                     </div>
 
-                    <div class="search-filter-row">
+                    <div class="search-filter-row" style="position: relative;">
                         <input type="text" class="search-input" id="main-search-input" placeholder="Search record..." style="flex: 2;">
-                        <button class="btn-filter-date" onclick="toggleDateFilter()" style="flex: 1;">
-                            Date Range <i class="fas fa-filter"></i>
-                        </button>
+                        
+                        <div class="date-filter-container" style="flex: 1;">
+                            <button class="btn-filter-date" onclick="toggleDateDropdown(event)" style="width: 100%; height: 100%; position: relative; z-index: 101;">
+                                Date Range <i class="fas fa-filter"></i>
+                            </button>
+                            
+                            <div class="dropdown-backdrop" id="dropdown-backdrop" onclick="closeDateDropdown()"></div>
+                            
+                            <div class="date-dropdown" id="date-dropdown">
+                                <div class="date-input-group">
+                                    <label>Start Date</label>
+                                    <input type="date" id="filter-start-date" onchange="applyFilters()">
+                                </div>
+                                <div class="date-input-group">
+                                    <label>End Date</label>
+                                    <input type="date" id="filter-end-date" onchange="applyFilters()">
+                                </div>
+                                <div class="date-actions">
+                                    <button onclick="clearDateFilter(event)" class="btn-clear-date">Clear</button>
+                                    <button onclick="applyFilters(); closeDateDropdown();" class="btn-apply-date">Done</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="unit-tab" class="tab-content">
@@ -165,18 +208,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                 <tbody>
                                     <?php
                                     $res = $conn->query("SELECT set_id, set_tag, lab_room, latest_activity, set_status FROM units WHERE set_status IN ('Working', 'For Repair') ORDER BY latest_activity DESC");
-                                    if ($res->num_rows > 0) {
-                                        while ($row = $res->fetch_assoc()) {
-                                            $statusClass = ($row['set_status'] == 'Working') ? 'badge green' : 'badge orange';
-                                            $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
-                                            echo "<tr class='selectable-row' data-type='unit' data-id='{$row['set_id']}' data-tag='{$row['set_tag']}'>";
-                                            echo "<td><div class='tag-info'><strong>PC-{$row['set_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
-                                            echo "<td><div class='activity-info'><strong>Latest Activity | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
-                                            echo "<td class='text-right'><span class='status-pill {$statusClass}'>{$row['set_status']}</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr class='no-data-row'><td colspan='3'>No active units found.</td></tr>";
+                                    while ($row = $res->fetch_assoc()) {
+                                        $statusClass = ($row['set_status'] == 'Working') ? 'badge green' : 'badge orange';
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='unit' data-id='{$row['set_id']}' data-tag='PC-{$row['set_tag']}'>";
+                                        echo "<td><div class='tag-info'><strong>PC-{$row['set_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Latest Activity <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill {$statusClass}'>{$row['set_status']}</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -190,18 +229,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                 <tbody>
                                     <?php
                                     $res = $conn->query("SELECT asset_id, asset_tag, lab_room, latest_activity, asset_status FROM assets WHERE asset_status IN ('Working', 'For Repair') ORDER BY latest_activity DESC");
-                                    if ($res->num_rows > 0) {
-                                        while ($row = $res->fetch_assoc()) {
-                                            $statusClass = ($row['asset_status'] == 'Working') ? 'badge green' : 'badge orange';
-                                            $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
-                                            echo "<tr class='selectable-row' data-type='asset' data-id='{$row['asset_id']}' data-tag='{$row['asset_tag']}'>";
-                                            echo "<td><div class='tag-info'><strong>FA-{$row['asset_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
-                                            echo "<td><div class='activity-info'><strong>Latest Activity | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
-                                            echo "<td class='text-right'><span class='status-pill {$statusClass}'>{$row['asset_status']}</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr class='no-data-row'><td colspan='3'>No active assets found.</td></tr>";
+                                    while ($row = $res->fetch_assoc()) {
+                                        $statusClass = ($row['asset_status'] == 'Working') ? 'badge green' : 'badge orange';
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='asset' data-id='{$row['asset_id']}' data-tag='FA-{$row['asset_tag']}'>";
+                                        echo "<td><div class='tag-info'><strong>FA-{$row['asset_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Latest Activity <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill {$statusClass}'>{$row['asset_status']}</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -215,19 +250,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                 <tbody>
                                     <?php
                                     $res = $conn->query("SELECT supply_id, supply_name, latest_activity, supply_status FROM supply ORDER BY latest_activity DESC");
-                                    if ($res->num_rows > 0) {
-                                        while ($row = $res->fetch_assoc()) {
-                                            $status = $row['supply_status'];
-                                            $statusClass = ($status == 'In Stock') ? 'badge green' : (($status == 'Low Stock') ? 'badge orange' : 'badge red');
-                                            $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
-                                            echo "<tr class='selectable-row' data-type='inventory' data-id='{$row['supply_id']}' data-tag='{$row['supply_name']}'>";
-                                            echo "<td><div class='tag-info'><strong>{$row['supply_name']}</strong></div></td>";
-                                            echo "<td><div class='activity-info'><strong>Latest Activity | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
-                                            echo "<td class='text-right'><span class='status-pill {$statusClass}'>{$status}</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr class='no-data-row'><td colspan='3'>No inventory records found.</td></tr>";
+                                    while ($row = $res->fetch_assoc()) {
+                                        $status = $row['supply_status'];
+                                        $statusClass = ($status == 'In Stock') ? 'badge green' : (($status == 'Low Stock') ? 'badge orange' : 'badge red');
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='inventory' data-id='{$row['supply_id']}' data-tag='{$row['supply_name']}'>";
+                                        echo "<td><div class='tag-info'><strong>{$row['supply_name']}</strong></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Latest Activity <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill {$statusClass}'>{$status}</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -241,17 +272,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                 <tbody>
                                     <?php
                                     $res = $conn->query("SELECT set_id, set_tag, latest_activity, lab_room FROM units WHERE set_status = 'Condemned' ORDER BY latest_activity DESC");
-                                    if ($res->num_rows > 0) {
-                                        while ($row = $res->fetch_assoc()) {
-                                            $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
-                                            echo "<tr class='selectable-row' data-type='retired' data-id='{$row['set_id']}' data-tag='{$row['set_tag']}'>";
-                                            echo "<td><div class='tag-info'><strong>PC-{$row['set_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
-                                            echo "<td><div class='activity-info'><strong>Condemned On | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
-                                            echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr class='no-data-row'><td colspan='3'>No condemned units found.</td></tr>";
+                                    while ($row = $res->fetch_assoc()) {
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='retired' data-id='{$row['set_id']}' data-tag='PC-{$row['set_tag']}'>";
+                                        echo "<td><div class='tag-info'><strong>PC-{$row['set_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Condemned On <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -265,17 +292,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                 <tbody>
                                     <?php
                                     $res = $conn->query("SELECT asset_id, asset_tag, lab_room, latest_activity FROM assets WHERE asset_status = 'Condemned' ORDER BY latest_activity DESC");
-                                    if ($res->num_rows > 0) {
-                                        while ($row = $res->fetch_assoc()) {
-                                            $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
-                                            echo "<tr class='selectable-row' data-type='retired' data-id='{$row['asset_id']}' data-tag='{$row['asset_tag']}'>";
-                                            echo "<td><div class='tag-info'><strong>FA-{$row['asset_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
-                                            echo "<td><div class='activity-info'><strong>Condemned On | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
-                                            echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr class='no-data-row'><td colspan='3'>No condemned assets found.</td></tr>";
+                                    while ($row = $res->fetch_assoc()) {
+                                        $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
+                                        echo "<tr class='selectable-row' data-type='retired' data-id='{$row['asset_id']}' data-tag='FA-{$row['asset_tag']}'>";
+                                        echo "<td><div class='tag-info'><strong>FA-{$row['asset_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Condemned On <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -289,21 +312,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                 <tbody>
                                     <?php
                                     $res = $conn->query("SELECT l.lab_room, l.lab_name, l.lab_status, MAX(h.archived_date) as archived_date 
-                                                         FROM laboratories l 
-                                                         INNER JOIN lab_history h ON l.lab_room = h.lab_room 
-                                                         WHERE l.lab_status = 'Archived' 
-                                                         GROUP BY l.lab_room");
-                                    if ($res->num_rows > 0) {
-                                        while ($row = $res->fetch_assoc()) {
-                                            $formattedDate = date('m/d/Y', strtotime($row['archived_date']));
-                                            echo "<tr class='selectable-row' data-type='archive' data-id='{$row['lab_room']}'>";
-                                            echo "<td><div class='tag-info'><strong>Room {$row['lab_room']}</strong><span class='separator'> | </span><span class='room-text'>({$row['lab_name']})</span></div></td>";
-                                            echo "<td><div class='activity-info'><strong>Archived On | </strong><span class='date-text'>{$formattedDate}</span></div></td>";
-                                            echo "<td class='text-right'><span class='status-pill badge-archived'>Archived</span></td>";
-                                            echo "</tr>";
-                                        }
-                                    } else {
-                                        echo "<tr class='no-data-row'><td colspan='3'>No archived rooms found.</td></tr>";
+                                                        FROM laboratories l 
+                                                        INNER JOIN lab_history h ON l.lab_room = h.lab_room 
+                                                        WHERE l.lab_status = 'Archived' 
+                                                        GROUP BY l.lab_room");
+                                    while ($row = $res->fetch_assoc()) {
+                                        $formattedDate = date('m/d/Y', strtotime($row['archived_date']));
+                                        echo "<tr class='selectable-row' data-type='archive' data-id='{$row['lab_room']}' data-tag='Room {$row['lab_room']}'>";
+                                        echo "<td><div class='tag-info'><strong>Room {$row['lab_room']}</strong><span class='separator'> | </span><span class='room-text'>({$row['lab_name']})</span></div></td>";
+                                        echo "<td><div class='activity-info'><strong>Archived On <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
+                                        echo "<td class='text-right'><span class='status-pill badge-archived'>Archived</span></td>";
+                                        echo "</tr>";
                                     }
                                     ?>
                                 </tbody>
@@ -312,52 +331,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                     </div>
                 </div>
 
-                <div class="panel white-panel right-panel">
+                <div class="panel white-panel right-panel" id="right-panel">
+                    <div class="mobile-detail-header">
+                        <button class="mobile-back-btn" onclick="closeMobileDetails()">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <h3 id="mobile-detail-title">Details</h3>
+                    </div>
+
                     <div id="view-full-timeline" class="history-view">
-                        <div class="section-header-row">
-                            <h3 id="timeline-title">Activity Timeline</h3>
-                        </div>
+                        <div class="section-header-row"><h3 id="timeline-title">Activity Timeline</h3></div>
                         <div class="table-container">
-                            <table class="timeline-table">
-                                <thead id="timeline-thead">
-                                    <tr><th>Date</th><th>By</th><th>Affected</th><th>Action</th><th>Remarks</th><th>Status</th></tr>
-                                </thead>
-                                <tbody class="data-body">
-                                    <tr class="placeholder-row"><td colspan="6" style="text-align: center; padding: 40px; color: #757575;"><em>Select an item on the left to view history.</em></td></tr>
-                                </tbody>
-                            </table>
+                            <div class="timeline-feed data-body">
+                                <div style="text-align: center; padding: 40px; color: #757575;"><em>Select an item on the left.</em></div>
+                            </div>
                         </div>
                     </div>
 
                     <div id="view-retired-timeline" class="history-view" style="display: none;">
-                        <div class="section-header-row"><h3>Retirement Record</h3></div>
+                        <div class="section-header-row"><h3 id="retired-title">Retirement Record</h3></div>
                         <div class="table-container">
-                            <table class="timeline-table">
-                                <thead id="retired-thead">
-                                    <tr><th>Date</th><th>By</th><th>Affected</th><th>Action</th><th>Remarks</th><th>Status</th></tr>
-                                </thead>
-                                <tbody class="data-body">
-                                    <tr class="placeholder-row"><td colspan="6" style="text-align: center; padding: 40px; color: #757575;"><em>Select a retired item to view record.</em></td></tr>
-                                </tbody>
-                            </table>
+                            <div class="timeline-feed data-body">
+                                <div style="text-align: center; padding: 40px; color: #757575;"><em>Select a retired item.</em></div>
+                            </div>
                         </div>
                     </div>
 
                     <div id="view-archives-details" class="history-view" style="display: none;">
-                        <div class="section-header-row">
-                            <h3>Archive Details</h3>
-                            <span id="archive-room-id" style="display: none;"></span>
-                        </div>
-                        <div class="detail-group">
-                            <label>Archive Reason:</label>
-                            <div class="detail-box" id="archive-reason-text">Select a room to view details.</div>
-                        </div>
-                        <div class="detail-group">
-                            <label>Archived By:</label>
-                            <div class="detail-box mini" id="archived-by-name">-</div>
+                        <div class="section-header-row"><h3 id="archive-title">Archive Details</h3></div>
+                        <div class="timeline-card archive-summary-card">
+                            <div class="timeline-card-subheader archive-meta">
+                                <div class="user-info">
+                                    <i class="fas fa-user-circle"></i> 
+                                    <span><strong>Archived By:</strong> <span id="archived-by-name">-</span></span>
+                                </div>
+                                <div class="date-info" style="font-size: 13px; color: #666; display: flex; align-items: center; gap: 5px;">
+                                    <i class="far fa-calendar-alt"></i>
+                                    <span><strong>Date:</strong> <span id="archive-date-text">-</span></span>
+                                </div>
+                            </div>
+                            <div class="timeline-card-body">
+                                <strong style="display: block; margin-bottom: 8px; font-size: 13px; color: #222;">Reason for Archiving:</strong>
+                                <div class="remarks-box" id="archive-reason-text">Waiting for selection...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>

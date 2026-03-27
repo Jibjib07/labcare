@@ -178,11 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (status === "Active") {
       infoStatus.className = "info-value status-bg";
       btnAction2.className = "btn-deactivate";
-      btnAction2.innerHTML = `<i class="fas fa-user-slash"></i> Deactivate`;
+      btnAction2.innerHTML = `<i class="fas fa-user-slash"></i> <span>Deactivate</span>`;
     } else {
       infoStatus.className = "info-value status-bg deact-bg";
       btnAction2.className = "btn-green-add";
-      btnAction2.innerHTML = `<i class="fas fa-undo"></i> Re-activate`;
+      btnAction2.innerHTML = `<i class="fas fa-undo"></i> <span>Re-activate</span>`;
     }
   }
 
@@ -199,7 +199,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (isEditing) toggleEditMode();
       populateInfoPanel(item);
+
+      // 🟢 MOBILE TRANSITION LOGIC
+      if (window.innerWidth <= 900) {
+        const userName = item.getAttribute("data-name");
+        const detailTitle = document.getElementById("mobile-detail-title");
+        if (detailTitle) detailTitle.innerText = userName;
+
+        document
+          .querySelector(".user-layout")
+          .classList.add("show-mobile-details");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     });
+  }
+
+  // 🟢 MOBILE BACK BUTTON LOGIC
+  const mobileBackBtn = document.getElementById("mobile-back-btn");
+  if (mobileBackBtn) {
+    mobileBackBtn.addEventListener("click", () => {
+      document
+        .querySelector(".user-layout")
+        .classList.remove("show-mobile-details");
+    });
+  }
+
+  function updateStatusVisuals() {
+    const status = infoStatus.innerText.trim();
+    if (status === "Active") {
+      infoStatus.className = "info-value status-bg";
+      btnAction2.className = "btn-deactivate";
+      btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-user-slash"></i> Deactivate</span><span class="mobile-icon"><i class="fas fa-user-slash"></i></span>`;
+    } else {
+      infoStatus.className = "info-value status-bg deact-bg";
+      btnAction2.className = "btn-green-add";
+      btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-undo"></i> Re-activate</span><span class="mobile-icon"><i class="fas fa-undo"></i></span>`;
+    }
   }
 
   function toggleEditMode() {
@@ -240,20 +275,23 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
 
+      // 🟢 Save and Cancel buttons (Desktop original + Mobile specific icons)
       btnAction1.className = "btn-green-add";
-      btnAction1.innerHTML = `<i class="fas fa-check-circle"></i> Save`;
-      btnAction2.style.display = "inline-block"; // Ensure visible as Cancel button
+      btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-check-circle"></i> Save</span><span class="mobile-icon"><i class="fas fa-save"></i></span>`;
+
+      btnAction2.style.display = "inline-flex";
       btnAction2.className = "btn-cancel-new";
-      btnAction2.innerHTML = `Cancel`;
+      btnAction2.innerHTML = `<span class="desktop-text">Cancel</span><span class="mobile-icon"><i class="fas fa-times"></i></span>`;
     } else {
       infoName.innerText = infoName.dataset.val;
       infoEmail.innerText = infoEmail.dataset.val;
       infoRole.innerText = infoRole.dataset.val;
       updateStatusVisuals();
 
+      // 🟢 Restore Edit button
       btnAction1.className = "btn-edit";
-      btnAction1.innerHTML = `<i class="fas fa-pen"></i> Edit`;
-      populateInfoPanel(currentItem); // Re-run self checks
+      btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-pen"></i> Edit</span><span class="mobile-icon"><i class="fas fa-pen"></i></span>`;
+      populateInfoPanel(currentItem);
     }
   }
 
@@ -341,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ✅ ACTION: SEND RESET LINK
+  // ACTION: SEND RESET LINK
   let resetArmed = false;
   let resetTimeout = null;
 
@@ -561,4 +599,26 @@ document.addEventListener("DOMContentLoaded", () => {
           : "none";
     });
   }
+
+  // Toggle password visibility
+  const togglePasswordIcons = document.querySelectorAll(".toggle-password");
+
+  togglePasswordIcons.forEach((icon) => {
+    icon.addEventListener("click", function () {
+      const targetId = this.getAttribute("data-target");
+      const inputField = document.getElementById(targetId);
+
+      if (inputField.type === "password") {
+        // Show password
+        inputField.type = "text";
+        this.classList.remove("fa-eye");
+        this.classList.add("fa-eye-slash");
+      } else {
+        // Hide password
+        inputField.type = "password";
+        this.classList.remove("fa-eye-slash");
+        this.classList.add("fa-eye");
+      }
+    });
+  });
 });

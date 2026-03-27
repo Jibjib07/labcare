@@ -24,7 +24,7 @@ if (isset($_POST['save_profile'])) {
     $user_name = trim($_POST['full_name']);
     $user_email = trim($_POST['email']);
 
-    // 🔹 Frontend validation fallback (redundant server-side)
+    // 🔹 Frontend validation fallback
     if (empty($user_name) || empty($user_email)) {
         $error = "Full Name and Email Address are required.";
     } elseif (!filter_var($user_email, FILTER_VALIDATE_EMAIL)) {
@@ -86,7 +86,6 @@ if (isset($_POST['save_profile'])) {
                     $logStmt->bind_param("iisss", $user_id, $user_id, $actionType, $oldDataJson, $newDataJson);
                     $logStmt->execute();
                     $logStmt->close();
-
                 } else {
                     $error = "Failed to update profile.";
                 }
@@ -169,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $mail->setFrom('cvsuccclabcare26@gmail.com', 'LabCare');
         $mail->addAddress($user['user_email'], $user['user_name']);
 
-        // Uses the BASE_URL defined in includes/db.php!
+        // Uses the BASE_URL defined in includes/db.php
         $resetLink = BASE_URL . "password_resets.php?token=" . $rawToken;
 
         $mail->Subject = 'LabCare Password Reset';
@@ -196,9 +195,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         echo json_encode(['status' => 'success', 'message' => 'Password reset email sent', 'csrf_token' => $_SESSION['csrf_token']]);
         exit;
-
     } catch (Exception $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Mailer Error: '.$mail->ErrorInfo, 'csrf_token' => $_SESSION['csrf_token']]);
+        echo json_encode(['status' => 'error', 'message' => 'Mailer Error: ' . $mail->ErrorInfo, 'csrf_token' => $_SESSION['csrf_token']]);
         exit;
     }
 }
@@ -216,7 +214,11 @@ $stmt->close();
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Settings - LabCare</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/geist-font@latest/dist/geist-sans/style.css" rel="stylesheet">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/account_settings.css?v=<?php echo time(); ?>">
@@ -225,7 +227,6 @@ $stmt->close();
 <body>
     <?php include 'includes/sidebar.php'; ?>
 
-    <!-- Toast Container -->
     <div id="authToast" class="toast">
         <div id="toast-icon"></div>
         <div>
@@ -234,7 +235,6 @@ $stmt->close();
         </div>
     </div>
 
-    <!-- PHP success trigger for profile save -->
     <?php if (!empty($success)) : ?>
         <input type="hidden" id="php_success" value="<?php echo htmlspecialchars($success); ?>">
     <?php endif; ?>
@@ -253,7 +253,6 @@ $stmt->close();
                     <h3>Profile Details</h3>
                     <div class="divider"></div>
 
-                    <!-- PHP error trigger for empty username/email -->
                     <?php if (!empty($error) && $error === "Full Name and Email Address are required.") : ?>
                         <input type="hidden" id="php_error" value="<?php echo htmlspecialchars($error); ?>">
                     <?php endif; ?>
@@ -266,7 +265,7 @@ $stmt->close();
                                 name="full_name"
                                 class="input-field"
                                 value="<?php echo htmlspecialchars($user['user_name']); ?>"
-                                >
+                                required>
                         </div>
 
                         <div class="form-group">
@@ -276,7 +275,7 @@ $stmt->close();
                                 name="email"
                                 class="input-field"
                                 value="<?php echo htmlspecialchars($user['user_email']); ?>"
-                                >
+                                required>
                         </div>
 
                         <div class="save-btn-container">
@@ -305,8 +304,6 @@ $stmt->close();
             </div>
 
             <div class="panel white-panel info-panel">
-                <h3>System Information</h3>
-
                 <div class="info-block">
                     <h4>CVSU Mission</h4>
                     <p>
@@ -348,36 +345,37 @@ $stmt->close();
         </div>
     </div>
 
-    <!-- RESET CONFIRM MODAL -->
     <div id="reset-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h2 style="color:#7B1FA2;">Send Password Reset</h2>
+        <div class="modal-content">
+            <h2 style="color:#7B1FA2;">Send Password Reset</h2>
 
-        <p style="color: #666; font-size: 0.85rem; margin-bottom: 20px;">
-        A secure reset link will be sent to your registered email.
-        </p>
+            <p style="color: #666; font-size: 0.85rem; margin-bottom: 20px;">
+                A secure reset link will be sent to your registered email.
+            </p>
 
-        <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="reset-name" class="input-field readonly-input" readonly>
-        </div>
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="reset-name" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888;" readonly>
+            </div>
 
-        <div class="form-group">
-        <label>Email Address</label>
-        <input type="text" id="reset-email" class="input-field readonly-input" readonly>
-        </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="text" id="reset-email" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888;" readonly>
+            </div>
 
-        <div class="modal-actions">
-        <button id="btn-cancel-reset" class="btn-cancel-new">Cancel</button>
-        <button id="btn-confirm-reset" class="btn-purple-reset">
-            <i class="fas fa-paper-plane"></i> Send Link
-        </button>
+            <div class="modal-actions">
+                <button id="btn-cancel-reset" class="btn-cancel-new">Cancel</button>
+                <button id="btn-confirm-reset" class="btn-purple-reset">
+                    <i class="fas fa-paper-plane"></i> Send Link
+                </button>
+            </div>
         </div>
     </div>
-    </div>
+
     <script>
         window.csrfToken = "<?php echo $_SESSION['csrf_token']; ?>";
     </script>
+    <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/account_settings.js?v=<?php echo time(); ?>"></script>
 </body>
 
