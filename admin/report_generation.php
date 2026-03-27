@@ -176,8 +176,8 @@ session_start();
             <p>Analytics and Formal Documentation System</p>
         </div>
 
-        <div class="report-layout">
-            <div class="panel white-panel">
+        <div class="report-layout" id="reportLayout">
+            <div class="panel white-panel form-panel" id="formPanel">
                 <div class="panel-header-row">
                     <h3 class="panel-title">Generate Report</h3>
                     <button class="btn-generate" id="generateReportBtn">
@@ -251,10 +251,21 @@ session_start();
                 </div>
             </div>
 
-            <div class="panel white-panel preview-panel">
+            <div class="panel white-panel preview-panel" id="previewPanel">
+                
+                <div class="mobile-back-container">
+                    <button class="btn-back" id="backToGenerateBtn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <span class="back-text">Back to Generate</span>
+                </div>
+
                 <div class="panel-header-row">
-                    <h3 class="panel-title">Report Preview</h3>
-                    <button class="btn-export" id="exportReportBtn"><i class="fas fa-file-export"></i> Export Data</button>
+                    <h3 class="panel-title">Preview Content</h3> 
+                    
+                    <button class="btn-export" id="exportReportBtn">
+                        <i class="fas fa-file-export"></i> <span class="export-text">Export Data</span>
+                    </button>
                 </div>
 
                 <div class="report-document-container">
