@@ -9,10 +9,13 @@
 
 html,
 body {
-  overflow-x: hidden; /* Prevents the screen from sliding left/right */
+  font-family: "Geist Sans", sans-serif; /* THIS WAS MISSING! */
+  background-color: #f8f9fa; /* Ensures the background matches other pages */
+  overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 /* =========================================
@@ -50,10 +53,21 @@ body {
   border-top: 1px solid #eee;
   margin-bottom: 25px;
 }
+
 .page-header h1 {
-  font-size: 24px !important;
+  font-size: 24px;
+  color: #000;
   margin-bottom: 2px !important;
+  font-weight: 900;
+  letter-spacing: -0.5px;
   line-height: 1.1;
+}
+
+.page-header p {
+  color: #555;
+  font-size: 14px;
+  margin-top: 5px;
+  margin-bottom: 0;
 }
 /* =========================================
    FORMS & BUTTONS
