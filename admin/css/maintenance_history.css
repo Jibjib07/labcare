@@ -2,345 +2,698 @@
    1. GLOBAL & UTILITIES
    ========================================= */
 body {
-    background-color: #f4f6f8;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    color: #333;
-    margin: 0;
-    padding: 0;
+  background-color: #f4f6f8;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  margin: 0;
+  padding: 0;
 }
 
 .main-content {
-    padding: 30px;
+  padding: 30px;
 }
 
 .page-header {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 .page-header h1 {
-    font-size: 24px;
-    color: #000;
-    margin-bottom: 5px;
-    font-weight: 800;
+  font-size: 24px;
+  color: #000;
+  margin-bottom: 5px;
+  font-weight: 800;
 }
 
 .white-panel {
-    background: white;
-    border-radius: 8px;
-    padding: 25px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .split-layout {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr; 
-    gap: 20px;
-    align-items: start;
-    height: calc(100vh - 160px);
-    min-height: 600px;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 20px;
+  align-items: start;
+  height: calc(100vh - 160px);
+  min-height: 600px;
 }
 
 /* =========================================
    2. NAVIGATION HIERARCHY (Toggleable Views)
    ========================================= */
 .section-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .section-header-row h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-    color: #000;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #000;
 }
 
-/* UPDATED: Toggle Link to Button */
 .btn-toggle-view {
-    background-color: #f0f2f5;
-    color: #ffffff;
-    border: 1px solid #ddd;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background-color: #4caf50;
+  background-color: #f0f2f5;
+  color: #ffffff;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #4caf50;
 }
-
 
 .btn-toggle-view i {
-    font-size: 11px;
-    color: #4caf50;
+  font-size: 11px;
+  color: #4caf50;
 }
 
 .nav-hierarchy {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
 }
 
 .pill-container {
-    background: #f0f0f0;
-    border-radius: 10px;
-    display: flex;
-    padding: 4px;
-    gap: 5px;
-    width: 100%;
-    box-sizing: border-box;
-    border: 1px solid #e0e0e0;
+  background: #f0f0f0;
+  border-radius: 10px;
+  display: flex;
+  padding: 4px;
+  gap: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #e0e0e0;
 }
 
 .main-nav-btn {
-    flex: 1;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 10px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #666;
-    text-align: center;
-    border-radius: 7px;
-    transition: all 0.2s ease;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
+  flex: 1;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #666;
+  text-align: center;
+  border-radius: 7px;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .main-nav-btn:hover:not(.active) {
-    background: #e0e0e0;
-    color: #333;
+  background: #e0e0e0;
+  color: #333;
 }
 
 .main-nav-btn.active {
-    background: #4caf50 !important;
-    color: white !important;
-    box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
+  background: #4caf50 !important;
+  color: white !important;
+  box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
 }
 
 /* =========================================
    3. CONTROLS & SEARCH
    ========================================= */
 .search-filter-row {
-    margin-bottom: 15px;
-    display: flex;
-    gap: 10px;
+  margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
 }
 
 .search-input {
-    flex: 2;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 13px;
-    box-sizing: border-box;
+  flex: 2;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
 .search-input:focus {
-    outline: none;
-    border-color: #4caf50;
+  outline: none;
+  border-color: #4caf50;
 }
 
 .btn-filter-date {
-    flex: 1;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 0 15px;
-    font-size: 12px;
-    color: #666;
-    cursor: pointer;
-    white-space: nowrap;
+  flex: 1;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0 15px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 /* =========================================
    4. LEFT TABLE (Fixed, Connected & Active)
    ========================================= */
 .history-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed; 
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .history-table tr {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    border-bottom: 1px solid #f0f0f0;
-    padding: 12px 0;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-left: 4px solid transparent; 
+  display: flex;
+  width: 100%;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
 }
 
-/* HOVER STATE */
 .history-table tr:hover {
-    background-color: #f9f9f9;
+  background-color: #f9f9f9;
 }
 
-/* ACTIVE/SELECTED STATE - RESTORED GREEN THEME */
 .history-table tr.active-row {
-    background-color: #e8f5e9 !important; 
-    border-left: 4px solid #4caf50 !important;
+  background-color: #e8f5e9 !important;
+  border-left: 4px solid #4caf50 !important;
 }
 
-/* COLUMN 1: ID (35%) */
 .history-table td:nth-child(1) {
-    flex: 0 0 35%;
-    padding-left: 11px;
-    font-size: 14px;
+  flex: 0 0 35%;
+  padding-left: 11px;
+  font-size: 14px;
 }
-.tag-info strong { font-size: 14px; color: #333; }
-.room-text { font-size: 13px; color: #666; }
+.tag-info strong {
+  font-size: 14px;
+  color: #333;
+}
+.room-text {
+  font-size: 13px;
+  color: #666;
+}
 
-/* COLUMN 2: ACTIVITY (45%) */
 .history-table td:nth-child(2) {
-    flex: 0 0 45%;
-    display: flex;
-    align-items: center;
-    font-size: 14px;
+  flex: 0 0 45%;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
 }
 
-/* Connected Activity text style */
 .activity-info strong {
-    font-size: 13px;
-    font-weight: 500;
-    color: #888;
-    margin-right: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #888;
+  margin-right: 4px;
 }
-.date-text { 
-    font-size: 13px;
-    color: #444; 
+.date-text {
+  font-size: 13px;
+  color: #444;
 }
 
-/* COLUMN 3: STATUS (20%) */
 .history-table td:nth-child(3) {
-    flex: 0 0 20%;
-    text-align: right;
-    padding-right: 15px;
+  flex: 0 0 20%;
+  text-align: right;
+  padding-right: 15px;
 }
 
 .history-table tr.no-data-row {
-    border-left: none !important;
-    cursor: default;
+  border-left: none !important;
+  cursor: default;
 }
 
 .history-table tr.no-data-row td {
-    flex: 1; /* Forces the cell to take up 100% of the row width */
-    width: 100%;
-    text-align: center;
+  flex: 1;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px !important;
+  color: #999;
+  font-size: 12px;
+}
+
+/* =========================================
+   5. RIGHT PANEL - TIMELINE CARDS
+   ========================================= */
+.timeline-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding-top: 10px;
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.timeline-feed::-webkit-scrollbar {
+  width: 6px;
+}
+.timeline-feed::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.timeline-feed::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+.timeline-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.timeline-card:hover {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.timeline-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #1b4d3e;
+}
+
+.user-info i {
+  font-size: 18px;
+  color: #1b4d3e;
+}
+
+.user-info strong {
+  font-weight: 700;
+  color: #333;
+}
+
+.card-date {
+  font-size: 12px;
+  color: #888;
+  margin-left: 5px;
+  font-weight: 400;
+}
+
+.timeline-card-subheader {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #444;
+  flex-wrap: wrap;
+}
+
+.info-item strong {
+  color: #222;
+  font-weight: 600;
+}
+
+.remarks-box {
+  background-color: #f8f9fa;
+  border-left: 3px solid #d1d5db;
+  padding: 12px 15px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-style: italic;
+  color: #555;
+  line-height: 1.5;
+}
+
+.timeline-card-header .status-pill {
+  margin-left: 10px;
+}
+
+/* =========================================
+   6. DETAILS, BADGES & ARCHIVES
+   ========================================= */
+.badge,
+.status-pill {
+  padding: 6px 0;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  display: inline-block;
+  text-align: center;
+  width: 85px;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.badge.green,
+.status-pill.green,
+.status-pill.Working {
+  background: #4caf50;
+}
+.badge.orange,
+.status-pill.orange,
+.status-pill.For\ Repair {
+  background: #ff9800;
+}
+.badge.red,
+.status-pill.red,
+.status-pill.Condemned {
+  background: #c62828;
+}
+.badge-archived,
+.status-pill.badge-archived {
+  background: #757575;
+}
+
+.archive-summary-card {
+  margin-top: 5px;
+}
+
+.archive-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 15px;
+}
+
+@media (min-width: 600px) {
+  .archive-meta {
+    flex-direction: row;
+    gap: 30px;
+  }
+}
+
+/* =========================================
+   7. MOBILE RESPONSIVENESS & DRILL-DOWN
+   ========================================= */
+.mobile-detail-header,
+.mobile-close-btn,
+.modal-overlay {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* Reset Grid */
+  .split-layout {
+    display: block !important;
+    height: auto !important;
+  }
+  .main-content {
+    padding: 70px 15px 15px 15px;
+  }
+
+  .page-header {
+    margin-bottom: 10px;
+  }
+
+  .white-panel {
+    border-radius: 12px;
+    padding: 20px !important;
+    margin-bottom: 20px;
+    height: auto;
+  }
+
+  /* PANEL SWAP LOGIC */
+  .left-panel.mobile-hide {
+    display: none !important;
+  }
+  .right-panel {
+    display: none !important;
+    width: 100% !important;
+    position: relative;
+    box-shadow: none;
+    margin-top: 0;
+  }
+  .right-panel.mobile-active {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  /* Mobile Detail Header */
+  .mobile-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px; /* More breathing room */
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 15px;
+  }
+  .mobile-back-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px !important; /* Increased padding to push it toward the vertical center */
-    color: #999;
-    font-size: 12px;
-}
-
-/* =========================================
-   5. RIGHT TABLE (Timeline)
-   ========================================= */
-.timeline-table {
-    width: 100%;
-    min-width: 100%;
-    table-layout: auto; 
-    border-collapse: collapse;
-}
-
-.timeline-table th {
-    background: #1b4d3e;
-    color: white;
-    padding: 12px 10px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-
-.timeline-table th:nth-child(1) { width: 85px; } 
-.timeline-table th:nth-child(2) { width: 100px; }
-.timeline-table th:nth-child(3) { width: 100px; }
-.timeline-table th:nth-child(4) { width: 100px; }
-.timeline-table th:nth-child(5) { width: auto; } 
-.timeline-table th:nth-child(6) { width: 110px; text-align: center; } 
-
-.timeline-table td {
-    padding: 12px 10px;
-    border-bottom: 1px solid #f0f0f0;
-    word-wrap: break-word; 
-    vertical-align: top;
-    font-size: 12px;
-}
-
-/* =========================================
-   6. DETAILS & BADGES
-   ========================================= */
-.btn-restore {
-    background: #4caf50;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 600;
+    width: 45px; /* Bigger button */
+    height: 45px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
     cursor: pointer;
-}
+    color: #333;
+    font-size: 18px; /* Bigger Icon */
+  }
+  #mobile-detail-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0;
+    color: #000;
+  }
 
-.detail-group { margin-top: 20px; }
-.detail-group label {
+  /* =======================================
+     BIGGER CARD FORMATTING
+     ======================================= */
+  .history-table,
+  .history-table tbody {
     display: block;
+    width: 100%;
+  }
+
+  .history-table tr {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 12px !important;
+    padding: 18px 15px !important; /* MUCH bigger padding to match timeline */
+    margin-bottom: 12px !important;
+    border-left: 1px solid #e0e0e0 !important;
+  }
+
+  .history-table tr.active-row {
+    background-color: #f1f8f1 !important;
+    border-color: #4caf50 !important;
+  }
+
+  .history-table td {
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  /* 1. Name & Room (Left) */
+  .history-table td:nth-child(1) {
+    flex: 0 0 32%;
+    display: flex;
+    flex-direction: column;
+  }
+  .tag-info strong {
+    font-size: 16px;
+    font-weight: 800;
+    color: #000;
+    display: block;
+  }
+  .room-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* 2. Date Info (Middle) */
+  .history-table td:nth-child(2) {
+    flex: 1;
+    text-align: left;
+    padding-left: 10px !important;
+  }
+  .activity-info strong {
+    font-size: 11px;
+    color: #888;
+    display: block;
+    margin-bottom: 4px;
     font-weight: 700;
-    margin-bottom: 8px;
-    font-size: 13px;
-}
+    text-transform: uppercase;
+  }
+  .date-text {
+    font-size: 14px;
+    color: #222;
+    font-weight: 600;
+    display: block;
+  }
 
-.detail-box {
-    background: #fbfbfb;
-    border: 1px solid #eeeeee;
-    padding: 15px;
-    border-radius: 4px;
-    font-size: 13px;
-    color: #555;
-}
-
-.badge, .status-pill {
+  /* 3. Status Badge (Right) */
+  .history-table td:nth-child(3) {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .status-pill {
+    width: 85px; /* Wider badge */
+    font-size: 11px; /* Bigger text */
     padding: 6px 0;
-    border-radius: 12px;
-    font-size: 10px; 
-    font-weight: 700;
-    color: white;
-    display: inline-block;
-    text-align: center;
-    width: 85px; 
-    white-space: nowrap; 
-    box-sizing: border-box;
-}
+    border-radius: 8px;
+  }
 
-.badge.green, .status-pill.green, .status-pill.Working { background: #4caf50; }
-.badge.orange, .status-pill.orange, .status-pill.For\ Repair { background: #ff9800; }
-.badge.red, .status-pill.red, .status-pill.Condemned { background: #c62828; }
-.badge-archived, .status-pill.badge-archived { background: #757575; }
+  /* Force hide pipes and overlays */
+  .separator {
+    display: none !important;
+  }
+  .modal-overlay {
+    display: none !important;
+  }
+  .timeline-feed {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
 
 /* =========================================
-   7. RESPONSIVE
+   8. DATE FILTER DROPDOWN
    ========================================= */
+.date-dropdown {
+  display: none;
+  position: absolute;
+  top: 110%; /* Drops it just below the search bar */
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  width: 280px; /* Wider default width for desktop */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.date-dropdown.show {
+  display: flex;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.date-input-group label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.date-input-group input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #333;
+}
+
+.date-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.btn-clear-date,
+.btn-apply-date {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.btn-clear-date {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.btn-clear-date:hover {
+  background: #e4e4e4;
+}
+
+.btn-apply-date {
+  background: #4caf50;
+  color: white;
+}
+
+.btn-apply-date:hover {
+  background: #43a047;
+}
+
 @media (max-width: 900px) {
-    .split-layout {
-        grid-template-columns: 1fr;
-        height: auto;
-    }
+  .date-dropdown {
+    width: 100% !important; /* Stretches across the full search row */
+    left: 0;
+    right: 0;
+    top: 115%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+}
+
+.hidden-row {
+  display: none !important;
+}
+
+/* =========================================
+   CRITICAL FILTER FIX (Overrides everything)
+   ========================================= */
+.history-table tr.hidden-row,
+.history-table tbody tr.hidden-row,
+.tab-content .selectable-row.hidden-row {
+  display: none !important;
+}
+
+/* =========================================
+   INVISIBLE DROP-DOWN SHIELD
+   ========================================= */
+.dropdown-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 90; /* Sits just underneath the dropdown (which is z-index 100) */
+  cursor: default;
+}
+
+.dropdown-backdrop.show {
+  display: block;
 }
