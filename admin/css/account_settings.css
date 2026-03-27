@@ -1,4 +1,23 @@
-/* --- Layout Grid --- */
+/* =========================================
+   UNIVERSAL FIXES
+   ========================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow-x: hidden; /* Prevents the screen from sliding left/right */
+  width: 100%;
+  max-width: 100vw;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* =========================================
+   LAYOUT & PANELS
+   ========================================= */
 .account-grid {
   display: grid;
   /* Two equal columns */
@@ -13,7 +32,6 @@
   gap: 30px;
 }
 
-/* --- Shared Panel Styles --- */
 .white-panel {
   background: white;
   padding: 30px;
@@ -32,8 +50,14 @@
   border-top: 1px solid #eee;
   margin-bottom: 25px;
 }
-
-/* --- Form Styles --- */
+.page-header h1 {
+  font-size: 24px !important;
+  margin-bottom: 2px !important;
+  line-height: 1.1;
+}
+/* =========================================
+   FORMS & BUTTONS
+   ========================================= */
 .form-group {
   margin-bottom: 20px;
 }
@@ -85,7 +109,9 @@
   background-color: #43a047;
 }
 
-/* --- Security Section --- */
+/* =========================================
+   SECURITY SECTION
+   ========================================= */
 .security-content {
   display: flex;
   flex-direction: column;
@@ -127,7 +153,9 @@
   pointer-events: none;
 }
 
-/* MODALS  */
+/* =========================================
+   MODALS
+   ========================================= */
 .modal-overlay {
   display: none;
   position: fixed;
@@ -140,6 +168,7 @@
   justify-content: center;
   align-items: center;
 }
+
 .modal-content {
   background-color: #ffffff;
   padding: 30px;
@@ -150,9 +179,11 @@
   animation: modalFadeIn 0.2s ease-out;
   box-sizing: border-box;
 }
+
 .modal-large {
   max-width: 500px;
 }
+
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -163,6 +194,7 @@
     transform: translateY(0);
   }
 }
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -188,7 +220,9 @@
   background-color: #e0e0e0;
 }
 
-/* --- Right Column: System Info --- */
+/* =========================================
+   SYSTEM INFO (RIGHT COLUMN)
+   ========================================= */
 .info-block {
   margin-bottom: 40px;
 }
@@ -222,7 +256,9 @@
   font-weight: 700;
 }
 
-/* --- Toast Container --- */
+/* =========================================
+   TOAST NOTIFICATIONS
+   ========================================= */
 #toast-container {
   position: fixed;
   top: 20px;
@@ -233,48 +269,38 @@
   gap: 12px;
 }
 
-/* --- Toast Styles --- */
-/* TOAST BASE */
 .toast {
   position: fixed;
   top: 20px;
   right: 20px;
   min-width: 280px;
   max-width: 350px;
-
   background: #fff;
   border-radius: 10px;
   padding: 15px 18px;
-
   display: flex;
   align-items: center;
   gap: 12px;
-
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border-left: 5px solid #4caf50; /* Default Green Success Border */
-
+  border-left: 5px solid #4caf50;
   opacity: 0;
   transform: translateY(-20px);
   pointer-events: none;
-
   transition: all 0.3s ease;
   z-index: 9999;
 }
 
-/* ACTIVE STATE - Used to trigger visibility via JavaScript */
 .toast.active {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
-/* ICON */
 #toast-icon {
   font-size: 18px;
   color: #4caf50;
 }
 
-/* TEXT CONTENT */
 #toast-title {
   font-weight: 600;
   font-size: 14px;
@@ -286,13 +312,12 @@
   color: #555;
 }
 
-/* ERROR STATE OVERRIDES */
 #toast-icon.error {
-  color: #e74c3c; /* Red Icon */
+  color: #e74c3c;
 }
 
 .toast.error {
-  border-left-color: #e74c3c; /* Red Border */
+  border-left-color: #e74c3c;
 }
 
 /* =========================================
@@ -302,29 +327,53 @@
 /* Tablets and Small Laptops */
 @media (max-width: 1024px) {
   .account-grid {
-    /* Change from 2 columns to 1 stacked column */
     grid-template-columns: 1fr;
   }
 }
 
 /* Mobile Phones */
 @media (max-width: 768px) {
+  /* 1. Force the page to lock to the device width and hide horizontal scroll */
+  html,
+  body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+  }
+
+  /* 2. Strip away any desktop sidebar offsets */
   .main-content {
+    margin-left: 0 !important; /* Removes the desktop sidebar gap */
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
     /* 80px top padding prevents the mobile navbar from overlapping the title */
-    padding: 80px 15px 15px 15px;
+    padding: 80px 15px 15px 15px !important;
+    overflow-x: hidden;
+  }
+
+  /* Push the logo to the right so the hamburger menu doesn't cover it */
+  .logo,
+  .brand-section {
+    margin-left: 45px !important;
   }
 
   .account-grid,
   .left-stack {
-    gap: 15px; /* Reduce space between panels */
+    gap: 15px;
   }
 
   .white-panel {
-    padding: 20px; /* Reduce inner padding of the white boxes */
+    padding: 20px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden; /* Protects against horizontal breakage inside panels */
   }
 
   .page-header h1 {
-    font-size: 22px;
+    font-size: 24px !important;
+    margin-bottom: 2px !important;
+    line-height: 1.1;
   }
 
   /* Make action buttons full-width for easier tapping */
