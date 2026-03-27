@@ -175,6 +175,37 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             .mobile-back-row {
                 display: flex !important;
             }
+
+            /* --- GUARANTEED ICON-ONLY BUTTONS --- */
+            .action-buttons button span, 
+            .panel-header-row button span {
+                display: none !important;
+            }
+
+            .btn-green-add, 
+            .btn-edit, 
+            .btn-save, 
+            .btn-archive, 
+            .btn-restore,
+            .btn-cancel-edit {
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                padding: 0 !important;
+                display: inline-flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
+
+            .btn-green-add i, 
+            .btn-edit i, 
+            .btn-save i, 
+            .btn-archive i, 
+            .btn-restore i,
+            .btn-cancel-edit i {
+                margin: 0 !important;
+                font-size: 18px !important;
+            }
         }
     </style>
 </head>
@@ -192,7 +223,9 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 <div class="panel-header-row">
                     <h3>Existing Guide List</h3>
                     <input type="hidden" id="categoryList" value='<?php echo json_encode($categories); ?>'>
-                    <button class="btn-green-add" id="openAddModal"><i class="fas fa-plus-circle"></i> Add</button>
+                    <button class="btn-green-add" id="openAddModal">
+                        <i class="fas fa-plus-circle"></i> <span>Add</span>
+                    </button>
                 </div>
                 <div class="status-toggle-row">
                     <div class="toggle-group">
@@ -201,9 +234,9 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                     </div>
                     <input type="hidden" id="statusValue" value="Available">
                 </div>
-                <div class="search-filter-row">
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search a guide">
-                    <select id="categoryFilter" class="filter-dropdown">
+                <div class="search-filter-row">               
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search">
+                    <select id="categoryFilter" class="filter-dropdown" style="width: 100%;">   
                         <option value="">All Categories</option>
                         <?php foreach ($categories as $cat): ?>
                             <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
@@ -226,7 +259,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 <div class="panel-header-row">
                     <h3>Guide Full Details</h3>
                     <div id="actionButtons" class="action-buttons" style="display:none;">
-                        <button class="btn-edit" id="mainEditBtn"><i class="fas fa-pen"></i> Edit</button>
+                        <button class="btn-edit" id="mainEditBtn"><i class="fas fa-pen"></i> <span>Edit</span></button>
                         <button class="btn-archive" id="archiveToggleBtn"></button>
                     </div>
                 </div>
@@ -240,8 +273,10 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             <div class="panel-header-row">
                 <h3>Adding New Guide</h3>
                 <div class="action-buttons">
-                    <button type="button" class="btn-cancel" id="closeAddModal">Cancel</button>
-                    <button type="button" class="btn-green-add" id="submitCreateBtn"><i class="fas fa-plus-circle"></i> Create</button>
+                    <button type="button" class="btn-cancel" id="closeAddModal">
+                        <i class="fas fa-times"></i> <span>Cancel</span>
+                    </button>
+                    <button type="button" class="btn-green-add" id="submitCreateBtn"><i class="fas fa-plus-circle"></i> <span>Create</span></button>
                 </div>
             </div>
             <hr class="modal-divider">
@@ -269,8 +304,8 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             <div class="form-group"><label>Issue Title</label><input type="text" id="archiveIssueTitle" class="detail-input" readonly></div>
             <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="archiveCategory" class="detail-input" readonly></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-cancel" id="closeArchiveModal">Cancel</button>
-                <button type="button" class="btn-archive" id="confirmArchiveBtn"><i class="fas fa-box-archive"></i> Archive</button>
+                <button type="button" class="btn-cancel" id="closeArchiveModal"><i class="fas fa-times"></i></button>
+                <button type="button" class="btn-archive" id="confirmArchiveBtn"><i class="fas fa-box-archive"></i> <span>Archive</span></button>
             </div>
         </div>
     </div>
@@ -282,8 +317,8 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             <div class="form-group"><label>Issue Title</label><input type="text" id="restoreIssueTitle" class="detail-input" readonly></div>
             <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="restoreCategory" class="detail-input" readonly></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-cancel" id="closeRestoreModal">Cancel</button>
-                <button type="button" class="btn-green-add" id="confirmRestoreBtn"><i class="fas fa-check-circle"></i> Confirm</button>
+                <button type="button" class="btn-cancel" id="closeRestoreModal"><i class="fas fa-times"></i></button>
+                <button type="button" class="btn-green-add" id="confirmRestoreBtn"><i class="fas fa-check-circle"></i> <span>Confirm</span></button>
             </div>
         </div>
     </div>

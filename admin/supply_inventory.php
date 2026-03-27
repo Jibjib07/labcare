@@ -187,7 +187,8 @@ if (isset($_POST['submit_restore'])) {
                 <div class="panel-header-row" style="margin-bottom: 20px;">
                     <h3 style="font-size: 16px;">Existing Supply List</h3>
                     <button type="button" class="btn-green-add" id="openModalBtn">
-                        <i class="fas fa-plus-circle"></i> Add
+                        <i class="fas fa-plus-circle"></i> 
+                        <span class="btn-text">Add</span> 
                     </button>
                 </div>
                 <div class="switch-filter-container" style="margin-bottom: 20px;">
@@ -198,8 +199,7 @@ if (isset($_POST['submit_restore'])) {
                 </div>
                 <div class="search-filter-row">
                     <div class="search-box-container" style="flex: 1; position: relative;">
-                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999;"></i>
-                        <input type="text" class="search-input" id="tableSearch" placeholder="Search a supply..." style="padding-left: 35px; width: 100%;">
+                        <input type="text" class="search-input" id="tableSearch" placeholder="Search" style="width: 100%;">
                     </div>
                     <select class="filter-dropdown" id="statusFilter" style="width: 140px;">
                         <option value="all">All Status</option>
@@ -249,36 +249,40 @@ if (isset($_POST['submit_restore'])) {
                         <h3>Supply Details</h3>
                         <div class="header-actions">
                             <div id="edit-action-wrapper" style="display:inline-block;">
-                                <button type="button" class="btn-green-edit" id="editTrigger"><i class="fas fa-pencil-alt"></i> Edit</button>
+                                <button type="button" class="btn-green-edit" id="editTrigger">
+                                    <i class="fas fa-pencil-alt"></i> 
+                                    <span class="btn-text">Edit</span> 
+                                </button>
                             </div>
 
                             <div id="archive-action-wrapper" style="display:inline-block;">
                                 <form action="supply_inventory.php" method="POST" id="archiveForm" style="display:inline;">
                                     <input type="hidden" name="supply_id" id="archive_supply_id">
-                                    <button type="button" class="btn-orange-archive" id="archiveTrigger"><i class="fas fa-box-archive"></i></button>
+                                    <button type="button" class="btn-orange-archive" id="archiveTrigger">
+                                        <i class="fas fa-box-archive"></i>
+                                        <span class="btn-text">Archive</span> 
+                                    </button>
                                     <input type="submit" name="submit_archive" id="hiddenArchiveSubmit" style="display:none;">
                                 </form>
                             </div>
 
                             <div id="restore-action-wrapper" style="display:none;">
-                                <button type="button" class="btn-green-edit" id="restoreTrigger"><i class="fas fa-rotate-left"></i> Restore</button>
+                                <button type="button" class="btn-green-edit" id="restoreTrigger">
+                                    <i class="fas fa-rotate-left"></i> 
+                                    <span class="btn-text">Restore</span> 
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="detail-grid">
-                        <div class="detail-group">
-                            <label>Supply Name:</label>
-                            <div class="detail-box" id="view_supply_name">Select an item</div>
-                        </div>
-                        <div class="detail-group">
-                            <label>Current Status:</label>
-                            <div id="view_supply_status">
-                            </div>
-                        </div>
+
+                    <div class="detail-group">
+                        <label>Supply Name:</label>
+                         <div class="detail-box" id="view_supply_name">Select an item</div>
                     </div>
 
-                    <h4 class="activity-title" style="margin-top: 25px; margin-bottom: 15px; font-weight: 700; font-size: 14px;">Recent Stock Activity:</h4>
+
+                    <h4 class="activity-title" style="margin-top: 15px; margin-bottom: 15px; font-weight: 700; font-size: 14px;">Recent Stock Activity:</h4>
                     <div class="activity-feed-container" id="activityFeed" style="flex: 1; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 8px; background: #fff;">
                     </div>
                 </div>
@@ -291,8 +295,14 @@ if (isset($_POST['submit_restore'])) {
                         <div class="panel-header-row">
                             <h3>Edit Supply</h3>
                             <div class="header-actions">
-                                <button type="button" class="btn-cancel" id="cancelEdit"><i class="fas fa-times"></i> <span class="btn-text">Cancel</span></button>
-                                <button type="submit" name="submit_update" class="btn-green-edit"><i class="fas fa-check-circle"></i> Save Update</button>
+                                <button type="button" class="btn-cancel" id="cancelEdit">
+                                    <i class="fas fa-times"></i> 
+                                    <span class="btn-text">Cancel</span> 
+                                </button>
+                                <button type="submit" name="submit_update" class="btn-green-edit">
+                                    <i class="fas fa-check-circle"></i> 
+                                    <span class="btn-text">Save Update</span> 
+                                </button>
                             </div>
                         </div>
 
@@ -334,8 +344,12 @@ if (isset($_POST['submit_restore'])) {
                 </div>
             </div>
             <div class="modal-footer-styled">
-                <button type="button" class="btn-modal-cancel" id="cancelArchiveConfirm">Cancel</button>
-                <button type="button" class="btn-orange-archive" id="finalArchiveBtn" style="padding: 10px 25px;"><i class="fas fa-box-archive"></i> Archive</button>
+                <button type="button" class="btn-modal-cancel" id="cancelArchiveConfirm">
+                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
+                </button>
+                <button type="button" class="btn-orange-archive" id="finalArchiveBtn">
+                    <i class="fas fa-box-archive"></i> <span class="btn-text">Archive</span>
+                </button>
             </div>
         </div>
     </div>
@@ -353,10 +367,14 @@ if (isset($_POST['submit_restore'])) {
                 </div>
             </div>
             <div class="modal-footer-styled">
-                <button type="button" class="btn-modal-cancel" id="cancelRestoreConfirm">Cancel</button>
+                <button type="button" class="btn-modal-cancel" id="cancelRestoreConfirm">
+                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
+                </button>
                 <form action="supply_inventory.php" method="POST" style="display:inline;">
                     <input type="hidden" name="supply_id" id="restore_supply_id">
-                    <button type="submit" name="submit_restore" class="btn-green-edit" style="padding: 10px 25px;"><i class="fas fa-rotate-left"></i> Restore</button>
+                    <button type="submit" name="submit_restore" class="btn-green-edit">
+                        <i class="fas fa-rotate-left"></i> <span class="btn-text">Restore</span>
+                    </button>
                 </form>
             </div>
         </div>
@@ -369,8 +387,12 @@ if (isset($_POST['submit_restore'])) {
             </div>
             <form action="supply_inventory.php" method="POST">
                 <div class="modal-body-grid">
-                    <div class="full-width"><label class="modal-label">Supply Name:</label><input type="text" name="supply_name" class="modal-input" required></div>
-                    <div class="full-width"><label class="modal-label">Initial Status:</label>
+                    <div class="full-width">
+                        <label class="modal-label">Supply Name:</label>
+                        <input type="text" name="supply_name" class="modal-input" required placeholder="Input supply name">
+                    </div>
+                    <div class="full-width">
+                        <label class="modal-label">Initial Status:</label>
                         <select name="status" class="modal-input">
                             <option value="In Stock">In Stock</option>
                             <option value="Out of Stock">Out of Stock</option>
@@ -378,8 +400,12 @@ if (isset($_POST['submit_restore'])) {
                     </div>
                 </div>
                 <div class="modal-footer-styled">
-                    <button type="button" class="btn-modal-cancel close-modal">Cancel</button>
-                    <button type="submit" name="submit_supply" class="btn-modal-create">Create</button>
+                    <button type="button" class="btn-modal-cancel close-modal">
+                        <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
+                    </button>
+                    <button type="submit" name="submit_supply" class="btn-modal-create">
+                        <i class="fas fa-check"></i> <span class="btn-text">Create</span>
+                    </button>
                 </div>
             </form>
         </div>
