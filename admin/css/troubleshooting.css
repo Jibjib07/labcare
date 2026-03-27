@@ -492,6 +492,17 @@
     width: 100%;
   }
 
+  .page-header h1 {
+    font-size: 24px !important; /* Keeps it bold and prominent on mobile */
+    margin-bottom: 2px !important;
+    line-height: 1.1;
+  }
+
+  .page-header p {
+    font-size: 13px !important;
+    line-height: 1.4;
+    margin-top: 5px !important;
+  }
   .left-list-panel {
     width: 100%;
     display: block;

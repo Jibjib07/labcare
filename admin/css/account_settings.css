@@ -170,7 +170,7 @@
 }
 
 #reset-modal h2 {
-  color: #7B1FA2;
+  color: #7b1fa2;
 }
 
 .btn-cancel-new {
@@ -250,8 +250,8 @@
   align-items: center;
   gap: 12px;
 
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-  border-left: 5px solid #4CAF50; /* Default Green Success Border */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-left: 5px solid #4caf50; /* Default Green Success Border */
 
   opacity: 0;
   transform: translateY(-20px);
@@ -271,7 +271,7 @@
 /* ICON */
 #toast-icon {
   font-size: 18px;
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 /* TEXT CONTENT */
@@ -293,4 +293,83 @@
 
 .toast.error {
   border-left-color: #e74c3c; /* Red Border */
+}
+
+/* =========================================
+   MOBILE RESPONSIVE VIEWS
+   ========================================= */
+
+/* Tablets and Small Laptops */
+@media (max-width: 1024px) {
+  .account-grid {
+    /* Change from 2 columns to 1 stacked column */
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile Phones */
+@media (max-width: 768px) {
+  .main-content {
+    /* 80px top padding prevents the mobile navbar from overlapping the title */
+    padding: 80px 15px 15px 15px;
+  }
+
+  .account-grid,
+  .left-stack {
+    gap: 15px; /* Reduce space between panels */
+  }
+
+  .white-panel {
+    padding: 20px; /* Reduce inner padding of the white boxes */
+  }
+
+  .page-header h1 {
+    font-size: 22px;
+  }
+
+  /* Make action buttons full-width for easier tapping */
+  .save-btn-container {
+    justify-content: stretch;
+  }
+
+  .btn-green-save,
+  .btn-purple-reset {
+    width: 100%;
+    justify-content: center;
+    padding: 14px;
+  }
+
+  /* Adjust Modals for Mobile */
+  .modal-content {
+    padding: 20px;
+    width: 90%;
+    margin: 0 auto;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse; /* Stack buttons vertically (Cancel on bottom) */
+    gap: 10px;
+  }
+
+  .btn-cancel-new,
+  #btn-confirm-reset {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  /* Center Toasts on Mobile */
+  #toast-container {
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    align-items: center;
+  }
+
+  .toast {
+    width: 100%;
+    max-width: 100%;
+    right: unset;
+  }
 }

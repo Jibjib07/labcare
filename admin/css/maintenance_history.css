@@ -413,16 +413,31 @@ body {
 
 @media (max-width: 900px) {
   /* Reset Grid */
+
+  .main-content {
+    padding:
+      70px, 15px, 15px, 15px; /* Give the dashboard a bit less edge breathing room */
+  }
   .split-layout {
     display: block !important;
     height: auto !important;
   }
   .main-content {
-    padding: 70px 15px 15px 15px;
+    padding: 60px 15px 15px 15px;
   }
 
   .page-header {
     margin-bottom: 10px;
+  }
+
+  .page-header h1 {
+    font-size: 24px !important;
+  }
+
+  .page-header p {
+    font-size: 13px !important;
+    line-height: 1.4;
+    margin-top: 5px !important;
   }
 
   .white-panel {

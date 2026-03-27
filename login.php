@@ -30,9 +30,48 @@ if (isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://api.fontshare.com/v2/css?f[]=geist@1,2&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/login.css?v=<?php echo time(); ?>">
+
+    <style>
+        .btn-back {
+            position: fixed;
+            /* Keeps it in the top corner even if the screen is small/scrolling */
+            top: 30px;
+            left: 30px;
+            color: #ffffff;
+            /* White to contrast with the green background */
+            background: rgba(255, 255, 255, 0.15);
+            /* Slightly frosted glass effect */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 18px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateX(-5px);
+            /* Subtle slide left on hover */
+            color: #1b4d3e;
+            /* Turns dark green on hover */
+            border-color: #ffffff;
+        }
+    </style>
 </head>
 
 <body class="login-body">
+
+    <a href="landing.php" class="btn-back" title="Back to Landing Page">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+
     <div class="glass-container">
         <div class="brand-section">
             <img src="assets/logo.png" alt="LabCare Logo" class="main-logo">
