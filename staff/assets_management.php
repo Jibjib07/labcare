@@ -95,13 +95,13 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                     <div class="panel-top-nav">
                         <a href="laboratory_management.php" class="back-btn"><i class="fas fa-arrow-left"></i></a>
                         <div class="toggle-container">
-                            <button type="button" class="toggle-link active">Computer Unit</button>
+                            <button type="button" class="toggle-link active">Computer Sets</button>
                             <button type="button" class="toggle-link" onclick="switchView('facility')">Facility Assets</button>
                         </div>
                     </div>
 
                     <div class="section-header-row">
-                        <h3>Room <?php echo $current_room; ?> - <strong>Computer Units</strong></h3>
+                        <h3>Room <?php echo $current_room; ?> - <strong>Computer Sets</strong></h3>
                     </div>
 
                     <div class="search-filter-row">
@@ -451,7 +451,7 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
                     <div class="panel-top-nav">
                         <a href="laboratory_management.php" class="back-btn"><i class="fas fa-arrow-left"></i></a>
                         <div class="toggle-container">
-                            <button type="button" class="toggle-link" onclick="switchView('computer')">Computer Unit</button>
+                            <button type="button" class="toggle-link" onclick="switchView('computer')">Computer Sets</button>
                             <button type="button" class="toggle-link active">Facility Assets</button>
                         </div>
                     </div>

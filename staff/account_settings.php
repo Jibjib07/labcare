@@ -1,6 +1,6 @@
 <?php
 include '../includes/db.php';
-require '../includes/admin_auth.php'; // This already handles role checking
+require '../includes/staff_auth.php'; // This already handles role checking
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;

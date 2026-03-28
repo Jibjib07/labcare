@@ -1901,22 +1901,21 @@ function confirmLogStatus() {
     // FA-Specific Status Toggles
     const group = document.getElementById("toggle_fa_status");
     const activeBtn = group ? group.querySelector(".status-btn.active") : null;
+
     if (group && group.style.display !== "none" && activeBtn) {
+      // FIXED: Changed "asset_status" to "fa_status" to match the PHP script
       formData.append(
-        "asset_status",
+        "fa_status",
         activeBtn.getAttribute("data-type") === "repair"
           ? "For Repair"
           : "Working",
       );
     } else {
       const pill = document.getElementById("pill_fa_status");
-      formData.append(
-        "asset_status",
-        pill ? pill.innerText.trim() : "For Repair",
-      );
+      // FIXED: Changed "asset_status" to "fa_status" to match the PHP script
+      formData.append("fa_status", pill ? pill.innerText.trim() : "For Repair");
     }
   }
-
   // --- 5. SEND TO THE CORRECT PHP SCRIPT ---
   fetch(targetUrl, { method: "POST", body: formData })
     .then((res) => res.json())
