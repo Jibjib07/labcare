@@ -634,3 +634,16 @@
     font-size: 10px;
   }
 }
+
+/* --- SMALL MOBILE --- */
+@media (max-width: 480px) {
+  .white-panel {
+    padding: 12px;
+  }
+  .item-name {
+    font-size: 13px;
+  }
+  .badge-text {
+    font-size: 10px;
+  }
+}

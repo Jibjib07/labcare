@@ -332,7 +332,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- MODAL CONTROLS ---
 
   if (openAddBtn) openAddBtn.onclick = () => (addModal.style.display = "flex");
-
   if (closeAddBtn) {
     closeAddBtn.onclick = () => {
       addModal.style.display = "none";
