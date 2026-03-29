@@ -22,10 +22,13 @@ if (isset($_SESSION['last_activity'])) {
         session_unset();
         session_destroy();
 
-        // If AJAX request, return JSON so JS can show the toast
-        if (isset($_POST['action'])) {
+        // UPGRADE: Check if it's an AJAX request via POST, GET, or Server Headers
+        $is_ajax = isset($_POST['action']) || isset($_GET['action']) ||
+            (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
+
+        if ($is_ajax) {
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'session_expired' => true, 'message' => 'Session timed out.']);
+            echo json_encode(['status' => 'error', 'session_expired' => true, 'message' => 'Session timed out. Please log in again.']);
             exit;
         }
 
@@ -36,4 +39,3 @@ if (isset($_SESSION['last_activity'])) {
 
 // Everything is good, update the clock
 $_SESSION['last_activity'] = time();
-?>

@@ -1,4 +1,5 @@
 <?php
+require '../includes/staff_auth.php';
 include '../includes/db.php';
 
 $add_error = '';

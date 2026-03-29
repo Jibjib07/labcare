@@ -1,5 +1,6 @@
 <?php
 session_start();
+include '../includes/admin_auth.php';
 include '../includes/db.php';
 
 date_default_timezone_set('Asia/Manila');
@@ -43,10 +44,15 @@ if (isset($_GET['fetch_id'])) {
 if (isset($_POST['submit_supply'])) {
     $supply_name = mysqli_real_escape_string($conn, trim($_POST['supply_name']));
     $quantity = isset($_POST['supply_quantity']) ? intval($_POST['supply_quantity']) : 0;
-    if ($quantity < 0) { $quantity = 0; }
+    if ($quantity < 0) {
+        $quantity = 0;
+    }
     $status = ($quantity > 0) ? "In Stock" : "Out of Stock";
 
-    if (empty($supply_name)) { header("Location: supply_inventory.php?error=empty_name"); exit(); }
+    if (empty($supply_name)) {
+        header("Location: supply_inventory.php?error=empty_name");
+        exit();
+    }
 
     $date = date('Y-m-d H:i:s');
     $insert_query = "INSERT INTO supply (supply_name, supply_status, supply_avail, latest_activity, supply_quantity) 
@@ -55,7 +61,7 @@ if (isset($_POST['submit_supply'])) {
     if (mysqli_query($conn, $insert_query)) {
         $new_id = mysqli_insert_id($conn);
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
-        
+
         // UPDATED: Included supply_quantity
         $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                        VALUES ('$date', 'Added', '$status', '$actor', 'Added to inventory with $quantity units', '$new_id', '$quantity')";
@@ -79,7 +85,7 @@ if (isset($_POST['submit_update'])) {
 
     $update_query = "UPDATE supply SET supply_name = '$new_name', latest_activity = '$date' WHERE supply_id = '$id'";
     if (mysqli_query($conn, $update_query)) {
-        
+
         // UPDATED: Included supply_quantity
         $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                        VALUES ('$date', 'Details Updated', '$old_status', '$actor', 'Supply name updated', '$id', '$curr_qty')";
@@ -93,7 +99,7 @@ if (isset($_POST['submit_update'])) {
 if (isset($_POST['submit_archive'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
     $date = date('Y-m-d H:i:s');
-    
+
     // Fetch current quantity to log it accurately before archiving
     $q_res = mysqli_query($conn, "SELECT supply_quantity FROM supply WHERE supply_id = '$id'");
     $curr_qty = ($q_row = mysqli_fetch_assoc($q_res)) ? intval($q_row['supply_quantity']) : 0;
@@ -101,7 +107,7 @@ if (isset($_POST['submit_archive'])) {
     $archive_query = "UPDATE supply SET supply_avail = 'Archived', supply_status = 'Out of Stock', latest_activity = '$date' WHERE supply_id = '$id'";
     if (mysqli_query($conn, $archive_query)) {
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
-        
+
         // UPDATED: Included supply_quantity
         $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                        VALUES ('$date', 'Archived', 'Out of Stock', '$actor', 'Item moved to archive', '$id', '$curr_qty')";
@@ -115,7 +121,7 @@ if (isset($_POST['submit_archive'])) {
 if (isset($_POST['submit_restore'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
     $date = date('Y-m-d H:i:s');
-    
+
     // Fetch current quantity to log it accurately
     $q_res = mysqli_query($conn, "SELECT supply_quantity FROM supply WHERE supply_id = '$id'");
     $curr_qty = ($q_row = mysqli_fetch_assoc($q_res)) ? intval($q_row['supply_quantity']) : 0;
@@ -123,7 +129,7 @@ if (isset($_POST['submit_restore'])) {
     $restore_query = "UPDATE supply SET supply_avail = 'Current', latest_activity = '$date' WHERE supply_id = '$id'";
     if (mysqli_query($conn, $restore_query)) {
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
-        
+
         // UPDATED: Included supply_quantity
         $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                        VALUES ('$date', 'Restored', 'Out of Stock', '$actor', 'Item restored from archive', '$id', '$curr_qty')";
@@ -156,7 +162,7 @@ if (isset($_POST['submit_transaction'])) {
     $res = mysqli_query($conn, $get_qty_query);
     if ($row = mysqli_fetch_assoc($res)) {
         $current_qty = intval($row['supply_quantity']);
-        
+
         if ($trans_type === 'release') {
             // Backend Error Trapping: Prevent dropping below 0
             if ($current_qty <= 0 || $trans_qty > $current_qty) {
@@ -176,7 +182,7 @@ if (isset($_POST['submit_transaction'])) {
 
         $update_query = "UPDATE supply SET supply_quantity = '$new_qty', supply_status = '$new_status', latest_activity = '$date' WHERE supply_id = '$id'";
         if (mysqli_query($conn, $update_query)) {
-            
+
             // UPDATED: Included supply_quantity (logging the new resulting quantity)
             $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                            VALUES ('$date', '$activity_text', '$new_status', '$actor', '$remarks', '$id', '$new_qty')";
@@ -223,8 +229,8 @@ if (isset($_POST['submit_transaction'])) {
                 <div class="panel-header-row" style="margin-bottom: 20px;">
                     <h3 style="font-size: 16px;">Existing Supply List</h3>
                     <button type="button" class="btn-green-add" id="openModalBtn">
-                        <i class="fas fa-plus-circle"></i> 
-                        <span class="btn-text">Add</span> 
+                        <i class="fas fa-plus-circle"></i>
+                        <span class="btn-text">Add</span>
                     </button>
                 </div>
                 <div class="switch-filter-container" style="margin-bottom: 20px;">
@@ -286,8 +292,8 @@ if (isset($_POST['submit_transaction'])) {
                         <div class="header-actions">
                             <div id="edit-action-wrapper" style="display:inline-block;">
                                 <button type="button" class="btn-green-edit" id="editTrigger">
-                                    <i class="fas fa-pencil-alt"></i> 
-                                    <span class="btn-text">Edit</span> 
+                                    <i class="fas fa-pencil-alt"></i>
+                                    <span class="btn-text">Edit</span>
                                 </button>
                             </div>
 
@@ -296,7 +302,7 @@ if (isset($_POST['submit_transaction'])) {
                                     <input type="hidden" name="supply_id" id="archive_supply_id">
                                     <button type="button" class="btn-orange-archive" id="archiveTrigger">
                                         <i class="fas fa-box-archive"></i>
-                                        <span class="btn-text">Archive</span> 
+                                        <span class="btn-text">Archive</span>
                                     </button>
                                     <input type="submit" name="submit_archive" id="hiddenArchiveSubmit" style="display:none;">
                                 </form>
@@ -304,15 +310,15 @@ if (isset($_POST['submit_transaction'])) {
 
                             <div id="transaction-action-wrapper" style="display:inline-block;">
                                 <button type="button" class="btn-green-edit" id="transactionTrigger">
-                                    <i class="fas fa-sign-in-alt"></i> 
-                                    <span class="btn-text">Inventory Transaction</span> 
+                                    <i class="fas fa-sign-in-alt"></i>
+                                    <span class="btn-text">Inventory Transaction</span>
                                 </button>
                             </div>
 
                             <div id="restore-action-wrapper" style="display:none;">
                                 <button type="button" class="btn-green-edit" id="restoreTrigger">
-                                    <i class="fas fa-rotate-left"></i> 
-                                    <span class="btn-text">Restore</span> 
+                                    <i class="fas fa-rotate-left"></i>
+                                    <span class="btn-text">Restore</span>
                                 </button>
                             </div>
                         </div>
@@ -350,10 +356,10 @@ if (isset($_POST['submit_transaction'])) {
                             <h3>Edit Supply</h3>
                             <div class="header-actions">
                                 <button type="button" class="btn-cancel" id="cancelEdit">
-                                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span> 
+                                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
                                 </button>
                                 <button type="submit" name="submit_update" class="btn-green-edit">
-                                    <i class="fas fa-check-circle"></i> <span class="btn-text">Save Update</span> 
+                                    <i class="fas fa-check-circle"></i> <span class="btn-text">Save Update</span>
                                 </button>
                             </div>
                         </div>
@@ -383,7 +389,7 @@ if (isset($_POST['submit_transaction'])) {
             <form action="supply_inventory.php" method="POST" id="transactionForm">
                 <input type="hidden" name="supply_id" id="trans_supply_id">
                 <input type="hidden" name="trans_type" id="trans_type" value="release">
-                
+
                 <div class="modal-body-grid">
                     <div class="full-width">
                         <label class="modal-label">Quantity:</label>
@@ -394,7 +400,7 @@ if (isset($_POST['submit_transaction'])) {
                         <textarea name="trans_remarks" id="trans_remarks" class="modal-input remarks-textarea" required placeholder="State the reason for stock update."></textarea>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer-styled" style="display: flex; gap: 10px; margin-top: 25px;">
                     <button type="button" class="btn-modal-cancel close-modal" style="flex: 1; justify-content: center;">
                         <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>

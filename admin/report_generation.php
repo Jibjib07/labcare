@@ -1,4 +1,5 @@
 <?php
+include '../includes/admin_auth.php';
 
 /**
  * 1. AJAX HANDLER - MUST BE AT THE ABSOLUTE TOP
@@ -20,7 +21,7 @@ if (isset($_POST['action'])) {
     $asOfDate = $_POST['asOfDate'] ?? date('Y-m-d');
     $fromDate = $_POST['fromDate'] ?? date('Y-m-d');
     $toDate   = $_POST['toDate'] ?? date('Y-m-d');
-    $subTab   = $_POST['subTab'] ?? 'units'; 
+    $subTab   = $_POST['subTab'] ?? 'units';
     $type     = $_POST['type'] ?? 'status';
 
     try {
@@ -32,8 +33,8 @@ if (isset($_POST['action'])) {
          * ACTION: fetch_snapshot_rooms
          */
         if ($_POST['action'] === 'fetch_snapshot_rooms') {
-            $dateConstraint = ($type === 'condemned') 
-                ? "log_date BETWEEN ? AND ?" 
+            $dateConstraint = ($type === 'condemned')
+                ? "log_date BETWEEN ? AND ?"
                 : "log_date <= ?";
 
             $query = "
@@ -53,7 +54,7 @@ if (isset($_POST['action'])) {
             } else {
                 $stmt->bind_param("ss", $asOfDate, $asOfDate);
             }
-            
+
             $stmt->execute();
             $result = $stmt->get_result();
             $response['data'] = $result->fetch_all(MYSQLI_ASSOC);
@@ -88,7 +89,7 @@ if (isset($_POST['action'])) {
                 $idCol = ($subTab === 'assets') ? 'asset_id' : 'set_id';
                 $tagCol = ($subTab === 'assets') ? 'asset_tag' : 'set_tag';
                 $statusCol = ($subTab === 'assets') ? 'asset_status' : 'set_status';
-                
+
                 $prefix = ($subTab === 'assets') ? 'FA-' : 'PC-';
                 $labId = $_POST['labId'] ?? 'all';
 
@@ -121,7 +122,7 @@ if (isset($_POST['action'])) {
 
                 $query .= " ORDER BY log.$tagCol ASC";
                 $stmt = $conn->prepare($query);
-                
+
                 if ($type === 'condemned') {
                     if (!empty($labId) && $labId !== 'all') {
                         $stmt->bind_param("ssi", $fromDate, $toDate, $labId);
@@ -252,7 +253,7 @@ session_start();
             </div>
 
             <div class="panel white-panel preview-panel" id="previewPanel">
-                
+
                 <div class="mobile-back-container">
                     <button class="btn-back" id="backToGenerateBtn">
                         <i class="fas fa-arrow-left"></i>
@@ -261,8 +262,8 @@ session_start();
                 </div>
 
                 <div class="panel-header-row">
-                    <h3 class="panel-title">Preview Content</h3> 
-                    
+                    <h3 class="panel-title">Preview Content</h3>
+
                     <button class="btn-export" id="exportReportBtn">
                         <i class="fas fa-file-export"></i> <span class="export-text">Export Data</span>
                     </button>

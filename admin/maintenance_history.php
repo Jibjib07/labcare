@@ -1,27 +1,29 @@
 <?php
 // 1. DATABASE CONNECTION
-include '../includes/db.php'; 
+include '../includes/admin_auth.php';
+include '../includes/db.php';
 
 // --- HELPER FUNCTION: STRICT BADGE COLOR RULES ---
 if (!function_exists('getBadgeColor')) {
-    function getBadgeColor($text) {
+    function getBadgeColor($text)
+    {
         $t = strtolower(trim($text));
-        
+
         // Green badges (Matches if the word is anywhere in the string)
         if (strpos($t, 'resolved') !== false || strpos($t, 'replenished') !== false || strpos($t, 'working') !== false || strpos($t, 'in stock') !== false) {
             return 'green';
         }
-        
+
         // Orange badges
         if (strpos($t, 'for repair') !== false) {
             return 'orange';
         }
-        
+
         // Red badges
         if (strpos($t, 'condemned') !== false || strpos($t, 'out of stock') !== false || strpos($t, 'released') !== false) {
             return 'red';
         }
-        
+
         // Default gray for Update, Added, Restored, etc.
         return 'gray';
     }
@@ -43,8 +45,8 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
         if ($row = $res->fetch_assoc()) {
             echo json_encode([
                 "status" => "success",
-                "reason" => $row['reason'], 
-                "admin" => $row['archived_by'],    
+                "reason" => $row['reason'],
+                "admin" => $row['archived_by'],
                 "lab_name" => $row['lab_name'],
                 "lab_room" => $row['lab_room'],
                 "date" => date('m/d/Y', strtotime($row['archived_date']))
@@ -68,9 +70,9 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
             while ($row = $res_supply->fetch_assoc()) {
                 $action = htmlspecialchars($row['suphisto_act']);
                 $status = htmlspecialchars($row['suphisto_stat'] ?? '-');
-                
+
                 $badgeClass = getBadgeColor($action);
-                
+
                 $date = htmlspecialchars(date('M d, Y', strtotime($row['suphisto_date'])));
                 $actor = htmlspecialchars($row['suphisto_actor']);
                 $remarks = htmlspecialchars($row['suphisto_remarks']);
@@ -78,7 +80,7 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
                 echo "<div class='timeline-card'>";
                 echo "  <div class='timeline-card-header'>";
                 echo "      <div class='user-info'><i class='fas fa-user-circle'></i> <strong>{$actor}</strong> <span class='card-date'>&bull; {$date}</span></div>";
-                echo "      <span class='status-pill badge {$badgeClass}'>{$action}</span>"; 
+                echo "      <span class='status-pill badge {$badgeClass}'>{$action}</span>";
                 echo "  </div>";
                 echo "  <div class='timeline-card-subheader'>";
                 echo "      <span class='info-item'><strong>Status:</strong> {$status}</span>";
@@ -174,6 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -182,6 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/maintenance_history.css?v=<?php echo time(); ?>">
 </head>
+
 <body>
     <?php include 'includes/sidebar.php'; ?>
 
@@ -193,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
 
         <div class="view-section">
             <div class="split-layout">
-                
+
                 <div class="panel white-panel left-panel">
                     <div class="section-header-row">
                         <h3 id="nav-title">Activity Logs</h3>
@@ -216,14 +220,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
 
                     <div class="search-filter-row" style="position: relative;">
                         <input type="text" class="search-input" id="main-search-input" placeholder="Search record..." style="flex: 2;">
-                        
+
                         <div class="date-filter-container" style="flex: 1;">
                             <button class="btn-filter-date" onclick="toggleDateDropdown(event)" style="width: 100%; height: 100%; position: relative; z-index: 101;">
                                 Date Range <i class="fas fa-filter"></i>
                             </button>
-                            
+
                             <div class="dropdown-backdrop" id="dropdown-backdrop" onclick="closeDateDropdown()"></div>
-                            
+
                             <div class="date-dropdown" id="date-dropdown">
                                 <div class="date-input-group">
                                     <label>Start Date</label>
@@ -402,7 +406,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                     </div>
 
                     <div id="view-full-timeline" class="history-view">
-                        <div class="section-header-row"><h3 id="timeline-title">Activity Timeline</h3></div>
+                        <div class="section-header-row">
+                            <h3 id="timeline-title">Activity Timeline</h3>
+                        </div>
                         <div class="table-container">
                             <div class="timeline-feed data-body">
                                 <div style="text-align: center; padding: 40px; color: #757575;"><em>Select an item on the left.</em></div>
@@ -411,7 +417,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                     </div>
 
                     <div id="view-retired-timeline" class="history-view" style="display: none;">
-                        <div class="section-header-row"><h3 id="retired-title">Retirement Record</h3></div>
+                        <div class="section-header-row">
+                            <h3 id="retired-title">Retirement Record</h3>
+                        </div>
                         <div class="table-container">
                             <div class="timeline-feed data-body">
                                 <div style="text-align: center; padding: 40px; color: #757575;"><em>Select a retired item.</em></div>
@@ -420,11 +428,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                     </div>
 
                     <div id="view-archives-details" class="history-view" style="display: none;">
-                        <div class="section-header-row"><h3 id="archive-title">Archive Details</h3></div>
+                        <div class="section-header-row">
+                            <h3 id="archive-title">Archive Details</h3>
+                        </div>
                         <div class="timeline-card archive-summary-card">
                             <div class="timeline-card-subheader archive-meta">
                                 <div class="user-info">
-                                    <i class="fas fa-user-circle"></i> 
+                                    <i class="fas fa-user-circle"></i>
                                     <span><strong>Archived By:</strong> <span id="archived-by-name">-</span></span>
                                 </div>
                                 <div class="date-info" style="font-size: 13px; color: #666; display: flex; align-items: center; gap: 5px;">
@@ -447,4 +457,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/maintenance_history.js?v=<?php echo time(); ?>"></script>
 </body>
+
 </html>

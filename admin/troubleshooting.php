@@ -1,4 +1,5 @@
 <?php
+include '../includes/admin_auth.php';
 include '../includes/db.php';
 
 // 1. AJAX Endpoint: Fetch Single Guide Details
@@ -177,15 +178,15 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             }
 
             /* --- GUARANTEED ICON-ONLY BUTTONS --- */
-            .action-buttons button span, 
+            .action-buttons button span,
             .panel-header-row button span {
                 display: none !important;
             }
 
-            .btn-green-add, 
-            .btn-edit, 
-            .btn-save, 
-            .btn-archive, 
+            .btn-green-add,
+            .btn-edit,
+            .btn-save,
+            .btn-archive,
             .btn-restore,
             .btn-cancel-edit {
                 width: 36px !important;
@@ -197,10 +198,10 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 align-items: center !important;
             }
 
-            .btn-green-add i, 
-            .btn-edit i, 
-            .btn-save i, 
-            .btn-archive i, 
+            .btn-green-add i,
+            .btn-edit i,
+            .btn-save i,
+            .btn-archive i,
             .btn-restore i,
             .btn-cancel-edit i {
                 margin: 0 !important;
@@ -234,9 +235,9 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                     </div>
                     <input type="hidden" id="statusValue" value="Available">
                 </div>
-                <div class="search-filter-row">               
+                <div class="search-filter-row">
                     <input type="text" id="searchInput" class="search-input" placeholder="Search">
-                    <select id="categoryFilter" class="filter-dropdown" style="width: 100%;">   
+                    <select id="categoryFilter" class="filter-dropdown" style="width: 100%;">
                         <option value="">All Categories</option>
                         <?php foreach ($categories as $cat): ?>
                             <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>

@@ -1,4 +1,5 @@
 <?php
+require '../includes/staff_auth.php';
 include '../includes/db.php';
 
 // Dynamically update the `com_age` in the health table so the numbers always match
