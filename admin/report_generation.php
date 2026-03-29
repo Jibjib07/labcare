@@ -1,15 +1,14 @@
 <?php
-include '../includes/admin_auth.php';
+// 1. This securely handles the session start and auth check!
+require_once '../includes/admin_auth.php';
+require_once '../includes/db.php';
 
 /**
- * 1. AJAX HANDLER - MUST BE AT THE ABSOLUTE TOP
+ * 2. AJAX HANDLER - MUST BE AT THE ABSOLUTE TOP
  */
 if (isset($_POST['action'])) {
-    ob_start();
+    ob_start(); // Catch any accidental HTML/PHP whitespace
     header('Content-Type: application/json');
-
-    require_once dirname(__FILE__) . '/../includes/db.php';
-    session_start();
 
     $response = ['success' => false, 'data' => [], 'prepared_by' => 'System Administrator'];
 
@@ -148,13 +147,14 @@ if (isset($_POST['action'])) {
         $response['message'] = $e->getMessage();
     }
 
-    ob_end_clean();
+    ob_end_clean(); // Wipes out any PHP errors/warnings so they don't corrupt the JSON
     echo json_encode($response);
     exit;
 }
 
-require_once '../includes/db.php';
-session_start();
+// ==========================================
+// 3. HTML RENDERING STARTS HERE
+// ==========================================
 ?>
 <!DOCTYPE html>
 <html lang="en">
