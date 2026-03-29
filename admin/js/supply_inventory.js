@@ -5,11 +5,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // --- Global State Trackers ---
   let isEditModeActive = false;
-  let snapID = "";     // Tracks the ID of the selected supply
-  let snapName = "";   // Tracks the Name for modal display
-  let snapStatus = ""; // Tracks the Status for conditional logic
+  let snapID = "";     
+  let snapName = "";   
+  let snapStatus = ""; 
+  let snapQuantity = 0; // NEW: Track the currently loaded quantity
 
-  // --- Helper: Force Close Edit Mode ---
   function forceCloseSupplyEditMode() {
     if (isEditModeActive) {
       isEditModeActive = false;
@@ -57,16 +57,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 3500);
   }
 
-  // Handle PHP Redirect Success/Error Messages
+  // SUCCESS MESSAGES
   const phpSuccess = document.getElementById("php_success");
   if (phpSuccess) {
     const messages = {
       added: "New supply added to inventory.",
-      updated: "Supply details have been updated.",
+      updated: "Supply name has been updated.",
       archived: "Item has been moved to Archive.",
-      restored: "Item has been restored to Current Inventory."
+      restored: "Item has been restored to Current Inventory.",
+      transaction: "Inventory transaction recorded successfully."
     };
     showNotification("Action Successful", messages[phpSuccess.value] || "Inventory updated.", "success");
+  }
+
+  // ERROR MESSAGES (NEW)
+  const phpError = document.getElementById("php_error");
+  if (phpError) {
+      const errMessages = {
+          empty_name: "Supply name cannot be empty.",
+          insufficient_stock: "Not enough stock to complete the release."
+      };
+      showNotification("Action Blocked", errMessages[phpError.value] || "An error occurred.", "error");
   }
 
   // --- 2. MULTI-LAYER FILTER & AUTO-SELECT LOGIC ---
@@ -130,16 +141,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const editWrapper = document.getElementById("edit-action-wrapper");
     const archWrapper = document.getElementById("archive-action-wrapper");
     const restWrapper = document.getElementById("restore-action-wrapper");
+    const transWrapper = document.getElementById("transaction-action-wrapper");
 
     if (currentAvailFilter === "Archived") {
       if (statusFilter) statusFilter.classList.add("hidden-filter");
       if (editWrapper) editWrapper.style.display = "none";
       if (archWrapper) archWrapper.style.display = "none";
+      if (transWrapper) transWrapper.style.display = "none";
       if (restWrapper) restWrapper.style.display = "inline-block";
     } else {
       if (statusFilter) statusFilter.classList.remove("hidden-filter");
       if (editWrapper) editWrapper.style.display = "inline-block";
       if (archWrapper) archWrapper.style.display = "inline-block";
+      if (transWrapper) transWrapper.style.display = "inline-block";
       if (restWrapper) restWrapper.style.display = "none";
     }
   }
@@ -155,12 +169,13 @@ document.addEventListener("DOMContentLoaded", function () {
   if (searchInput) searchInput.addEventListener("input", filterTable);
   if (statusFilter) statusFilter.addEventListener("change", filterTable);
 
-  // --- 3. MODAL LOGIC (FIXED ID BINDING) ---
+  // --- 3. MODAL LOGIC & ERROR TRAPPING ---
   const addModal = document.getElementById("addSupplyModal");
   const archiveConfirmModal = document.getElementById("archiveConfirmModal");
   const restoreConfirmModal = document.getElementById("restoreConfirmModal");
+  const transactionModal = document.getElementById("transactionModal");
+  const transRemarks = document.getElementById("trans_remarks");
 
-  // Add Button Click
   if (document.getElementById("openModalBtn")) {
     document.getElementById("openModalBtn").onclick = () => {
       forceCloseSupplyEditMode();
@@ -168,36 +183,101 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 
-  // Archive Trigger
   if (document.getElementById("archiveTrigger")) {
     document.getElementById("archiveTrigger").onclick = function () {
       forceCloseSupplyEditMode();
       document.getElementById("confirm_supply_name").innerText = snapName;
-      // Force ID into the archive hidden field
       document.getElementById("archive_supply_id").value = snapID;
       archiveConfirmModal.style.setProperty("display", "flex", "important");
     };
   }
 
-  // Restore Trigger
   if (document.getElementById("restoreTrigger")) {
     document.getElementById("restoreTrigger").onclick = function () {
       forceCloseSupplyEditMode();
       document.getElementById("restore_confirm_supply_name").innerText = snapName;
-      // Force ID into the restore hidden field
       document.getElementById("restore_supply_id").value = snapID;
       restoreConfirmModal.style.setProperty("display", "flex", "important");
     };
   }
 
-  // Submit Archive via Hidden Button
+  // TRANSACTION MODAL TRIGGER
+  if (document.getElementById("transactionTrigger")) {
+    document.getElementById("transactionTrigger").onclick = function () {
+      forceCloseSupplyEditMode();
+      document.getElementById("trans_modal_title").innerText = `Update ${snapName} Stock`;
+      document.getElementById("trans_supply_id").value = snapID;
+      document.getElementById("trans_quantity").value = "1";
+      document.getElementById("trans_remarks").value = "";
+      
+      // Default to Release
+      document.getElementById("trans_type").value = "release";
+      document.querySelectorAll(".trans-tab").forEach(t => t.classList.remove("active"));
+      document.querySelector('.trans-tab[data-type="release"]').classList.add("active");
+      document.getElementById("trans_modal_desc").innerText = "Removing items for use in a laboratory.";
+      
+      // Enforce required remarks for Release
+      transRemarks.required = true;
+      transRemarks.placeholder = "Explain the reason...";
+
+      transactionModal.style.setProperty("display", "flex", "important");
+    };
+  }
+
+  // TRANSACTION TABS TOGGLE (REMARKS REQUIREMENT LOGIC)
+  const transTabs = document.querySelectorAll(".trans-tab");
+  const transTypeInput = document.getElementById("trans_type");
+  const transDesc = document.getElementById("trans_modal_desc");
+
+  transTabs.forEach(tab => {
+      tab.addEventListener("click", function() {
+          transTabs.forEach(t => t.classList.remove("active"));
+          this.classList.add("active");
+          
+          const type = this.getAttribute("data-type");
+          transTypeInput.value = type;
+          
+          if (type === "release") {
+              transDesc.innerText = "Removing items for use in a laboratory.";
+              transRemarks.required = true;
+              transRemarks.placeholder = "Explain the reason...";
+          } else {
+              transDesc.innerText = "Adding items back to the inventory.";
+              transRemarks.required = false; // Remove requirement for Restock
+              transRemarks.placeholder = "Optional: Add a note or leave blank...";
+          }
+      });
+  });
+
+  // TRANSACTION FORM SUBMIT VALIDATION (QUANTITY TRAPPING)
+  const transactionForm = document.getElementById("transactionForm");
+  if (transactionForm) {
+      transactionForm.onsubmit = function (e) {
+          const type = transTypeInput.value;
+          const reqQty = parseInt(document.getElementById("trans_quantity").value) || 0;
+
+          if (type === "release") {
+              if (snapQuantity <= 0) {
+                  e.preventDefault();
+                  showNotification("Action Blocked", "Cannot release stock. Item is currently out of stock.", "error");
+                  return false;
+              }
+              if (reqQty > snapQuantity) {
+                  e.preventDefault();
+                  showNotification("Action Blocked", `Cannot release more than available stock (${snapQuantity}).`, "error");
+                  return false;
+              }
+          }
+          return true;
+      };
+  }
+
   if (document.getElementById("finalArchiveBtn")) {
     document.getElementById("finalArchiveBtn").onclick = () => {
       document.getElementById("hiddenArchiveSubmit").click();
     };
   }
 
-  // Close All Modals
   document.querySelectorAll(".close-modal, .btn-modal-cancel, #cancelArchiveConfirm, #cancelRestoreConfirm").forEach((btn) => {
     btn.onclick = function () {
       document.querySelectorAll(".modal-overlay").forEach(m => m.style.setProperty("display", "none", "important"));
@@ -237,6 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
           snapID = data.supply.supply_id;
           snapName = data.supply.supply_name.trim();
           snapStatus = data.supply.supply_status.trim();
+          snapQuantity = parseInt(data.supply.supply_quantity) || 0; // Save quantity globally for error trapping
           
           updateRightPanel(data.supply, data.history);
         }
@@ -250,16 +331,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const statusContainer = document.getElementById("view_supply_status");
     if (statusContainer) {
-      const pillColor = supply.supply_status === "In Stock" ? "green" : "red";
-      statusContainer.innerHTML = `<span class="status-pill ${pillColor}">${supply.supply_status}</span>`;
+      const displayStatus = supply.supply_avail === "Archived" ? "Archived" : supply.supply_status;
+      const fontColor = displayStatus === "In Stock" ? "#4caf50" : (displayStatus === "Archived" ? "#555" : "#f44336");
+      statusContainer.innerHTML = `<span>${displayStatus}</span>`;
     }
 
-    // Populate hidden inputs for forms
+    const quantityContainer = document.getElementById("view_supply_quantity");
+    if (quantityContainer) {
+        quantityContainer.innerText = snapQuantity;
+    }
+
     document.getElementById("edit_supply_id").value = snapID;
     document.getElementById("archive_supply_id").value = snapID;
     document.getElementById("restore_supply_id").value = snapID;
     document.getElementById("edit_supply_name").value = snapName;
     document.getElementById("original_status").value = snapStatus;
+
+    const isArchived = supply.supply_avail === "Archived";
+    document.getElementById("transaction-action-wrapper").style.display = isArchived ? "none" : "inline-block";
 
     const feed = document.getElementById("activityFeed");
     if (!feed) return;
@@ -271,7 +360,6 @@ document.addEventListener("DOMContentLoaded", function () {
         card.className = "activity-card";
         if (index < history.length - 1) card.style.borderBottom = "1px solid #f0f0f0";
 
-        // --- DATE FORMATTER: Parses "03/27/2026 12:00 AM" into "March 27, 2026" ---
         let formattedDate = log.date;
         const parsedDate = new Date(log.date);
         if (!isNaN(parsedDate)) {
@@ -282,15 +370,17 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        // --- UPDATED BADGE LOGIC FOR RESTORED AND ARCHIVED ---
-        let badgeClass = "red";
-        if (log.activity.includes('In Stock') || log.activity === "Added") {
+        let badgeClass = "gray"; 
+        if (log.activity.includes('In Stock') || log.activity.includes('Stock Replenished')) {
             badgeClass = "green";
-        } else if (log.activity === "Archived" || log.activity === "Restored") {
-            badgeClass = "gray";
+        } else if (log.activity.includes('Out of Stock') || log.activity.includes('Stock Released')) {
+            badgeClass = "red";
         }
 
-        // --- UPDATED LAYOUT: Name and Date Stacked Vertically ---
+        let borderColor = "#e0e0e0"; 
+        if (badgeClass === "green") borderColor = "#4caf50";
+        if (badgeClass === "red") borderColor = "#f44336";
+
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
             <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -303,7 +393,7 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
             <span class="badge ${badgeClass}" style="flex-shrink: 0; margin-left: 10px;">${log.activity}</span>
           </div>
-          <div class="activity-remark-bubble">
+          <div class="activity-remark-bubble" style="border-left-color: ${borderColor};">
             <p style="margin: 0; font-size: 13px; color: #444; line-height: 1.5; font-style: italic;">"${log.remarks || "No specific remarks provided."}"</p>
           </div>
         `;
@@ -314,55 +404,23 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // --- 5. EDIT MODE LOGIC ---
+  // --- 5. SIMPLIFIED EDIT MODE LOGIC ---
   const viewArea = document.getElementById("view-mode");
   const editArea = document.getElementById("edit-mode");
-  const statusBtns = document.querySelectorAll(".status-option-btn");
-  const statusInput = document.getElementById("stock_status_value");
 
   if (document.getElementById("editTrigger")) {
     document.getElementById("editTrigger").onclick = () => {
       isEditModeActive = true;
-      document.getElementById("update_remarks").value = "";
       viewArea.style.display = "none";
       editArea.style.display = "block";
-
-      statusBtns.forEach((b) => b.classList.remove("active"));
-      const targetBtn = document.querySelector(`.status-option-btn[data-value="${snapStatus}"]`);
-      if (targetBtn) {
-        targetBtn.classList.add("active");
-        statusInput.value = snapStatus;
-      }
     };
   }
-
-  statusBtns.forEach((btn) => {
-    btn.addEventListener("click", function () {
-      statusBtns.forEach((b) => b.classList.remove("active"));
-      this.classList.add("active");
-      statusInput.value = this.getAttribute("data-value");
-    });
-  });
 
   if (document.getElementById("cancelEdit")) {
     document.getElementById("cancelEdit").onclick = () => {
       isEditModeActive = false;
       editArea.style.display = "none";
       viewArea.style.display = "block";
-    };
-  }
-
-  if (document.getElementById("updateForm")) {
-    document.getElementById("updateForm").onsubmit = function (e) {
-      const currentStatus = statusInput.value;
-      const remarks = document.getElementById("update_remarks").value.trim();
-      if (currentStatus !== snapStatus && remarks === "") {
-        e.preventDefault();
-        showNotification("Remarks Required", "Status changes must include a descriptive remark.", "error");
-        document.getElementById("update_remarks").style.borderColor = "#f44336";
-        return false;
-      }
-      return true;
     };
   }
 
@@ -374,14 +432,12 @@ document.addEventListener("DOMContentLoaded", function () {
   applyTabUI(targetTab === "Archived" ? "Archived" : "Current");
   filterTable();
 
-  // URL Cleaning
-  if (urlParams.has("success") || targetId || targetTab) {
+  if (urlParams.has("success") || urlParams.has("error") || targetId || targetTab) {
     const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
     window.history.replaceState({ path: cleanUrl }, "", cleanUrl);
   }
 });
 
-// --- Mobile Navigation Function ---
 function closeMobileDetails() {
   const layout = document.querySelector(".supply-layout");
   if (layout) layout.classList.remove("mobile-show-details");

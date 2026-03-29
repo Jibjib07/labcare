@@ -2,10 +2,9 @@
 session_start();
 include '../includes/db.php';
 
-// NEW: Set timezone to your local time
 date_default_timezone_set('Asia/Manila');
 
-// --- 1. AJAX FETCH HANDLER (MUST BE AT THE VERY TOP) ---
+// --- 1. AJAX FETCH HANDLER ---
 if (isset($_GET['fetch_id'])) {
     header('Content-Type: application/json');
     $id = mysqli_real_escape_string($conn, $_GET['fetch_id']);
@@ -14,7 +13,8 @@ if (isset($_GET['fetch_id'])) {
     $res = mysqli_query($conn, $query);
     $supply = mysqli_fetch_assoc($res);
 
-    $log_query = "SELECT suphisto_date, suphisto_act, suphisto_actor, suphisto_remarks 
+    // UPDATED: Added supply_quantity to the SELECT statement
+    $log_query = "SELECT suphisto_date, suphisto_act, suphisto_actor, suphisto_remarks, supply_quantity 
                   FROM supply_history 
                   WHERE supply_id = '$id' 
                   ORDER BY suphisto_date DESC, suphisto_id DESC";
@@ -24,11 +24,11 @@ if (isset($_GET['fetch_id'])) {
     if ($log_res) {
         while ($log = mysqli_fetch_assoc($log_res)) {
             $history[] = [
-                // Display the exact time (e.g., 03/26/2026 11:52 PM) in the UI feed
                 'date' => date('m/d/Y h:i A', strtotime($log['suphisto_date'])),
                 'activity' => $log['suphisto_act'],
                 'user' => $log['suphisto_actor'],
-                'remarks' => $log['suphisto_remarks']
+                'remarks' => $log['suphisto_remarks'],
+                'quantity' => $log['supply_quantity'] // Passed to JS just in case you need it later
             ];
         }
     }
@@ -42,90 +42,70 @@ if (isset($_GET['fetch_id'])) {
 // A. Add New Supply
 if (isset($_POST['submit_supply'])) {
     $supply_name = mysqli_real_escape_string($conn, trim($_POST['supply_name']));
-    $status = mysqli_real_escape_string($conn, $_POST['status']);
+    $quantity = isset($_POST['supply_quantity']) ? intval($_POST['supply_quantity']) : 0;
+    if ($quantity < 0) { $quantity = 0; }
+    $status = ($quantity > 0) ? "In Stock" : "Out of Stock";
 
-    if (empty($supply_name)) {
-        header("Location: supply_inventory.php?error=empty_name");
-        exit();
-    }
+    if (empty($supply_name)) { header("Location: supply_inventory.php?error=empty_name"); exit(); }
 
-    // Set the exact current time
     $date = date('Y-m-d H:i:s');
-
-    // FIXED: Insert the $date into latest_activity instead of the word 'Added'
-    $insert_query = "INSERT INTO supply (supply_name, supply_status, supply_avail, latest_activity) 
-                     VALUES ('$supply_name', '$status', 'Current', '$date')";
+    $insert_query = "INSERT INTO supply (supply_name, supply_status, supply_avail, latest_activity, supply_quantity) 
+                     VALUES ('$supply_name', '$status', 'Current', '$date', '$quantity')";
 
     if (mysqli_query($conn, $insert_query)) {
-        // Get last ID to auto-select the newly created item
         $new_id = mysqli_insert_id($conn);
-
-        // --- NEW: INSTANT HISTORY LOG ---
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
-        $activity = ($status === "In Stock") ? "Marked In Stock" : "Marked Out of Stock";
-        $remarks = "Added"; // Automatically set remarks to "Added"
-
-        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
-                       VALUES ('$date', '$activity', '$status', '$actor', '$remarks', '$new_id')";
+        
+        // UPDATED: Included supply_quantity
+        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
+                       VALUES ('$date', 'Added', '$status', '$actor', 'Added to inventory with $quantity units', '$new_id', '$quantity')";
         mysqli_query($conn, $hist_query);
-        // --------------------------------
-
         header("Location: supply_inventory.php?success=added&id=$new_id");
         exit();
     }
 }
 
-// B. Handle Conditional Update
+// B. Handle Update (Name only)
 if (isset($_POST['submit_update'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
     $new_name = mysqli_real_escape_string($conn, trim($_POST['supply_name']));
-    $new_status = mysqli_real_escape_string($conn, $_POST['supply_status']);
     $old_status = mysqli_real_escape_string($conn, $_POST['original_status']);
-    $remarks = mysqli_real_escape_string($conn, trim($_POST['update_remarks']));
-
-    if (empty($new_status)) {
-        $new_status = $old_status;
-    }
-
     $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
     $date = date('Y-m-d H:i:s');
 
-    $activity_text = "Details Updated";
-    if ($new_status !== $old_status) {
-        $activity_text = ($new_status === "In Stock") ? "Marked In Stock" : "Marked Out of Stock";
-    }
+    // Fetch current quantity to log it accurately
+    $q_res = mysqli_query($conn, "SELECT supply_quantity FROM supply WHERE supply_id = '$id'");
+    $curr_qty = ($q_row = mysqli_fetch_assoc($q_res)) ? intval($q_row['supply_quantity']) : 0;
 
-    // FIXED: Update latest_activity with the timestamp $date
-    $update_query = "UPDATE supply SET supply_name = '$new_name', supply_status = '$new_status', latest_activity = '$date' WHERE supply_id = '$id'";
-
+    $update_query = "UPDATE supply SET supply_name = '$new_name', latest_activity = '$date' WHERE supply_id = '$id'";
     if (mysqli_query($conn, $update_query)) {
-        if ($new_status !== $old_status) {
-            $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
-                           VALUES ('$date', '$activity_text', '$new_status', '$actor', '$remarks', '$id')";
-            mysqli_query($conn, $hist_query);
-        }
+        
+        // UPDATED: Included supply_quantity
+        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
+                       VALUES ('$date', 'Details Updated', '$old_status', '$actor', 'Supply name updated', '$id', '$curr_qty')";
+        mysqli_query($conn, $hist_query);
         header("Location: supply_inventory.php?success=updated&id=$id");
-        exit();
-    } else {
-        header("Location: supply_inventory.php?error=sql_error");
         exit();
     }
 }
 
-// C. Handle Archival Logic (Silent Mode)
+// C. Handle Archival Logic
 if (isset($_POST['submit_archive'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
     $date = date('Y-m-d H:i:s');
+    
+    // Fetch current quantity to log it accurately before archiving
+    $q_res = mysqli_query($conn, "SELECT supply_quantity FROM supply WHERE supply_id = '$id'");
+    $curr_qty = ($q_row = mysqli_fetch_assoc($q_res)) ? intval($q_row['supply_quantity']) : 0;
 
-    // FIXED: Update latest_activity with timestamp
     $archive_query = "UPDATE supply SET supply_avail = 'Archived', supply_status = 'Out of Stock', latest_activity = '$date' WHERE supply_id = '$id'";
-
     if (mysqli_query($conn, $archive_query)) {
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
-        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
-                       VALUES ('$date', 'Archived', 'Out of Stock', '$actor', 'Item moved to archive', '$id')";
+        
+        // UPDATED: Included supply_quantity
+        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
+                       VALUES ('$date', 'Archived', 'Out of Stock', '$actor', 'Item moved to archive', '$id', '$curr_qty')";
         mysqli_query($conn, $hist_query);
-
         header("Location: supply_inventory.php?success=archived");
         exit();
     }
@@ -135,21 +115,77 @@ if (isset($_POST['submit_archive'])) {
 if (isset($_POST['submit_restore'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
     $date = date('Y-m-d H:i:s');
+    
+    // Fetch current quantity to log it accurately
+    $q_res = mysqli_query($conn, "SELECT supply_quantity FROM supply WHERE supply_id = '$id'");
+    $curr_qty = ($q_row = mysqli_fetch_assoc($q_res)) ? intval($q_row['supply_quantity']) : 0;
 
-    // FIXED: Update latest_activity with timestamp
     $restore_query = "UPDATE supply SET supply_avail = 'Current', latest_activity = '$date' WHERE supply_id = '$id'";
-
     if (mysqli_query($conn, $restore_query)) {
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
-        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id) 
-                       VALUES ('$date', 'Restored', 'Out of Stock', '$actor', 'Item restored from archive', '$id')";
+        
+        // UPDATED: Included supply_quantity
+        $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
+                       VALUES ('$date', 'Restored', 'Out of Stock', '$actor', 'Item restored from archive', '$id', '$curr_qty')";
         mysqli_query($conn, $hist_query);
-
         header("Location: supply_inventory.php?success=restored&id=$id");
         exit();
     }
 }
 
+// E. Handle Inventory Transaction
+if (isset($_POST['submit_transaction'])) {
+    $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
+    $trans_type = mysqli_real_escape_string($conn, $_POST['trans_type']); // 'release' or 'restock'
+    $trans_qty = intval($_POST['trans_quantity']);
+    $remarks = mysqli_real_escape_string($conn, trim($_POST['trans_remarks']));
+    $date = date('Y-m-d H:i:s');
+    $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
+
+    // Auto-generate remarks if empty
+    if (empty($remarks)) {
+        if ($trans_type === 'restock') {
+            $remarks = "Stock Replenished";
+        } else {
+            $remarks = "Stock Released";
+        }
+    }
+
+    // Get current quantity
+    $get_qty_query = "SELECT supply_quantity FROM supply WHERE supply_id = '$id'";
+    $res = mysqli_query($conn, $get_qty_query);
+    if ($row = mysqli_fetch_assoc($res)) {
+        $current_qty = intval($row['supply_quantity']);
+        
+        if ($trans_type === 'release') {
+            // Backend Error Trapping: Prevent dropping below 0
+            if ($current_qty <= 0 || $trans_qty > $current_qty) {
+                header("Location: supply_inventory.php?error=insufficient_stock&id=$id");
+                exit();
+            }
+            $new_qty = $current_qty - $trans_qty;
+            $activity_text = "Stock Released (-$trans_qty)";
+        } else {
+            // Restock
+            $new_qty = $current_qty + $trans_qty;
+            $activity_text = "Stock Replenished (+$trans_qty)";
+        }
+
+        // Auto-update status
+        $new_status = ($new_qty > 0) ? "In Stock" : "Out of Stock";
+
+        $update_query = "UPDATE supply SET supply_quantity = '$new_qty', supply_status = '$new_status', latest_activity = '$date' WHERE supply_id = '$id'";
+        if (mysqli_query($conn, $update_query)) {
+            
+            // UPDATED: Included supply_quantity (logging the new resulting quantity)
+            $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
+                           VALUES ('$date', '$activity_text', '$new_status', '$actor', '$remarks', '$id', '$new_qty')";
+            mysqli_query($conn, $hist_query);
+            header("Location: supply_inventory.php?success=transaction&id=$id");
+            exit();
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -177,10 +213,10 @@ if (isset($_POST['submit_restore'])) {
         <div class="supply-layout">
 
             <?php if (isset($_GET['success'])): ?>
-                <input type="hidden" id="php_success" value="<?php echo $_GET['success']; ?>">
+                <input type="hidden" id="php_success" value="<?php echo htmlspecialchars($_GET['success']); ?>">
             <?php endif; ?>
             <?php if (isset($_GET['error'])): ?>
-                <input type="hidden" id="php_error" value="<?php echo $_GET['error']; ?>">
+                <input type="hidden" id="php_error" value="<?php echo htmlspecialchars($_GET['error']); ?>">
             <?php endif; ?>
 
             <div class="panel white-panel left-list-panel">
@@ -199,7 +235,8 @@ if (isset($_POST['submit_restore'])) {
                 </div>
                 <div class="search-filter-row">
                     <div class="search-box-container" style="flex: 1; position: relative;">
-                        <input type="text" class="search-input" id="tableSearch" placeholder="Search" style="width: 100%;">
+                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999;"></i>
+                        <input type="text" class="search-input" id="tableSearch" placeholder="Search a supply..." style="padding-left: 35px; width: 100%;">
                     </div>
                     <select class="filter-dropdown" id="statusFilter" style="width: 140px;">
                         <option value="all">All Status</option>
@@ -216,13 +253,12 @@ if (isset($_POST['submit_restore'])) {
                         while ($row = mysqli_fetch_assoc($result)) {
                             $id = $row['supply_id'];
                             $badge = ($row['supply_status'] === 'In Stock') ? 'badge green' : 'badge red';
-                            $avail = $row['supply_avail'];
-                            $displayClass = ($avail === 'Archived') ? 'style="display:none;"' : '';
+                            $displayClass = ($row['supply_avail'] === 'Archived') ? 'style="display:none;"' : '';
 
                             echo "
                             <div class='supply-row asset-item' 
                                 data-id='{$id}' 
-                                data-avail='{$avail}' 
+                                data-avail='{$row['supply_avail']}' 
                                 {$displayClass}> 
                                 <div class='item-info'>
                                     <span class='supply-name-cell item-name'>" . htmlspecialchars($row['supply_name']) . "</span>
@@ -266,6 +302,13 @@ if (isset($_POST['submit_restore'])) {
                                 </form>
                             </div>
 
+                            <div id="transaction-action-wrapper" style="display:inline-block;">
+                                <button type="button" class="btn-green-edit" id="transactionTrigger">
+                                    <i class="fas fa-sign-in-alt"></i> 
+                                    <span class="btn-text">Inventory Transaction</span> 
+                                </button>
+                            </div>
+
                             <div id="restore-action-wrapper" style="display:none;">
                                 <button type="button" class="btn-green-edit" id="restoreTrigger">
                                     <i class="fas fa-rotate-left"></i> 
@@ -275,15 +318,26 @@ if (isset($_POST['submit_restore'])) {
                         </div>
                     </div>
 
-
-                    <div class="detail-group">
+                    <div class="detail-group" style="margin-bottom: 20px;">
                         <label>Supply Name:</label>
-                         <div class="detail-box" id="view_supply_name">Select an item</div>
+                        <div class="detail-box" style="background: white; border: 1px solid #eaeaea; justify-content: flex-start; padding: 12px 15px;" id="view_supply_name">Select an item</div>
                     </div>
 
+                    <div class="detail-grid" style="margin-bottom: 25px; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="detail-group">
+                            <label>Current Status:</label>
+                            <div class="detail-box" style="background: white; border: 1px solid #eaeaea; justify-content: flex-start; padding: 12px 15px;" id="view_supply_status">
+                            </div>
+                        </div>
+                        <div class="detail-group">
+                            <label>Quantity:</label>
+                            <div class="detail-box" style="background: white; border: 1px solid #eaeaea; color: #111; justify-content: flex-start; padding: 12px 15px;" id="view_supply_quantity">
+                            </div>
+                        </div>
+                    </div>
 
-                    <h4 class="activity-title" style="margin-top: 15px; margin-bottom: 15px; font-weight: 700; font-size: 14px;">Recent Stock Activity:</h4>
-                    <div class="activity-feed-container" id="activityFeed" style="flex: 1; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 8px; background: #fff;">
+                    <h4 class="activity-title" style="margin-bottom: 15px;">Recent Stock Activity:</h4>
+                    <div class="activity-feed-container" id="activityFeed" style="flex: 1; overflow-y: auto;">
                     </div>
                 </div>
 
@@ -296,34 +350,19 @@ if (isset($_POST['submit_restore'])) {
                             <h3>Edit Supply</h3>
                             <div class="header-actions">
                                 <button type="button" class="btn-cancel" id="cancelEdit">
-                                    <i class="fas fa-times"></i> 
-                                    <span class="btn-text">Cancel</span> 
+                                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span> 
                                 </button>
                                 <button type="submit" name="submit_update" class="btn-green-edit">
-                                    <i class="fas fa-check-circle"></i> 
-                                    <span class="btn-text">Save Update</span> 
+                                    <i class="fas fa-check-circle"></i> <span class="btn-text">Save Update</span> 
                                 </button>
                             </div>
                         </div>
 
-                        <div class="detail-grid">
+                        <div class="detail-grid" style="display: block;">
                             <div class="detail-group">
                                 <label>Supply Name:</label>
-                                <input type="text" name="supply_name" id="edit_supply_name" class="modal-input">
+                                <input type="text" name="supply_name" id="edit_supply_name" class="modal-input" required>
                             </div>
-                            <div class="detail-group">
-                                <label>Current Status:</label>
-                                <div class="status-toggle-buttons">
-                                    <input type="hidden" name="supply_status" id="stock_status_value" required>
-
-                                    <button type="button" class="status-option-btn" data-value="In Stock">In Stock</button>
-                                    <button type="button" class="status-option-btn" data-value="Out of Stock">Out of Stock</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="remarks-container" style="margin-top: 20px;">
-                            <label class="modal-label">Update Remarks (Required for status change):</label>
-                            <textarea name="update_remarks" id="update_remarks" class="modal-input remarks-textarea" placeholder="Explain the reason for this update..."></textarea>
                         </div>
                     </form>
                 </div>
@@ -331,26 +370,40 @@ if (isset($_POST['submit_restore'])) {
         </div>
     </div>
 
-    <div id="archiveConfirmModal" class="modal-overlay">
+    <div id="transactionModal" class="modal-overlay">
         <div class="modal-content wide-modal">
+            <div class="transaction-tabs">
+                <button type="button" class="trans-tab active" data-type="release">Release (Stock Out)</button>
+                <button type="button" class="trans-tab" data-type="restock">Restock (Stock In)</button>
+            </div>
             <div class="modal-header-simple">
-                <h3>Archive this Supply?</h3>
-                <p>This supply will no longer be visible in current inventory and will automatically marked as Out of Stock. Can be restored later.</p>
+                <h3 id="trans_modal_title">Update Stock</h3>
+                <p id="trans_modal_desc">Removing items for use in a laboratory.</p>
             </div>
-            <div class="modal-body-grid">
-                <div class="full-width">
-                    <label class="modal-label">Supply Name</label>
-                    <div class="detail-input uneditable-confirm" id="confirm_supply_name">-</div>
+            <form action="supply_inventory.php" method="POST" id="transactionForm">
+                <input type="hidden" name="supply_id" id="trans_supply_id">
+                <input type="hidden" name="trans_type" id="trans_type" value="release">
+                
+                <div class="modal-body-grid">
+                    <div class="full-width">
+                        <label class="modal-label">Quantity:</label>
+                        <input type="number" name="trans_quantity" id="trans_quantity" class="modal-input" min="1" step="1" required value="1">
+                    </div>
+                    <div class="full-width">
+                        <label class="modal-label">Reason (Remarks):</label>
+                        <textarea name="trans_remarks" id="trans_remarks" class="modal-input remarks-textarea" required placeholder="State the reason for stock update."></textarea>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer-styled">
-                <button type="button" class="btn-modal-cancel" id="cancelArchiveConfirm">
-                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
-                </button>
-                <button type="button" class="btn-orange-archive" id="finalArchiveBtn">
-                    <i class="fas fa-box-archive"></i> <span class="btn-text">Archive</span>
-                </button>
-            </div>
+                
+                <div class="modal-footer-styled" style="display: flex; gap: 10px; margin-top: 25px;">
+                    <button type="button" class="btn-modal-cancel close-modal" style="flex: 1; justify-content: center;">
+                        <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
+                    </button>
+                    <button type="submit" name="submit_transaction" class="btn-green-edit" style="flex: 1; justify-content: center;">
+                        <i class="fas fa-check"></i> <span class="btn-text">Confirm</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -358,14 +411,9 @@ if (isset($_POST['submit_restore'])) {
         <div class="modal-content wide-modal">
             <div class="modal-header-simple">
                 <h3>Restore this Supply?</h3>
-                <p>This supply will be moved back to the active list. You may need to update its stock status manually.</p>
+                <p>This supply will be moved back to the active list.</p>
             </div>
-            <div class="modal-body-grid">
-                <div class="full-width">
-                    <label class="modal-label">Supply Name</label>
-                    <div class="detail-input uneditable-confirm" id="restore_confirm_supply_name">-</div>
-                </div>
-            </div>
+            <div class="detail-input uneditable-confirm" id="restore_confirm_supply_name">-</div>
             <div class="modal-footer-styled">
                 <button type="button" class="btn-modal-cancel" id="cancelRestoreConfirm">
                     <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
@@ -380,30 +428,45 @@ if (isset($_POST['submit_restore'])) {
         </div>
     </div>
 
+    <div id="archiveConfirmModal" class="modal-overlay">
+        <div class="modal-content wide-modal">
+            <div class="modal-header-simple">
+                <h3>Archive this Supply?</h3>
+                <p>This supply will no longer be visible in current inventory.</p>
+            </div>
+            <div class="detail-input uneditable-confirm" id="confirm_supply_name">-</div>
+            <div class="modal-footer-styled">
+                <button type="button" class="btn-modal-cancel" id="cancelArchiveConfirm">
+                    <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
+                </button>
+                <button type="button" class="btn-orange-archive" id="finalArchiveBtn">
+                    <i class="fas fa-box-archive"></i> <span class="btn-text">Archive</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="addSupplyModal" class="modal-overlay">
         <div class="modal-content wide-modal">
             <div class="modal-header-simple">
                 <h3>Add New Supply</h3>
             </div>
-            <form action="supply_inventory.php" method="POST">
+            <form action="supply_inventory.php" method="POST" id="addSupplyForm">
                 <div class="modal-body-grid">
                     <div class="full-width">
                         <label class="modal-label">Supply Name:</label>
-                        <input type="text" name="supply_name" class="modal-input" required placeholder="Input supply name">
+                        <input type="text" name="supply_name" class="modal-input" required placeholder="Input supply name.">
                     </div>
                     <div class="full-width">
-                        <label class="modal-label">Initial Status:</label>
-                        <select name="status" class="modal-input">
-                            <option value="In Stock">In Stock</option>
-                            <option value="Out of Stock">Out of Stock</option>
-                        </select>
+                        <label class="modal-label">Quantity:</label>
+                        <input type="number" name="supply_quantity" id="add_supply_quantity" class="modal-input" min="0" step="1" required placeholder="Enter quantity">
                     </div>
                 </div>
                 <div class="modal-footer-styled">
                     <button type="button" class="btn-modal-cancel close-modal">
                         <i class="fas fa-times"></i> <span class="btn-text">Cancel</span>
                     </button>
-                    <button type="submit" name="submit_supply" class="btn-modal-create">
+                    <button type="submit" name="submit_supply" class="btn-green-edit">
                         <i class="fas fa-check"></i> <span class="btn-text">Create</span>
                     </button>
                 </div>

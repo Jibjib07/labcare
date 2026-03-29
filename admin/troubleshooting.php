@@ -304,7 +304,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             <div class="form-group"><label>Issue Title</label><input type="text" id="archiveIssueTitle" class="detail-input" readonly></div>
             <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="archiveCategory" class="detail-input" readonly></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-cancel" id="closeArchiveModal"><i class="fas fa-times"></i></button>
+                <button type="button" class="btn-cancel" id="closeArchiveModal"><i class="fas fa-times"></i><span>Cancel</span></button>
                 <button type="button" class="btn-archive" id="confirmArchiveBtn"><i class="fas fa-box-archive"></i> <span>Archive</span></button>
             </div>
         </div>
@@ -317,7 +317,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             <div class="form-group"><label>Issue Title</label><input type="text" id="restoreIssueTitle" class="detail-input" readonly></div>
             <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="restoreCategory" class="detail-input" readonly></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-cancel" id="closeRestoreModal"><i class="fas fa-times"></i></button>
+                <button type="button" class="btn-cancel" id="closeRestoreModal"><i class="fas fa-times"></i><span>Cancel</span></button>
                 <button type="button" class="btn-green-add" id="confirmRestoreBtn"><i class="fas fa-check-circle"></i> <span>Confirm</span></button>
             </div>
         </div>

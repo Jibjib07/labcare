@@ -241,6 +241,7 @@ display: flex;
     color: #555555 !important;
 }
 
+
 /* =========================================
    4. RIGHT PANEL: DETAILS & EDIT MODE
    ========================================= */
@@ -470,6 +471,7 @@ display: flex;
     font-size: 14px;
     color: #444;
     box-sizing: border-box;
+    resize: none;
 }
 .modal-input:focus {
     outline: none;
@@ -531,6 +533,38 @@ display: flex;
 .status-option-btn[data-value="Out of Stock"] { border: 1px solid #f44336; color: #f44336; }
 .status-option-btn[data-value="In Stock"].active { background-color: #4caf50 !important; color: white !important; border-color: #4caf50 !important; }
 .status-option-btn[data-value="Out of Stock"].active { background-color: #f44336 !important; color: white !important; border-color: #f44336 !important; }
+
+.transaction-tabs {
+    display: flex;
+    background-color: #f0f0f0;
+    padding: 4px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.trans-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.trans-tab.active {
+    background: #4caf50;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+#trans_modal_desc {
+    color: #888;
+    font-size: 13px;
+    margin-top: 5px;
+    margin-bottom: 20px;
+}
+
 
 /* =========================================
    7. NOTIFICATION (TOAST) STYLES

@@ -29,7 +29,7 @@ body {
   border-radius: 8px;
   padding: 25px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-  height: 100%;
+  height: 650px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -228,21 +228,45 @@ body {
   padding-right: 15px;
 }
 
+/* Update this block under Section 4 */
 .history-table tr.no-data-row {
+  display: block; /* Overrides the flex display so it spans full width */
   border-left: none !important;
   cursor: default;
 }
 
 .history-table tr.no-data-row td {
-  flex: 1;
+  display: block;
   width: 100%;
   text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px !important;
+  padding: 40px 15px !important;
   color: #999;
-  font-size: 12px;
+  font-size: 13px;
+  font-style: italic;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   FIX: Make Left Panel List Scrollable
+   ========================================= */
+.tab-content {
+  flex: 1; /* Tells the container to fill the remaining vertical space */
+  min-height: 0; /* Critical flexbox trick to force scrolling */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 5px; /* Breathing room for the scrollbar */
+}
+
+/* Match the custom, clean scrollbar of the right panel */
+.tab-content::-webkit-scrollbar {
+  width: 6px;
+}
+.tab-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.tab-content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
 }
 
 /* =========================================
@@ -255,9 +279,13 @@ body {
   padding-top: 10px;
   max-height: calc(100vh - 280px);
   overflow-y: auto;
+  overflow-x: hidden; /* Keeps the horizontal scroll fix */
   padding-right: 5px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* RESTORED: Custom Scrollbar Design */
 .timeline-feed::-webkit-scrollbar {
   width: 6px;
 }
@@ -267,6 +295,31 @@ body {
 .timeline-feed::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 10px;
+}
+
+.timeline-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease;
+  width: 100%; 
+  box-sizing: border-box;
+}
+
+/* Add this to ensure long remarks wrap and don't push the layout */
+.remarks-box {
+  background-color: #f8f9fa;
+  border-left: 3px solid #d1d5db;
+  padding: 12px 15px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-style: italic;
+  color: #555;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .timeline-card {
@@ -348,16 +401,18 @@ body {
 /* =========================================
    6. DETAILS, BADGES & ARCHIVES
    ========================================= */
+/* Update this block under Section 6 */
 .badge,
 .status-pill {
-  padding: 6px 0;
+  padding: 6px 12px; /* Added side padding */
   border-radius: 12px;
   font-size: 10px;
   font-weight: 700;
   color: white;
   display: inline-block;
   text-align: center;
-  width: 85px;
+  min-width: 85px; /* Replaced fixed width with min-width */
+  width: max-content; /* Allows the badge to grow with the text */
   white-space: nowrap;
   box-sizing: border-box;
 }
@@ -380,6 +435,13 @@ body {
 .badge-archived,
 .status-pill.badge-archived {
   background: #757575;
+}
+
+/* NEW GRAY BADGE FOR GENERIC ACTIONS */
+.badge.gray,
+.status-pill.gray {
+  background-color: #e0e0e0 !important;
+  color: #555555 !important;
 }
 
 .archive-summary-card {
