@@ -21,7 +21,7 @@
 .white-panel {
   background: white;
   border-radius: 8px;
-  padding: 25px;
+  padding: 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
@@ -67,7 +67,7 @@
   color: #ffffff !important;
   border: none;
   height: 38px;
-  padding: 0 16px;
+  padding: 0px 16px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
@@ -81,9 +81,10 @@
 
 .btn-archive {
   background: #ff5722;
+  height: 38px;
   color: white;
   border: none;
-  padding: 8px 18px;
+  padding: 16px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
@@ -96,17 +97,45 @@
 
 .btn-cancel,
 .btn-cancel-edit {
-  background: transparent;
-  border: none;
-  color: #666;
+  background: #ffffff !important;
+  border: 1px solid #d1d1d1 !important;
+  color: #444 !important;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  padding: 0 10px;
+  padding: 0 15px;
   height: 38px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
-  transition: color 0.2s;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.btn-cancel:hover,
+.btn-cancel-edit:hover {
+  background: #f5f5f5 !important;
+  border-color: #bbb !important;
+  color: #000 !important;
+}
+
+/* DESKTOP MODE: Hide the Icon inside Cancel buttons */
+@media (min-width: 769px) {
+  .btn-cancel i,
+  .btn-cancel-edit i {
+    display: none !important;
+  }
+}
+
+/* MOBILE MODE */
+@media (max-width: 768px) {
+  .btn-cancel,
+  .btn-cancel-edit {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+  }
 }
 
 .btn-edit:hover,
@@ -181,7 +210,7 @@
 .search-filter-row {
   display: flex;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 .search-input {
   flex: 1;
@@ -191,34 +220,35 @@
   font-size: 13px;
 }
 .filter-dropdown {
-  padding: 0 10px;
+  flex: 0.5;
+  padding: 10px;
   border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 13px;
   color: #555;
-  min-width: 140px;
+  background-color: #fff;
+  cursor: pointer;
 }
 
 /* =========================================
-   4. LIST CONTAINER STYLING (Final Reference)
+   4. LIST CONTAINER STYLING
    ========================================= */
 
 .list-container {
   flex: 1;
   overflow-y: auto;
-  border: none; /* Change from 1px solid #f0f0f0 to none */
+  border: none;
   border-radius: 6px;
   background: #fff;
 }
 
 .supply-row.asset-item {
-  height: 50px;
   min-height: 50px;
   flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
+  padding: 10px 20px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -245,10 +275,12 @@
 .item-name {
   font-weight: 700;
   color: #333;
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 13px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.4;
+  padding-right: 10px;
 }
 
 /* Right side Category Container */
@@ -256,6 +288,7 @@
   display: flex;
   align-items: center;
   margin-left: 15px;
+  flex-shrink: 0;
 }
 
 .badge-text {
@@ -263,6 +296,7 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 /* CUSTOM SCROLLBAR FOR LIST */
@@ -288,12 +322,10 @@
 
 .detail-group label {
   display: block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #1b4d3e;
-  margin-bottom: 8px;
-  font-weight: 800;
+  font-size: 13px;
+  color: #222;
+  margin-bottom: 5px;
+  font-weight: 700;
 }
 
 .detail-input,
@@ -305,12 +337,12 @@
   border-radius: 6px;
   background-color: #fcfcfc;
   color: #444;
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
   line-height: 1.5;
   box-sizing: border-box;
   display: block;
-  resize: none; /* Disables manual resize */
+  resize: none;
 }
 
 .detail-input,
@@ -322,6 +354,16 @@
   min-height: 45px;
   height: auto;
   overflow: hidden;
+}
+
+/* View Mode Typography */
+.view-mode {
+  padding: 10px 12px;
+  color: #444;
+  font-size: 13px;
+  line-height: 1.5;
+  background-color: transparent;
+  border: 1px solid transparent;
 }
 
 /* =========================================
@@ -338,7 +380,6 @@
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  backdrop-filter: blur(2px);
 }
 
 .modal-content {
@@ -403,6 +444,9 @@
 .toast-archive {
   border-left-color: #ff5722;
 }
+.toast-error {
+  border-left-color: #f44336;
+}
 
 .toast-icon {
   font-size: 20px;
@@ -414,6 +458,9 @@
 }
 .toast-archive .toast-icon {
   color: #ff5722;
+}
+.toast-error .toast-icon {
+  color: #f44336;
 }
 
 .toast-title {
@@ -470,50 +517,120 @@
 }
 .form-group textarea {
   min-height: 80px;
+  resize: none;
 }
 
 /* =========================================
-   7. RESPONSIVENESS
+   7. FULL RESPONSIVENESS BREAKPOINTS
    ========================================= */
+
+/* --- TABLET VIEW --- */
 @media (max-width: 1024px) {
   .troubleshoot-layout {
     grid-template-columns: 1fr;
   }
-  .left-list-panel {
+  .left-list-panel,
+  .right-detail-panel {
     height: auto;
-    max-height: 400px;
+    min-height: 400px;
+    max-height: 600px;
   }
 }
 
-/* --- MOBILE RESPONSIVE VIEW (Instant Toggle) --- */
+/* --- MOBILE VIEW (SWAP LOGIC) --- */
 @media (max-width: 768px) {
+  .page-header h1 {
+    font-size: 22px;
+  }
+
   .troubleshoot-layout {
-    display: block;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .left-list-panel,
+  .right-detail-panel {
+    height: 80vh !important;
+    max-height: none;
+    padding: 15px !important;
   }
 
   .left-list-panel {
-    width: 100%;
-    display: block;
+    display: flex !important;
   }
-
   .right-detail-panel {
-    width: 100%;
-    display: none; /* Hide details by default on mobile */
-    margin: 0;
+    display: none !important;
   }
 
-  /* When a row is clicked, instantly swap visibility */
   .troubleshoot-layout.show-mobile-detail .left-list-panel {
-    display: none;
+    display: none !important;
   }
-
   .troubleshoot-layout.show-mobile-detail .right-detail-panel {
-    display: block;
+    display: flex !important;
   }
 
-  /* Show the back button ONLY on mobile */
   .mobile-back-row {
     display: flex !important;
+    margin-bottom: 10px;
+  }
+
+  .action-buttons {
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .btn-green-add span,
+  .btn-edit span,
+  .btn-save span,
+  .btn-archive span,
+  .btn-restore span,
+  .btn-cancel-edit span,
+  .btn-cancel span {
+    display: none !important;
+  }
+
+  .btn-green-add,
+  .btn-edit,
+  .btn-save,
+  .btn-archive,
+  .btn-restore,
+  .btn-cancel-edit,
+  .btn-cancel {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .btn-green-add i,
+  .btn-edit i,
+  .btn-save i,
+  .btn-archive i,
+  .btn-restore i,
+  .btn-cancel i,
+  .btn-cancel-edit i {
+    margin: 0 !important;
+    font-size: 18px !important;
+  }
+
+  .search-filter-row {
+    flex-direction: column;
+  }
+  .filter-dropdown {
+    flex: 1;
+  }
+}
+
+/* --- SMALL MOBILE --- */
+@media (max-width: 480px) {
+  .white-panel {
+    padding: 12px;
+  }
+  .item-name {
+    font-size: 13px;
+  }
+  .badge-text {
+    font-size: 10px;
   }
 }

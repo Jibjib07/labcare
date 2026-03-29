@@ -96,16 +96,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_guide'])) {
     exit;
 }
 
-// 6. CREATE NEW GUIDE
+// 6. CREATE NEW GUIDE: With Validation & Duplicate Check
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_guide'])) {
-    $title = mysqli_real_escape_string($conn, $_POST['issue_title']);
-    $category = mysqli_real_escape_string($conn, $_POST['issue_catego']);
-    $summary = mysqli_real_escape_string($conn, $_POST['issue_summary']);
-    $cause = mysqli_real_escape_string($conn, $_POST['issue_cause']);
-    $solution = mysqli_real_escape_string($conn, $_POST['issue_solutio']);
-    $preventive = mysqli_real_escape_string($conn, $_POST['issue_preven']);
+    $title = mysqli_real_escape_string($conn, trim($_POST['issue_title']));
+    $category = mysqli_real_escape_string($conn, trim($_POST['issue_catego']));
+    $summary = mysqli_real_escape_string($conn, trim($_POST['issue_summary']));
+    $cause = mysqli_real_escape_string($conn, trim($_POST['issue_cause']));
+    $solution = mysqli_real_escape_string($conn, trim($_POST['issue_solutio']));
+    $preventive = mysqli_real_escape_string($conn, trim($_POST['issue_preven']));
+
+    if (empty($title) || empty($category)) {
+        echo json_encode(['status' => 'error', 'message' => 'Title and Category are required.']);
+        exit;
+    }
+
+    $check_query = "SELECT guide_id FROM troubleshooting WHERE issue_title = '$title'";
+    $check_result = mysqli_query($conn, $check_query);
+    
+    if (mysqli_num_rows($check_result) > 0) {
+        echo json_encode(['status' => 'error', 'message' => 'A guide with this exact title already exists.']);
+        exit;
+    }
+
     $insert_query = "INSERT INTO troubleshooting (issue_title, issue_catego, issue_summary, issue_cause, issue_solutio, issue_preven, guide_status) 
                      VALUES ('$title', '$category', '$summary', '$cause', '$solution', '$preventive', 'Available')";
+                     
     if (mysqli_query($conn, $insert_query)) {
         echo json_encode(['status' => 'success', 'message' => 'New guide created successfully']);
     } else {
@@ -127,54 +142,18 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
     <link rel="stylesheet" href="css/troubleshooting.css?v=<?php echo time(); ?>">
 
     <style>
-        .back-btn {
-            background: white;
-            border: 1px solid #ddd;
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
-            color: #333;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            text-decoration: none;
-            transition: background 0.2s;
-        }
-
-        .back-btn:hover {
-            background: #f5f5f5;
-        }
-
+        .back-btn { background: white; border: 1px solid #ddd; width: 40px; height: 40px; border-radius: 6px; color: #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; text-decoration: none; transition: background 0.2s; }
+        .back-btn:hover { background: #f5f5f5; }
         @media (max-width: 768px) {
-            .troubleshoot-layout {
-                display: block;
-                width: 100%;
-            }
-
-            .left-list-panel {
-                width: 100%;
-                display: block;
-            }
-
-            .right-detail-panel {
-                width: 100%;
-                display: none;
-                margin: 0;
-            }
-
-            .troubleshoot-layout.show-mobile-detail .left-list-panel {
-                display: none;
-            }
-
-            .troubleshoot-layout.show-mobile-detail .right-detail-panel {
-                display: block;
-            }
-
-            .mobile-back-row {
-                display: flex !important;
-            }
+            .troubleshoot-layout { display: block; width: 100%; }
+            .left-list-panel { width: 100%; display: block; }
+            .right-detail-panel { width: 100%; display: none; margin: 0; }
+            .troubleshoot-layout.show-mobile-detail .left-list-panel { display: none; }
+            .troubleshoot-layout.show-mobile-detail .right-detail-panel { display: block; }
+            .mobile-back-row { display: flex !important; }
+            .action-buttons button span, .panel-header-row button span { display: none !important; }
+            .btn-green-add, .btn-edit, .btn-save, .btn-archive, .btn-restore, .btn-cancel-edit { width: 36px !important; height: 36px !important; min-width: 36px !important; padding: 0 !important; display: inline-flex !important; justify-content: center !important; align-items: center !important; }
+            .btn-green-add i, .btn-edit i, .btn-save i, .btn-archive i, .btn-restore i, .btn-cancel-edit i { margin: 0 !important; font-size: 18px !important; }
         }
     </style>
 </head>
@@ -192,7 +171,9 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 <div class="panel-header-row">
                     <h3>Existing Guide List</h3>
                     <input type="hidden" id="categoryList" value='<?php echo json_encode($categories); ?>'>
-                    <button class="btn-green-add" id="openAddModal"><i class="fas fa-plus-circle"></i> Add</button>
+                    <button class="btn-green-add" id="openAddModal">
+                        <i class="fas fa-plus-circle"></i> <span>Add</span>
+                    </button>
                 </div>
                 <div class="status-toggle-row">
                     <div class="toggle-group">
@@ -201,9 +182,9 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                     </div>
                     <input type="hidden" id="statusValue" value="Available">
                 </div>
-                <div class="search-filter-row">
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search a guide">
-                    <select id="categoryFilter" class="filter-dropdown">
+                <div class="search-filter-row">               
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search">
+                    <select id="categoryFilter" class="filter-dropdown" style="width: 100%;">   
                         <option value="">All Categories</option>
                         <?php foreach ($categories as $cat): ?>
                             <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
@@ -226,7 +207,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 <div class="panel-header-row">
                     <h3>Guide Full Details</h3>
                     <div id="actionButtons" class="action-buttons" style="display:none;">
-                        <button class="btn-edit" id="mainEditBtn"><i class="fas fa-pen"></i> Edit</button>
+                        <button class="btn-edit" id="mainEditBtn"><i class="fas fa-pen"></i> <span>Edit</span></button>
                         <button class="btn-archive" id="archiveToggleBtn"></button>
                     </div>
                 </div>
@@ -240,8 +221,10 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             <div class="panel-header-row">
                 <h3>Adding New Guide</h3>
                 <div class="action-buttons">
-                    <button type="button" class="btn-cancel" id="closeAddModal">Cancel</button>
-                    <button type="button" class="btn-green-add" id="submitCreateBtn"><i class="fas fa-plus-circle"></i> Create</button>
+                    <button type="button" class="btn-cancel" id="closeAddModal">
+                        <i class="fas fa-times"></i> <span>Cancel</span>
+                    </button>
+                    <button type="button" class="btn-green-add" id="submitCreateBtn"><i class="fas fa-plus-circle"></i> <span>Create</span></button>
                 </div>
             </div>
             <hr class="modal-divider">
@@ -269,8 +252,8 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             <div class="form-group"><label>Issue Title</label><input type="text" id="archiveIssueTitle" class="detail-input" readonly></div>
             <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="archiveCategory" class="detail-input" readonly></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-cancel" id="closeArchiveModal">Cancel</button>
-                <button type="button" class="btn-archive" id="confirmArchiveBtn"><i class="fas fa-box-archive"></i> Archive</button>
+                <button type="button" class="btn-cancel" id="closeArchiveModal"><i class="fas fa-times"></i><span>Cancel</span></button>
+                <button type="button" class="btn-archive" id="confirmArchiveBtn"><i class="fas fa-box-archive"></i> <span>Archive</span></button>
             </div>
         </div>
     </div>
@@ -282,13 +265,13 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             <div class="form-group"><label>Issue Title</label><input type="text" id="restoreIssueTitle" class="detail-input" readonly></div>
             <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="restoreCategory" class="detail-input" readonly></div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-cancel" id="closeRestoreModal">Cancel</button>
-                <button type="button" class="btn-green-add" id="confirmRestoreBtn"><i class="fas fa-check-circle"></i> Confirm</button>
+                <button type="button" class="btn-cancel" id="closeRestoreModal"><i class="fas fa-times"></i><span>Cancel</span></button>
+                <button type="button" class="btn-green-add" id="confirmRestoreBtn"><i class="fas fa-check-circle"></i> <span>Confirm</span></button>
             </div>
         </div>
     </div>
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
-    <script src="js/troubleshooting.js"></script>
+    <script src="js/troubleshooting.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>

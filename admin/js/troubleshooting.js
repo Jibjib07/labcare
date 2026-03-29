@@ -19,11 +19,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const closeAddBtn = document.getElementById("closeAddModal");
   const addGuideForm = document.getElementById("addGuideForm");
   const submitCreateBtn = document.getElementById("submitCreateBtn");
-
   const archiveModal = document.getElementById("archiveConfirmModal");
   const closeArchiveBtn = document.getElementById("closeArchiveModal");
   const confirmArchiveBtn = document.getElementById("confirmArchiveBtn");
-
   const restoreModal = document.getElementById("restoreConfirmModal");
   const closeRestoreBtn = document.getElementById("closeRestoreModal");
   const confirmRestoreBtn = document.getElementById("confirmRestoreBtn");
@@ -48,7 +46,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function showNotification(type, title, message) {
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
-    const iconClass = type === "success" ? "fa-check-circle" : "fa-box-archive";
+
+    let iconClass = "fa-info-circle";
+    if (type === "success") iconClass = "fa-check-circle";
+    if (type === "error") iconClass = "fa-exclamation-circle";
+    if (type === "archive") iconClass = "fa-box-archive";
+
     toast.innerHTML = `
             <div class="toast-icon"><i class="fas ${iconClass}"></i></div>
             <div class="toast-content">
@@ -62,63 +65,73 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 4000);
   }
 
-  function resetEditButton() {
-    if (editBtn) {
-      editBtn.innerHTML = '<i class="fas fa-pen"></i> Edit';
-      editBtn.className = "btn-edit";
-      editBtn.style.display = "inline-block";
+  // --- BUTTON STATE & VISIBILITY ---
+
+  function updateButtonVisibility() {
+    if (!editBtn || !archiveToggleBtn) return;
+
+    const isArchived = statusValueInput.value === "Archived";
+
+    if (isArchived) {
+      editBtn.style.setProperty("display", "none", "important");
+      archiveToggleBtn.innerHTML =
+        '<i class="fas fa-undo"></i> <span>Restore</span>';
+      archiveToggleBtn.className = "btn-restore";
+      archiveToggleBtn.style.setProperty("display", "inline-flex", "important");
+    } else {
+      editBtn.style.setProperty("display", "inline-flex", "important");
+      archiveToggleBtn.innerHTML =
+        '<i class="fas fa-box-archive"></i> <span>Archive</span>';
+      archiveToggleBtn.className = "btn-archive";
+      archiveToggleBtn.style.setProperty("display", "inline-flex", "important");
     }
   }
 
-  // Helper: Restore original UI state after editing/canceling
+  function resetEditButton() {
+    if (!editBtn) return;
+    editBtn.innerHTML = '<i class="fas fa-pen"></i> <span>Edit</span>';
+    editBtn.className = "btn-edit";
+    editBtn.classList.replace("btn-save", "btn-edit");
+    updateButtonVisibility();
+  }
+
   function exitEditMode() {
-    const inputs = detailView.querySelectorAll(
-      ".detail-input, .detail-textarea",
-    );
-    const select = detailView.querySelector(".detail-select");
     const cancelBtn = document.getElementById("editCancelBtn");
 
-    inputs.forEach((el) => el.setAttribute("readonly", true));
-    if (select) select.setAttribute("disabled", true);
+    detailView
+      .querySelectorAll(".view-mode")
+      .forEach((el) => (el.style.display = "block"));
+    detailView
+      .querySelectorAll(".edit-mode")
+      .forEach((el) => (el.style.display = "none"));
 
     resetEditButton();
-    archiveToggleBtn.style.display = "inline-flex";
     if (cancelBtn) cancelBtn.remove();
   }
 
-  // Helper: Discard unsaved text and revert to stored data
   function cancelEdit() {
     if (currentGuideData) {
       renderDetails(currentGuideData);
       exitEditMode();
       detailView
-        .querySelectorAll(".detail-textarea")
+        .querySelectorAll(".detail-textarea.edit-mode")
         .forEach(adjustTextareaHeight);
     }
   }
 
   // --- LIST LOGIC ---
+
   function refreshTable(autoSelectFirst = true) {
     const search = searchInput.value;
     const category = categoryFilter.value;
     const status = statusValueInput ? statusValueInput.value : "Available";
 
-    // Clear Edit state if refreshing
     if (document.getElementById("editCancelBtn")) {
       exitEditMode();
     }
 
     skipAnimation = true;
-
-    if (status === "Archived") {
-      archiveToggleBtn.innerHTML = '<i class="fas fa-undo"></i> Restore';
-      archiveToggleBtn.className = "btn-restore";
-      if (editBtn) editBtn.style.display = "none";
-    } else {
-      archiveToggleBtn.innerHTML = '<i class="fas fa-box-archive"></i> Archive';
-      archiveToggleBtn.className = "btn-archive";
-      if (editBtn) editBtn.style.display = "inline-block";
-    }
+    updateButtonVisibility();
 
     fetch(
       `troubleshooting.php?ajax_filter=1&search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&status=${status}`,
@@ -126,12 +139,9 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((res) => res.text())
       .then((html) => {
         tableBody.innerHTML = html;
-
-        // Target the .guide-item class
         const firstRow = tableBody.querySelector(".guide-item");
 
         if (autoSelectFirst && firstRow) {
-          // Stop auto-selection on mobile devices
           if (window.innerWidth > 768) {
             firstRow.click();
           }
@@ -152,19 +162,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- SELECTION & RENDERING ---
+
   tableBody.onclick = (e) => {
-    // Target the .guide-item container
     const row = e.target.closest(".guide-item");
     if (!row) return;
 
-    // --- NEW: MOBILE TOGGLE ---
     if (window.innerWidth <= 768) {
       document
         .querySelector(".troubleshoot-layout")
         .classList.add("show-mobile-detail");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    // If clicking a new row while editing, cancel the current edit
     if (document.getElementById("editCancelBtn")) {
       exitEditMode();
     }
@@ -188,15 +197,11 @@ document.addEventListener("DOMContentLoaded", function () {
         currentGuideData = data;
         actionButtons.style.display = "flex";
 
-        if (statusValueInput.value === "Archived") {
-          if (editBtn) editBtn.style.display = "none";
-        } else {
-          resetEditButton();
-        }
+        updateButtonVisibility();
 
         renderDetails(data);
         detailView
-          .querySelectorAll(".detail-textarea")
+          .querySelectorAll(".detail-textarea.edit-mode")
           .forEach(adjustTextareaHeight);
       });
   };
@@ -210,12 +215,36 @@ document.addEventListener("DOMContentLoaded", function () {
       .join("");
 
     detailView.innerHTML = `
-            <div class="detail-group"><label>Category</label><select class="detail-select" name="issue_catego" disabled>${categoryOptions}</select></div>
-            <div class="detail-group"><label>Issue Title</label><input type="text" class="detail-input" name="issue_title" value="${data.issue_title}" readonly></div>
-            <div class="detail-group"><label>Summary Description</label><textarea class="detail-textarea" name="issue_summary" readonly>${data.issue_summary}</textarea></div>
-            <div class="detail-group"><label>Possible Causes</label><textarea class="detail-textarea" name="issue_cause" readonly>${data.issue_cause}</textarea></div>
-            <div class="detail-group"><label>Step-by-Step Solution</label><textarea class="detail-textarea" name="issue_solutio" readonly>${data.issue_solutio}</textarea></div>
-            <div class="detail-group"><label>Preventive Measures</label><textarea class="detail-textarea" name="issue_preven" readonly>${data.issue_preven || ""}</textarea></div>`;
+            <div class="detail-group">
+                <label>Category</label>
+                <div class="view-mode">${data.issue_catego}</div>
+                <select class="detail-select edit-mode" name="issue_catego" style="display:none;">${categoryOptions}</select>
+            </div>
+            <div class="detail-group">
+                <label>Issue Title</label>
+                <div class="view-mode">${data.issue_title}</div>
+                <input type="text" class="detail-input edit-mode" name="issue_title" value="${data.issue_title}" style="display:none;">
+            </div>
+            <div class="detail-group">
+                <label>Summary Description</label>
+                <div class="view-mode">${data.issue_summary || "-"}</div>
+                <textarea class="detail-textarea edit-mode" name="issue_summary" style="display:none;">${data.issue_summary}</textarea>
+            </div>
+            <div class="detail-group">
+                <label>Possible Causes</label>
+                <div class="view-mode">${data.issue_cause || "-"}</div>
+                <textarea class="detail-textarea edit-mode" name="issue_cause" style="display:none;">${data.issue_cause}</textarea>
+            </div>
+            <div class="detail-group">
+                <label>Step-by-Step Solution</label>
+                <div class="view-mode">${data.issue_solutio || "-"}</div>
+                <textarea class="detail-textarea edit-mode" name="issue_solutio" style="display:none;">${data.issue_solutio}</textarea>
+            </div>
+            <div class="detail-group">
+                <label>Preventive Measures</label>
+                <div class="view-mode">${data.issue_preven || "-"}</div>
+                <textarea class="detail-textarea edit-mode" name="issue_preven" style="display:none;">${data.issue_preven || ""}</textarea>
+            </div>`;
   }
 
   detailView.addEventListener("input", (e) => {
@@ -231,29 +260,32 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // --- EDIT, SAVE & CANCEL ACTION ---
+
   if (editBtn) {
     editBtn.onclick = () => {
-      const inputs = detailView.querySelectorAll(
-        ".detail-input, .detail-textarea",
-      );
-      const select = detailView.querySelector(".detail-select");
       const isEditing = editBtn.classList.contains("btn-save");
 
       if (!isEditing) {
-        // ENTERING EDIT MODE
-        inputs.forEach((el) => el.removeAttribute("readonly"));
-        if (select) select.removeAttribute("disabled");
+        // --- ENTERING EDIT MODE ---
+        detailView
+          .querySelectorAll(".view-mode")
+          .forEach((el) => (el.style.display = "none"));
+        detailView
+          .querySelectorAll(".edit-mode")
+          .forEach((el) => (el.style.display = "block"));
 
-        editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+        editBtn.innerHTML = '<i class="fas fa-save"></i> <span>Save</span>';
         editBtn.classList.replace("btn-edit", "btn-save");
 
-        // Switch Archive button to Cancel button
-        archiveToggleBtn.style.display = "none";
+        archiveToggleBtn.style.setProperty("display", "none", "important");
+
         if (!document.getElementById("editCancelBtn")) {
           const cancelBtn = document.createElement("button");
           cancelBtn.id = "editCancelBtn";
-          cancelBtn.className = "btn-cancel-edit"; // Make sure this class exists in your CSS or style it
-          cancelBtn.innerHTML = "Cancel";
+          cancelBtn.className = "btn-cancel-edit";
+          cancelBtn.innerHTML =
+            '<i class="fas fa-times"></i> <span>Cancel</span>';
+
           cancelBtn.onclick = (e) => {
             e.stopPropagation();
             cancelEdit();
@@ -262,15 +294,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         detailView
-          .querySelectorAll(".detail-textarea")
+          .querySelectorAll(".detail-textarea.edit-mode")
           .forEach(adjustTextareaHeight);
       } else {
-        // SAVING
+        // --- SAVING MODE ---
         const formData = new FormData();
         formData.append("update_guide", "1");
         formData.append("guide_id", currentGuideId);
+
         detailView
-          .querySelectorAll("[name]")
+          .querySelectorAll(".edit-mode")
           .forEach((f) => formData.append(f.name, f.value));
 
         fetch("troubleshooting.php", { method: "POST", body: formData })
@@ -282,14 +315,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 "Guide Updated",
                 "Changes saved successfully.",
               );
-              // Capture the new values locally so Cancel doesn't revert to old data
               const updatedData = {};
               formData.forEach((value, key) => {
                 updatedData[key] = value;
               });
               currentGuideData = { ...currentGuideData, ...updatedData };
-
               exitEditMode();
+              renderDetails(currentGuideData);
               refreshTable(false);
             }
           });
@@ -297,9 +329,10 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 
-  // --- MODAL & FILTER CONTROLS ---
+  // --- MODAL CONTROLS ---
 
   if (openAddBtn) openAddBtn.onclick = () => (addModal.style.display = "flex");
+
   if (closeAddBtn) {
     closeAddBtn.onclick = () => {
       addModal.style.display = "none";
@@ -311,9 +344,36 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   if (submitCreateBtn) {
-    submitCreateBtn.onclick = () => {
+    submitCreateBtn.onclick = (e) => {
+      e.preventDefault();
+
+      const titleInput = addGuideForm
+        .querySelector('input[name="issue_title"]')
+        .value.trim();
+      const categorySelect = addGuideForm
+        .querySelector('select[name="issue_catego"]')
+        .value.trim();
+
+      if (titleInput === "") {
+        showNotification(
+          "error",
+          "Validation Error",
+          "Issue Title cannot be empty.",
+        );
+        return;
+      }
+      if (categorySelect === "") {
+        showNotification(
+          "error",
+          "Validation Error",
+          "Please select a Category.",
+        );
+        return;
+      }
+
       const formData = new FormData(addGuideForm);
       formData.append("create_guide", "1");
+
       fetch("troubleshooting.php", { method: "POST", body: formData })
         .then((res) => res.json())
         .then((result) => {
@@ -325,7 +385,17 @@ document.addEventListener("DOMContentLoaded", function () {
             );
             closeAddBtn.onclick();
             refreshTable(true);
+          } else {
+            showNotification("error", "Action Failed", result.message);
           }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          showNotification(
+            "error",
+            "System Error",
+            "An unexpected error occurred.",
+          );
         });
     };
   }
@@ -410,10 +480,10 @@ document.addEventListener("DOMContentLoaded", function () {
   refreshTable(true);
 });
 
-// --- NEW: Global function for mobile back button ---
 function closeMobileDetails() {
   const layout = document.querySelector(".troubleshoot-layout");
   if (layout) {
     layout.classList.remove("show-mobile-detail");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
