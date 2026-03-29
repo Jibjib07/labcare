@@ -1,4 +1,5 @@
 <?php
+include '../includes/admin_auth.php';
 include '../includes/db.php';
 
 $add_error = '';

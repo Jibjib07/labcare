@@ -1,5 +1,6 @@
 <?php
 session_start();
+require '../includes/staff_auth.php';
 include '../includes/db.php';
 
 // --- NEW: QUICK SEARCH AJAX ENDPOINT ---

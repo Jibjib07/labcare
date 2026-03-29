@@ -1,5 +1,6 @@
 let currentEditingSetId = null; // For Computer Units
 let currentSelectedFAId = null; // For Facility Assets
+let isEditModeActive = false; // <-- ADDED: Tracker for Edit/Report Mode
 
 // Check for pending toasts when the page loads
 document.addEventListener("DOMContentLoaded", () => {
@@ -15,6 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
     .querySelectorAll("#assetListContainer .asset-item:not(.missing-id)")
     .forEach((item) => {
       item.addEventListener("click", function () {
+        // --- ADDED: Blocker for PC List ---
+        if (isEditModeActive) {
+          showNotification(
+            "Action Blocked",
+            "Please save or cancel your current report before selecting another item.",
+            "error"
+          );
+          return;
+        }
+        // ----------------------------------
         const setId = this.getAttribute("data-set-id");
         if (setId) selectUnit(this, setId);
       });
@@ -24,6 +35,16 @@ document.addEventListener("DOMContentLoaded", () => {
     .querySelectorAll("#facilityListContainer .asset-item")
     .forEach((item) => {
       item.addEventListener("click", function () {
+        // --- ADDED: Blocker for FA List ---
+        if (isEditModeActive) {
+          showNotification(
+            "Action Blocked",
+            "Please save or cancel your current report before selecting another item.",
+            "error"
+          );
+          return;
+        }
+        // ----------------------------------
         const assetId = this.getAttribute("data-asset-id");
         if (assetId) selectFacilityAsset(this, assetId);
       });
@@ -102,6 +123,16 @@ window.addEventListener("click", function (event) {
 });
 
 function switchView(viewName) {
+  // --- ADDED: Auto-cancel edit mode if they switch main tabs ---
+  if (isEditModeActive) {
+      if (document.getElementById("view-facility").style.display === "block") {
+          cancelFAReportMode();
+      } else {
+          cancelReportMode();
+      }
+  }
+  // -------------------------------------------------------------
+
   const computerView = document.getElementById("view-computer");
   const facilityView = document.getElementById("view-facility");
 
@@ -184,10 +215,6 @@ function closeMobileDetails() {
   if (computerView) computerView.classList.remove("mobile-show-details");
   if (facilityView) facilityView.classList.remove("mobile-show-details");
 }
-
-// ==========================================
-// AUTO-SELECT HELPER
-// ==========================================
 
 // ==========================================
 // AUTO-SELECT HELPER (UPGRADED FOR DASHBOARD URL PARAMS)
@@ -351,6 +378,17 @@ function applyFAFilters() {
 // ==========================================
 
 function selectUnit(element, setId) {
+  // --- ADDED: Blocker inside selection function ---
+  if (isEditModeActive) {
+      showNotification(
+          "Action Blocked",
+          "Please save or cancel your current report before selecting another item.",
+          "error"
+      );
+      return;
+  }
+  // ------------------------------------------------
+
   currentEditingSetId = setId;
 
   document
@@ -498,6 +536,8 @@ function populateRightPanel(data) {
 }
 
 function resetUIToViewMode() {
+  isEditModeActive = false; // <-- ADDED: Turn off the lock
+  
   const btn = document.getElementById("btnReport");
   const btnCancel = document.getElementById("btnCancelReport");
 
@@ -518,6 +558,17 @@ function resetUIToViewMode() {
 // ==========================================
 
 function selectFacilityAsset(element, assetId) {
+  // --- ADDED: Blocker inside selection function ---
+  if (isEditModeActive) {
+      showNotification(
+          "Action Blocked",
+          "Please save or cancel your current report before selecting another item.",
+          "error"
+      );
+      return;
+  }
+  // ------------------------------------------------
+
   currentSelectedFAId = assetId;
   currentEditingSetId = null;
 
@@ -609,6 +660,10 @@ function selectFacilityAsset(element, assetId) {
               '<div style="text-align:center; color:#888; padding: 25px;">No recent maintenance activity found.</div>';
           }
         }
+        
+        // --- ADDED: Turn off edit mode lock after loading new FA details ---
+        isEditModeActive = false; 
+        
       } else {
         showNotification("Error", data.error, "error");
       }
@@ -643,6 +698,8 @@ function toggleReportMode() {
   const btnCancel = document.getElementById("btnCancelReport");
 
   if (textSpan.innerText === "Report") {
+    isEditModeActive = true; // <-- ADDED: Turn ON the lock
+    
     textSpan.innerText = "Submit";
     btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span id="reportText">Submit</span>`;
     btnCancel.style.display = "inline-block";
@@ -659,6 +716,8 @@ function toggleReportMode() {
 }
 
 function cancelReportMode() {
+  isEditModeActive = false; // <-- ADDED: Turn OFF the lock
+
   if (currentEditingSetId) {
     const activeItem = document.querySelector(
       "#assetListContainer .asset-item.active",
@@ -809,6 +868,8 @@ function toggleFAReportMode() {
   const btnCancel = document.getElementById("btnCancelReportFA");
 
   if (textSpan.innerText.trim() === "Report") {
+    isEditModeActive = true; // <-- ADDED: Turn ON the lock
+    
     textSpan.innerText = "Submit";
     btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span id="reportTextFA">Submit</span>`;
     btnCancel.style.display = "inline-block";
@@ -836,6 +897,8 @@ function toggleFAReportMode() {
 }
 
 function cancelFAReportMode() {
+  isEditModeActive = false; // <-- ADDED: Turn OFF the lock
+  
   if (currentSelectedFAId) {
     const activeItem = document.querySelector(
       "#facilityListContainer .asset-item.active",

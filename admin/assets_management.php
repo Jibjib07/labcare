@@ -1,4 +1,5 @@
 <?php
+include '../includes/admin_auth.php';
 include '../includes/db.php';
 
 
@@ -540,11 +541,9 @@ function generateStatusToggle($id, $label, $hasSubInput = false, $subLabel = '',
 
                         <div class="header-actions">
                             <button class="btn-transfer" onclick="openModal('transferModal', <?= $current_lab_id ?>)">
-                                <i class="fas fa-exchange-alt"></i> Transfer
-                            </button>
+                                <i class="fas fa-exchange-alt"></i> <span class="btn-text">Transfer</button>
                             <button class="btn-green-add" onclick="openFacilityAssetModal()">
-                                <i class="fas fa-plus-circle"></i> Add
-                            </button>
+                                <i class="fas fa-plus-circle"></i> <span class="btn-text">Add</button>
                         </div>
                     </div>
 

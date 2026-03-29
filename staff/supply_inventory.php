@@ -1,5 +1,6 @@
 <?php
 session_start();
+require '../includes/staff_auth.php';
 include '../includes/db.php';
 
 date_default_timezone_set('Asia/Manila');
@@ -37,6 +38,7 @@ if (isset($_GET['fetch_id'])) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -45,6 +47,7 @@ if (isset($_GET['fetch_id'])) {
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/supply_inventory.css?v=<?php echo time(); ?>">
 </head>
+
 <body>
     <?php include 'includes/sidebar.php'; ?>
 
@@ -81,7 +84,7 @@ if (isset($_GET['fetch_id'])) {
                         while ($row = mysqli_fetch_assoc($result)) {
                             $id = $row['supply_id'];
                             $badge = ($row['supply_status'] === 'In Stock') ? 'badge green' : 'badge red';
-                            
+
                             echo "
                             <div class='supply-row asset-item' data-id='{$id}' data-avail='Current'> 
                                 <div class='item-info'>
@@ -105,7 +108,7 @@ if (isset($_GET['fetch_id'])) {
                         </button>
                         <h3 style="margin:0; font-size:16px;">Back to List</h3>
                     </div>
-                    
+
                     <div class="panel-header-row">
                         <h3>Supply Details</h3>
                     </div>
@@ -117,7 +120,7 @@ if (isset($_GET['fetch_id'])) {
 
                     <h4 class="activity-title" style="margin-top: 15px; margin-bottom: 15px; font-weight: 700; font-size: 14px;">Supply History:</h4>
                     <div class="activity-feed-container" id="activityFeed" style="flex: 1; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 8px; background: #fff;">
-                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -126,4 +129,5 @@ if (isset($_GET['fetch_id'])) {
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/supply_inventory.js?v=<?php echo time(); ?>"></script>
 </body>
+
 </html>

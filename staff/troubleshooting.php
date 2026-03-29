@@ -1,4 +1,5 @@
 <?php
+require '../includes/staff_auth.php';
 include '../includes/db.php';
 
 // 1. AJAX Endpoint: Fetch Single Guide Details
@@ -126,15 +127,15 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 <div class="panel-header-row">
                     <h3>Existing Guide List</h3>
                     <input type="hidden" id="categoryList" value='<?php echo json_encode($categories); ?>'>
-                    </div>
-                
+                </div>
+
                 <div class="status-toggle-row">
                     <input type="hidden" id="statusValue" value="Available">
                 </div>
 
-                <div class="search-filter-row">               
+                <div class="search-filter-row">
                     <input type="text" id="searchInput" class="search-input" placeholder="Search">
-                    <select id="categoryFilter" class="filter-dropdown" style="width: 100%;">   
+                    <select id="categoryFilter" class="filter-dropdown" style="width: 100%;">
                         <option value="">All Categories</option>
                         <?php foreach ($categories as $cat): ?>
                             <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
@@ -156,7 +157,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
 
                 <div class="panel-header-row">
                     <h3>Guide Full Details</h3>
-                    </div>
+                </div>
                 <div id="detailView" class="detail-content"></div>
             </div>
         </div>
