@@ -44,14 +44,22 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "POST",
         body: data,
       });
-      const result = await res.json();
+      
+      // FIX #1: Read as text first to catch hidden PHP errors instead of crashing
+      const rawText = await res.text();
+      let result;
+
+      try {
+        result = JSON.parse(rawText);
+      } catch (e) {
+        console.error("CRITICAL: Server did not return JSON. Raw output:", rawText);
+        throw new Error("Server output invalid. Check console (F12) for details.");
+      }
 
       if (result.session_expired) {
         showToast("Session Expired", "Please login again.", "error");
         setTimeout(() => (window.location.href = "../login.php"), 1500);
-        return {
-          status: "error",
-        };
+        return { status: "error" };
       }
 
       if (result.csrf_token) {
@@ -63,9 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (result.message === "Access denied") {
         showToast("Access Denied", "You no longer have permission.", "error");
         setTimeout(() => (window.location.href = "../login.php"), 2000);
-        return {
-          status: "error",
-        };
+        return { status: "error" };
       }
 
       if (result.message === "Invalid CSRF token" && retry) {
@@ -75,14 +81,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return result;
     } catch (error) {
       console.error("Network Error:", error);
-      showToast(
-        "Network Issue",
-        "Connection failed. Please check your internet or try again.",
-        "error",
-      );
+      // Pass the ACTUAL error message up the chain
       return {
         status: "error",
-        message: "network_error",
+        message: error.message || "Connection failed. Please check your internet.",
       };
     }
   }
@@ -178,11 +180,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (status === "Active") {
       infoStatus.className = "info-value status-bg";
       btnAction2.className = "btn-deactivate";
-      btnAction2.innerHTML = `<i class="fas fa-user-slash"></i> <span>Deactivate</span>`;
+      btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-user-slash"></i> Deactivate</span><span class="mobile-icon"><i class="fas fa-user-slash"></i></span>`;
     } else {
       infoStatus.className = "info-value status-bg deact-bg";
       btnAction2.className = "btn-green-add";
-      btnAction2.innerHTML = `<i class="fas fa-undo"></i> <span>Re-activate</span>`;
+      btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-undo"></i> Re-activate</span><span class="mobile-icon"><i class="fas fa-undo"></i></span>`;
     }
   }
 
@@ -222,19 +224,6 @@ document.addEventListener("DOMContentLoaded", () => {
         .querySelector(".user-layout")
         .classList.remove("show-mobile-details");
     });
-  }
-
-  function updateStatusVisuals() {
-    const status = infoStatus.innerText.trim();
-    if (status === "Active") {
-      infoStatus.className = "info-value status-bg";
-      btnAction2.className = "btn-deactivate";
-      btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-user-slash"></i> Deactivate</span><span class="mobile-icon"><i class="fas fa-user-slash"></i></span>`;
-    } else {
-      infoStatus.className = "info-value status-bg deact-bg";
-      btnAction2.className = "btn-green-add";
-      btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-undo"></i> Re-activate</span><span class="mobile-icon"><i class="fas fa-undo"></i></span>`;
-    }
   }
 
   function toggleEditMode() {
@@ -505,6 +494,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+  // FIX #3: Add User Role Toggle Logic
+  const addRoleBtns = document.querySelectorAll("#add-user-form .role-btn");
+  const addRoleInput = document.getElementById("add-role");
+
+  addRoleBtns.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      addRoleBtns.forEach((b) => b.classList.remove("active"));
+      e.target.classList.add("active");
+      addRoleInput.value = e.target.dataset.val;
+    });
+  });
+
   // Add User Logic
   document
     .getElementById("btn-open-add-modal")
@@ -529,6 +530,12 @@ document.addEventListener("DOMContentLoaded", () => {
           "Please fill out all required fields.",
           "error",
         );
+        return;
+      }
+
+      // FIX #2: Add email validation check
+      if (!isValidEmail(email)) {
+        showToast("Email Error", "Please enter a valid email address.", "error");
         return;
       }
 
@@ -559,7 +566,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      const confirmBtn = document.getElementById("btn-confirm-add");
+
       try {
+        // FIX #4: Add Loading State to prevent spamming
+        setLoading(confirmBtn, "Creating...");
+
         const formData = new FormData();
         formData.append("name", name);
         formData.append("email", email);
@@ -567,6 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append("role", role);
 
         const data = await postData("add_user", formData);
+        
         if (data.status !== "success") throw new Error(data.message);
 
         sessionStorage.setItem(
@@ -580,6 +593,9 @@ document.addEventListener("DOMContentLoaded", () => {
         location.reload();
       } catch (err) {
         showToast("Creation Failed", err.message, "error");
+      } finally {
+        // Reset the button after success or failure
+        resetButton(confirmBtn);
       }
     });
 

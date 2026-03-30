@@ -2,9 +2,6 @@
 include '../includes/db.php';
 require '../includes/admin_auth.php'; 
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
 // CSRF TOKEN GENERATION
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -102,13 +99,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             if ($stmt->execute()) {
                 $newUserId = $stmt->insert_id;
-                // LOG AUDIT: ADD
-                $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, new_data) VALUES (?, ?, 'Add', ?)");
-                $logData = json_encode(['name' => $name, 'email' => $email, 'role' => $role]);
-                $audit->bind_param("iis", $adminId, $newUserId, $logData);
-                $audit->execute();
+                
+                // 🛡️ LOG AUDIT: ADD (Safely wrapped to prevent crashes)
+                try {
+                    $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, new_data) VALUES (?, ?, 'Add', ?)");
+                    if ($audit) {
+                        $logData = json_encode(['name' => $name, 'email' => $email, 'role' => $role]);
+                        $audit->bind_param("iis", $adminId, $newUserId, $logData);
+                        $audit->execute();
+                    }
+                } catch (Exception $logError) {
+                    error_log("Audit Log Failed: " . $logError->getMessage());
+                }
 
-                echo json_encode(['status' => 'success', 'id' => $stmt->insert_id, 'csrf_token' => $new_csrf]);
+                echo json_encode(['status' => 'success', 'id' => $newUserId, 'csrf_token' => $new_csrf]);
                 exit;
             }
         }
@@ -135,16 +139,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $oldStmt->execute();
             $oldData = $oldStmt->get_result()->fetch_assoc();
 
-            // 2. Perform the update
+            // Perform the update
             $stmt = $conn->prepare("UPDATE users SET user_name=?, user_email=?, user_role=? WHERE user_id=?");
             $stmt->bind_param("sssi", $name, $email, $role, $id);
 
             if ($stmt->execute()) {
-                if ($audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, old_data, new_data) VALUES (?, ?, 'Update', ?, ?)")) {
-                    $newData = json_encode(['name' => $name, 'email' => $email, 'role' => $role]);
-                    $oldJson = json_encode($oldData);
-                    $audit->bind_param("iiss", $adminId, $id, $oldJson, $newData);
-                    $audit->execute();
+                // 🛡️ LOG AUDIT: UPDATE (Safely wrapped to prevent crashes)
+                try {
+                    $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, old_data, new_data) VALUES (?, ?, 'Update', ?, ?)");
+                    if ($audit) {
+                        $newData = json_encode(['name' => $name, 'email' => $email, 'role' => $role]);
+                        $oldJson = json_encode($oldData);
+                        $audit->bind_param("iiss", $adminId, $id, $oldJson, $newData);
+                        $audit->execute();
+                    }
+                } catch (Exception $logError) {
+                    error_log("Audit Log Failed: " . $logError->getMessage());
                 }
 
                 echo json_encode(['status' => 'success', 'csrf_token' => $new_csrf]);
@@ -172,11 +182,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $stmt->bind_param("si", $status, $id);
 
             if ($stmt->execute()) {
-                if ($audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, old_data, new_data) VALUES (?, ?, 'Status Change', ?, ?)")) {
-                    $oldJson = json_encode($oldData);
-                    $newJson = json_encode(['user_status' => $status]);
-                    $audit->bind_param("iiss", $adminId, $id, $oldJson, $newJson);
-                    $audit->execute();
+                // 🛡️ LOG AUDIT: STATUS CHANGE (Safely wrapped to prevent crashes)
+                try {
+                    $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, old_data, new_data) VALUES (?, ?, 'Status Change', ?, ?)");
+                    if ($audit) {
+                        $oldJson = json_encode($oldData);
+                        $newJson = json_encode(['user_status' => $status]);
+                        $audit->bind_param("iiss", $adminId, $id, $oldJson, $newJson);
+                        $audit->execute();
+                    }
+                } catch (Exception $logError) {
+                    error_log("Audit Log Failed: " . $logError->getMessage());
                 }
 
                 echo json_encode(['status' => 'success', 'csrf_token' => $new_csrf]);
@@ -216,8 +232,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $stmt->bind_param("iss", $id, $tokenHash, $expires);
 
             if ($stmt->execute()) {
+                // EXPLICITLY REQUIRE AND LOAD PHPMAILER ONLY HERE
                 require '../vendor/autoload.php';
-                $mail = new PHPMailer(true);
+                $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                
                 try {
                     $mail->isSMTP();
                     $mail->Host = 'smtp.gmail.com';
@@ -236,35 +254,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $mail->Body = "Hello {$user['user_name']},\n\nAn administrator has initiated a password reset for your account. Please click the link below to set a new password:\n\n{$resetLink}\n\nThis link expires in 1 hour.";
 
                     if ($mail->send()) {
-                    // LOG AUDIT TRAIL
-                    $actionType = 'Send Password Reset Link'; 
-                    $logData = json_encode([
-                        'message' => "Reset link sent to {$user['user_email']} by admin ID {$adminId}",
-                        'ip' => $_SERVER['REMOTE_ADDR'],
-                        'user_agent' => $_SERVER['HTTP_USER_AGENT']
-                    ]);
+                        // LOG AUDIT TRAIL
+                        try {
+                            $actionType = 'Send Password Reset Link'; 
+                            $logData = json_encode([
+                                'message' => "Reset link sent to {$user['user_email']} by admin ID {$adminId}",
+                                'ip' => $_SERVER['REMOTE_ADDR'],
+                                'user_agent' => $_SERVER['HTTP_USER_AGENT']
+                            ]);
 
-                    $audit = $conn->prepare("
-                        INSERT INTO user_audit_trail (admin_id, user_id, action_type, new_data)
-                        VALUES (?, ?, ?, ?)
-                    ");
-                    $audit->bind_param("iiss", $adminId, $id, $actionType, $logData);
-                    if(!$audit->execute()) {
-                        error_log("Audit log failed: " . $audit->error);
+                            $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, new_data) VALUES (?, ?, ?, ?)");
+                            if ($audit) {
+                                $audit->bind_param("iiss", $adminId, $id, $actionType, $logData);
+                                $audit->execute();
+                            }
+                        } catch (Exception $logError) {
+                            error_log("Audit log failed: " . $logError->getMessage());
+                        }
+
+                        echo json_encode(['status' => 'success', 'csrf_token' => $new_csrf]);
+                        exit;
                     }
-
-                    echo json_encode(['status' => 'success', 'csrf_token' => $new_csrf]);
-                    exit;
+                } catch (\Exception $e) { // Catch any mailer-specific exceptions locally
+                    throw new Exception("Mailer Error: " . $mail->ErrorInfo);
                 }
-            } catch (Exception $e) {
-                throw new Exception("Mailer Error: " . $mail->ErrorInfo);
             }
         }
-    }
 
         throw new Exception("Invalid action provided.");
 
     } catch (Exception $e) {
+        // Global catch block for all standard PHP exceptions
         echo json_encode(['status' => 'error', 'message' => $e->getMessage(), 'csrf_token' => $new_csrf]);
         exit;
     }
