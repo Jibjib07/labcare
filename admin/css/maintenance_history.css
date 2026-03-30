@@ -465,6 +465,34 @@ body {
 }
 
 /* =========================================
+   EXPORT BUTTON
+   ========================================= */
+.btn-export {
+  background-color: #fff;
+  color: #1b4d3e; /* Matching your dark green text */
+  border: 1px solid #1b4d3e;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-export:hover {
+  background-color: #1b4d3e;
+  color: #fff;
+}
+
+.btn-export i {
+  font-size: 12px;
+}
+
+
+/* =========================================
    7. MOBILE RESPONSIVENESS & DRILL-DOWN
    ========================================= */
 .mobile-detail-header,
@@ -773,4 +801,84 @@ body {
 
 .dropdown-backdrop.show {
   display: block;
+}
+
+/* =========================================
+   9. TOAST NOTIFICATIONS
+   ========================================= */
+.toast-container {
+  position: fixed;
+  top: 30px; /* Changed to top */
+  right: 30px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.toast {
+  background-color: #ffffff; /* White background */
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Soft shadow */
+  border: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 300px;
+  max-width: 400px;
+  opacity: 0;
+  transform: translateX(50px); /* Slide in from the right */
+  animation: slideInRight 0.3s forwards;
+}
+
+/* The Colored Icon Circle */
+.toast-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Dynamic Colors based on status */
+.toast.success .toast-icon { background-color: #4caf50; }
+.toast.warning .toast-icon { background-color: #ff9800; }
+.toast.error .toast-icon { background-color: #f44336; }
+
+/* Text Layout */
+.toast-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toast-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #000;
+  margin: 0;
+}
+
+.toast-message {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.toast.fade-out {
+  animation: fadeOutRight 0.3s forwards;
+}
+
+@keyframes slideInRight {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeOutRight {
+  to { opacity: 0; transform: translateX(50px); }
 }

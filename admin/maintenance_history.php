@@ -36,8 +36,9 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
 
     if ($type === 'archive') {
         header('Content-Type: application/json');
-        // Archives usually only pull the single latest record, but ID desc is safer
-        $stmt = $conn->prepare("SELECT lab_name, lab_room, reason, archived_by, archived_date FROM lab_history WHERE lab_room = ? ORDER BY lab_history_id DESC LIMIT 1");
+        
+        // FIX: Using lab_id to fetch specific archive details based on table schema
+        $stmt = $conn->prepare("SELECT lab_name, lab_room, reason, archived_by, archived_date FROM lab_history WHERE lab_id = ? ORDER BY archived_date DESC LIMIT 1");
         $stmt->bind_param("s", $id);
         $stmt->execute();
         $res = $stmt->get_result();
@@ -49,7 +50,7 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
                 "admin" => $row['archived_by'],
                 "lab_name" => $row['lab_name'],
                 "lab_room" => $row['lab_room'],
-                "date" => date('m/d/Y', strtotime($row['archived_date']))
+                "date" => date('M d, Y', strtotime($row['archived_date']))
             ]);
         } else {
             echo json_encode(["status" => "error", "reason" => "No archive history found.", "admin" => "-"]);
@@ -59,7 +60,6 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
 
     $foundData = false;
     if ($type === 'inventory') {
-        // UPDATED: ORDER BY suphisto_id DESC to ensure exact chronological insertion order
         $stmt_supply = $conn->prepare("SELECT suphisto_date, suphisto_act, suphisto_actor, suphisto_remarks, suphisto_stat FROM supply_history WHERE supply_id = ? ORDER BY suphisto_id DESC");
         $stmt_supply->bind_param("i", $id);
         $stmt_supply->execute();
@@ -92,7 +92,6 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
             }
         }
     } else {
-        // UPDATED: ORDER BY report_id DESC
         $stmt_unit = $conn->prepare("SELECT report_date, report_actor, report_affected, report_action, report_remarks, report_status FROM unit_history WHERE set_id = ? ORDER BY report_id DESC");
         $stmt_unit->bind_param("s", $id);
         $stmt_unit->execute();
@@ -124,7 +123,6 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
                 echo "</div>";
             }
         } else {
-            // UPDATED: ORDER BY report_id DESC
             $stmt_asset = $conn->prepare("SELECT report_date, report_actor, report_affected, report_action, report_remarks, report_status FROM asset_history WHERE asset_id = ? ORDER BY report_id DESC");
             $stmt_asset->bind_param("s", $id);
             $stmt_asset->execute();
@@ -373,15 +371,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                             <table class="history-table no-header">
                                 <tbody>
                                     <?php
-                                    $res = $conn->query("SELECT l.lab_room, l.lab_name, l.lab_status, MAX(h.archived_date) as archived_date 
+                                    // FIX: Selected and grouped by lab_id to pass correctly to Javascript fetch
+                                    $res = $conn->query("SELECT l.lab_id, l.lab_room, l.lab_name, l.lab_status, MAX(h.archived_date) as archived_date 
                                                          FROM laboratories l 
                                                          INNER JOIN lab_history h ON l.lab_room = h.lab_room 
                                                          WHERE l.lab_status = 'Archived' 
-                                                         GROUP BY l.lab_room");
+                                                         GROUP BY l.lab_id, l.lab_room");
                                     if ($res->num_rows > 0) {
                                         while ($row = $res->fetch_assoc()) {
                                             $formattedDate = date('m/d/Y', strtotime($row['archived_date']));
-                                            echo "<tr class='selectable-row' data-type='archive' data-id='{$row['lab_room']}' data-tag='Room {$row['lab_room']}'>";
+                                            // Pass lab_id dynamically instead of lab_room
+                                            echo "<tr class='selectable-row' data-type='archive' data-id='{$row['lab_id']}' data-tag='Room {$row['lab_room']}'>";
                                             echo "<td><div class='tag-info'><strong>Room {$row['lab_room']}</strong><span class='separator'> | </span><span class='room-text'>({$row['lab_name']})</span></div></td>";
                                             echo "<td><div class='activity-info'><strong>Archived On <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                             echo "<td class='text-right'><span class='status-pill badge-archived'>Archived</span></td>";
@@ -408,6 +408,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                     <div id="view-full-timeline" class="history-view">
                         <div class="section-header-row">
                             <h3 id="timeline-title">Activity Timeline</h3>
+                            <button id="btn-export-active" class="btn-export" style="display: none;" onclick="exportTimeline()">
+                                <i class="fas fa-file-export"></i> Export
+                            </button>
                         </div>
                         <div class="table-container">
                             <div class="timeline-feed data-body">
@@ -419,6 +422,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                     <div id="view-retired-timeline" class="history-view" style="display: none;">
                         <div class="section-header-row">
                             <h3 id="retired-title">Retirement Record</h3>
+                            <button id="btn-export-retired" class="btn-export" style="display: none;" onclick="exportTimeline()">
+                                <i class="fas fa-file-export"></i> Export
+                            </button>
                         </div>
                         <div class="table-container">
                             <div class="timeline-feed data-body">
@@ -438,7 +444,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                     <span><strong>Archived By:</strong> <span id="archived-by-name">-</span></span>
                                 </div>
                                 <div class="date-info" style="font-size: 13px; color: #666; display: flex; align-items: center; gap: 5px;">
-                                    <i class="far fa-calendar-alt"></i>
                                     <span><strong>Date:</strong> <span id="archive-date-text">-</span></span>
                                 </div>
                             </div>
@@ -448,12 +453,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                             </div>
                         </div>
                     </div>
+
                 </div>
 
             </div>
         </div>
     </div>
 
+    <div id="toast-container" class="toast-container"></div>
+    
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/maintenance_history.js?v=<?php echo time(); ?>"></script>
 </body>
