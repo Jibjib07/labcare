@@ -1,5 +1,4 @@
 <?php
-include '../includes/admin_auth.php';
 include '../includes/db.php';
 
 // 1. AJAX Endpoint: Fetch Single Guide Details
@@ -97,16 +96,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_guide'])) {
     exit;
 }
 
-// 6. CREATE NEW GUIDE
+// 6. CREATE NEW GUIDE: With Validation & Duplicate Check
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_guide'])) {
-    $title = mysqli_real_escape_string($conn, $_POST['issue_title']);
-    $category = mysqli_real_escape_string($conn, $_POST['issue_catego']);
-    $summary = mysqli_real_escape_string($conn, $_POST['issue_summary']);
-    $cause = mysqli_real_escape_string($conn, $_POST['issue_cause']);
-    $solution = mysqli_real_escape_string($conn, $_POST['issue_solutio']);
-    $preventive = mysqli_real_escape_string($conn, $_POST['issue_preven']);
+    $title = mysqli_real_escape_string($conn, trim($_POST['issue_title']));
+    $category = mysqli_real_escape_string($conn, trim($_POST['issue_catego']));
+    $summary = mysqli_real_escape_string($conn, trim($_POST['issue_summary']));
+    $cause = mysqli_real_escape_string($conn, trim($_POST['issue_cause']));
+    $solution = mysqli_real_escape_string($conn, trim($_POST['issue_solutio']));
+    $preventive = mysqli_real_escape_string($conn, trim($_POST['issue_preven']));
+
+    if (empty($title) || empty($category)) {
+        echo json_encode(['status' => 'error', 'message' => 'Title and Category are required.']);
+        exit;
+    }
+
+    $check_query = "SELECT guide_id FROM troubleshooting WHERE issue_title = '$title'";
+    $check_result = mysqli_query($conn, $check_query);
+
+    if (mysqli_num_rows($check_result) > 0) {
+        echo json_encode(['status' => 'error', 'message' => 'A guide with this exact title already exists.']);
+        exit;
+    }
+
     $insert_query = "INSERT INTO troubleshooting (issue_title, issue_catego, issue_summary, issue_cause, issue_solutio, issue_preven, guide_status) 
                      VALUES ('$title', '$category', '$summary', '$cause', '$solution', '$preventive', 'Available')";
+
     if (mysqli_query($conn, $insert_query)) {
         echo json_encode(['status' => 'success', 'message' => 'New guide created successfully']);
     } else {
@@ -177,7 +191,6 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 display: flex !important;
             }
 
-            /* --- GUARANTEED ICON-ONLY BUTTONS --- */
             .action-buttons button span,
             .panel-header-row button span {
                 display: none !important;
@@ -324,7 +337,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
         </div>
     </div>
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
-    <script src="js/troubleshooting.js"></script>
+    <script src="js/troubleshooting.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>
