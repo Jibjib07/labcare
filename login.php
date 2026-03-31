@@ -1,5 +1,8 @@
 <?php
-session_start();
+// 1. Start the session safely
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Handle Logout
 if (isset($_GET['action']) && $_GET['action'] == 'logout') {
@@ -9,14 +12,18 @@ if (isset($_GET['action']) && $_GET['action'] == 'logout') {
     exit();
 }
 
-// Role-based redirect if already logged in
-if (isset($_SESSION['user_id'])) {
-    if (isset($_SESSION['user_role']) && strtolower($_SESSION['user_role']) === 'admin') {
+// 2. The "Bouncer": If they already have an active session, kick them to their dashboard
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_role'])) {
+
+    // Check their role to send them to the correct dashboard
+    if (strtolower($_SESSION['user_role']) === 'admin') {
         header("Location: admin/dashboard.php");
+        exit();
     } else {
-        header("Location: user/dashboard.php");
+        // Fixed: Pointing to 'staff' instead of 'user' to match your folder structure
+        header("Location: staff/dashboard.php");
+        exit();
     }
-    exit();
 }
 ?>
 
@@ -95,6 +102,8 @@ if (isset($_SESSION['user_id'])) {
                     if ($_GET['error'] == 'invalid_password') echo "Incorrect password.";
                     if ($_GET['error'] == 'user_not_found') echo "Account not found.";
                     if ($_GET['error'] == 'inactive') echo "Account is disabled.";
+                    if ($_GET['error'] == 'timeout') echo "Session timed out. Please log in again.";
+                    if ($_GET['error'] == 'unauthorized') echo "Please log in to access this page.";
                     ?>
                 </div>
             <?php endif; ?>

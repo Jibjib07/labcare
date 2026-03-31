@@ -14,89 +14,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$success = "";
-$error = "";
-
-/* SAVE PROFILE */
-if (isset($_POST['save_profile'])) {
-
-    // 🔹 Trim inputs
-    $user_name = trim($_POST['full_name']);
-    $user_email = trim($_POST['email']);
-
-    // 🔹 Frontend validation fallback
-    if (empty($user_name) || empty($user_email)) {
-        $error = "Full Name and Email Address are required.";
-    } elseif (!filter_var($user_email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Please enter a valid email address.";
-    } else {
-
-        // 🔹 Fetch current user data to capture old values for audit
-        $fetchStmt = $conn->prepare("SELECT user_name, user_email FROM users WHERE user_id = ?");
-        $fetchStmt->bind_param("i", $user_id);
-        $fetchStmt->execute();
-        $oldUser = $fetchStmt->get_result()->fetch_assoc();
-        $fetchStmt->close();
-
-        if (!$oldUser) {
-            $error = "User not found.";
-        } else {
-
-            // 🔹 Check for duplicate emails
-            $check = $conn->prepare("SELECT user_id FROM users WHERE user_email = ? AND user_id != ?");
-            $check->bind_param("si", $user_email, $user_id);
-            $check->execute();
-            $check_result = $check->get_result();
-
-            if ($check_result->num_rows > 0) {
-                $error = "That email address is already being used by another account.";
-            } else {
-
-                // 🔹 Update user profile
-                $stmt = $conn->prepare("UPDATE users SET user_name = ?, user_email = ? WHERE user_id = ?");
-                $stmt->bind_param("ssi", $user_name, $user_email, $user_id);
-
-                if ($stmt->execute()) {
-
-                    $success = "saved";
-
-                    // 🔹 Update session values
-                    $_SESSION['user_name'] = $user_name;
-                    $_SESSION['user_email'] = $user_email;
-
-                    // 🔹 Prepare audit trail
-                    $oldData = [
-                        'old_name' => $oldUser['user_name'],
-                        'old_email' => $oldUser['user_email']
-                    ];
-                    $newData = [
-                        'new_name' => $user_name,
-                        'new_email' => $user_email
-                    ];
-
-                    $logStmt = $conn->prepare("
-                        INSERT INTO user_audit_trail 
-                        (admin_id, user_id, action_type, old_data, new_data, created_at) 
-                        VALUES (?, ?, ?, ?, ?, NOW())
-                    ");
-                    $actionType = 'Update';
-                    $oldDataJson = json_encode($oldData);
-                    $newDataJson = json_encode($newData);
-
-                    $logStmt->bind_param("iisss", $user_id, $user_id, $actionType, $oldDataJson, $newDataJson);
-                    $logStmt->execute();
-                    $logStmt->close();
-                } else {
-                    $error = "Failed to update profile.";
-                }
-
-                $stmt->close();
-            }
-
-            $check->close();
-        }
-    }
-}
 
 /* --- SEND PASSWORD RESET LINK (AJAX) --- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'self_send_reset') {
@@ -235,14 +152,12 @@ $stmt->close();
         </div>
     </div>
 
-    <?php if (!empty($success)) : ?>
-        <input type="hidden" id="php_success" value="<?php echo htmlspecialchars($success); ?>">
-    <?php endif; ?>
+    <div id="toast-container" class="toast-container"></div>
 
     <div class="main-content">
         <div class="page-header">
             <h1>Account Settings</h1>
-            <p>Update your profile details, manage login security, and view system policies.</p>
+            <p>View your profile details, manage login security, and view system policies.</p>
         </div>
 
         <div class="account-grid">
@@ -253,37 +168,25 @@ $stmt->close();
                     <h3>Profile Details</h3>
                     <div class="divider"></div>
 
-                    <?php if (!empty($error) && $error === "Full Name and Email Address are required.") : ?>
-                        <input type="hidden" id="php_error" value="<?php echo htmlspecialchars($error); ?>">
-                    <?php endif; ?>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input
+                            type="text"
+                            class="input-field readonly-input"
+                            value="<?php echo htmlspecialchars($user['user_name']); ?>"
+                            style="background-color: #f9f9f9; color: #888; cursor: not-allowed;"
+                            readonly>
+                    </div>
 
-                    <form method="POST" action="">
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input
-                                type="text"
-                                name="full_name"
-                                class="input-field"
-                                value="<?php echo htmlspecialchars($user['user_name']); ?>"
-                                required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Email Address</label>
-                            <input
-                                type="email"
-                                name="email"
-                                class="input-field"
-                                value="<?php echo htmlspecialchars($user['user_email']); ?>"
-                                required>
-                        </div>
-
-                        <div class="save-btn-container">
-                            <button type="submit" name="save_profile" class="btn-green-save">
-                                <i class="fas fa-save"></i> Save
-                            </button>
-                        </div>
-                    </form>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input
+                            type="email"
+                            class="input-field readonly-input"
+                            value="<?php echo htmlspecialchars($user['user_email']); ?>"
+                            style="background-color: #f9f9f9; color: #888; cursor: not-allowed;"
+                            readonly>
+                    </div>
                 </div>
 
                 <div class="panel white-panel security-panel">
@@ -355,12 +258,12 @@ $stmt->close();
 
             <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" id="reset-name" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888;" readonly>
+                <input type="text" id="reset-name" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888; cursor: not-allowed;" readonly>
             </div>
 
             <div class="form-group">
                 <label>Email Address</label>
-                <input type="text" id="reset-email" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888;" readonly>
+                <input type="text" id="reset-email" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888; cursor: not-allowed;" readonly>
             </div>
 
             <div class="modal-actions">
