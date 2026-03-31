@@ -64,3 +64,18 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <a href="../login.php?action=logout" class="btn-logout">Log Out</a>
     </div>
 </div>
+
+<script>
+    // Listen for signals from other tabs (e.g., the Password Reset page)
+    window.addEventListener('storage', function(event) {
+        // If another tab shouts the 'labcare_force_logout' signal
+        if (event.key === 'labcare_force_logout') {
+
+            // Clean up the signal so it doesn't get stuck
+            localStorage.removeItem('labcare_force_logout');
+
+            // Instantly redirect this active tab to the login screen
+            window.location.href = '../login.php?error=timeout';
+        }
+    });
+</script>

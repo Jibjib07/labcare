@@ -1,4 +1,10 @@
 <?php
+// 1. THE SESSION KILLER - Log them out immediately when they click the link
+session_start();
+session_unset();
+session_destroy();
+session_start(); // Start a fresh, empty session for security/form handling
+
 require 'includes/db.php';
 
 $MAX_ATTEMPTS = 3;                  // Max allowed attempts before the token is locked
@@ -37,7 +43,7 @@ if (!$token) {
             $delStmt = $conn->prepare("DELETE FROM password_resets WHERE user_id = ?");
             $delStmt->bind_param("i", $user_id);
             $delStmt->execute();
-            
+
             $notif_title = "Error";
             $notif_msg = "This link is locked due to too many failed attempts. Please request a new one.";
             $show_form = false;
@@ -66,23 +72,28 @@ if ($show_form && isset($_POST['reset_password_btn'])) {
     if (empty($new_password)) {
         $notif_title = "Error";
         $notif_msg = "Please enter a new password.";
-    } 
+    }
     // Passwords mismatch → show error, don't lock token
     elseif ($new_password !== $confirm_password) {
         $notif_title = "Error";
         $notif_msg = "Passwords do not match. Please try again.";
-    } 
-    else {
+    } else {
         // Valid password → hash and update user record
         $hashed = password_hash($new_password, PASSWORD_DEFAULT);
         $updateStmt = $conn->prepare("UPDATE users SET user_password = ? WHERE user_id = ?");
         $updateStmt->bind_param("si", $hashed, $user_id);
-        
+
         if ($updateStmt->execute()) {
             // Delete token after successful reset
             $delStmt = $conn->prepare("DELETE FROM password_resets WHERE user_id = ?");
             $delStmt->bind_param("i", $user_id);
             $delStmt->execute();
+
+            // Log it in the audit trail
+            $logStmt = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, created_at) VALUES (?, ?, 'Password Reset Completed', NOW())");
+            $logStmt->bind_param("ii", $user_id, $user_id);
+            $logStmt->execute();
+            $logStmt->close();
 
             // Redirect to login with success message
             header("Location: login.php?reset=success");
@@ -97,6 +108,7 @@ if ($show_form && isset($_POST['reset_password_btn'])) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -105,6 +117,7 @@ if ($show_form && isset($_POST['reset_password_btn'])) {
     <link href="https://api.fontshare.com/v2/css?f[]=geist@1,2&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/login.css?v=<?php echo time(); ?>">
 </head>
+
 <body class="login-body">
 
     <div class="glass-container">
@@ -115,18 +128,18 @@ if ($show_form && isset($_POST['reset_password_btn'])) {
 
         <div class="login-box reset-card">
             <h2 class="auth-title-large">Create New Password</h2>
-            
-            <?php if($show_form): ?>
+
+            <?php if ($show_form): ?>
                 <p class="auth-subtitle-gray">Please create a new password for your account.</p>
             <?php endif; ?>
 
-            <?php if($notif_msg): ?>
+            <?php if ($notif_msg): ?>
                 <div class="notif <?php echo strtolower($notif_title); ?>" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; background: rgba(255,0,0,0.1); color: #ff4d4d; border: 1px solid rgba(255,0,0,0.2);">
                     <i class="fas fa-exclamation-circle"></i> <?php echo $notif_msg; ?>
                 </div>
             <?php endif; ?>
 
-            <?php if($show_form): ?>
+            <?php if ($show_form): ?>
                 <form method="POST">
                     <div class="input-group">
                         <label>Password</label>
@@ -157,6 +170,9 @@ if ($show_form && isset($_POST['reset_password_btn'])) {
     </div>
 
     <script>
+        // Send a cross-tab signal to log out all other active LabCare windows
+        localStorage.setItem('labcare_force_logout', Date.now());
+
         document.querySelectorAll('.toggle-pass').forEach(icon => {
             icon.addEventListener('click', function() {
                 const input = this.previousElementSibling;
@@ -168,4 +184,5 @@ if ($show_form && isset($_POST['reset_password_btn'])) {
         });
     </script>
 </body>
+
 </html>
