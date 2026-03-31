@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
           showNotification(
             "Action Blocked",
             "Please save or cancel your current report before selecting another item.",
-            "error"
+            "error",
           );
           return;
         }
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
           showNotification(
             "Action Blocked",
             "Please save or cancel your current report before selecting another item.",
-            "error"
+            "error",
           );
           return;
         }
@@ -125,11 +125,11 @@ window.addEventListener("click", function (event) {
 function switchView(viewName) {
   // --- ADDED: Auto-cancel edit mode if they switch main tabs ---
   if (isEditModeActive) {
-      if (document.getElementById("view-facility").style.display === "block") {
-          cancelFAReportMode();
-      } else {
-          cancelReportMode();
-      }
+    if (document.getElementById("view-facility").style.display === "block") {
+      cancelFAReportMode();
+    } else {
+      cancelReportMode();
+    }
   }
   // -------------------------------------------------------------
 
@@ -380,12 +380,12 @@ function applyFAFilters() {
 function selectUnit(element, setId) {
   // --- ADDED: Blocker inside selection function ---
   if (isEditModeActive) {
-      showNotification(
-          "Action Blocked",
-          "Please save or cancel your current report before selecting another item.",
-          "error"
-      );
-      return;
+    showNotification(
+      "Action Blocked",
+      "Please save or cancel your current report before selecting another item.",
+      "error",
+    );
+    return;
   }
   // ------------------------------------------------
 
@@ -537,7 +537,7 @@ function populateRightPanel(data) {
 
 function resetUIToViewMode() {
   isEditModeActive = false; // <-- ADDED: Turn off the lock
-  
+
   const btn = document.getElementById("btnReport");
   const btnCancel = document.getElementById("btnCancelReport");
 
@@ -560,12 +560,12 @@ function resetUIToViewMode() {
 function selectFacilityAsset(element, assetId) {
   // --- ADDED: Blocker inside selection function ---
   if (isEditModeActive) {
-      showNotification(
-          "Action Blocked",
-          "Please save or cancel your current report before selecting another item.",
-          "error"
-      );
-      return;
+    showNotification(
+      "Action Blocked",
+      "Please save or cancel your current report before selecting another item.",
+      "error",
+    );
+    return;
   }
   // ------------------------------------------------
 
@@ -660,10 +660,9 @@ function selectFacilityAsset(element, assetId) {
               '<div style="text-align:center; color:#888; padding: 25px;">No recent maintenance activity found.</div>';
           }
         }
-        
+
         // --- ADDED: Turn off edit mode lock after loading new FA details ---
-        isEditModeActive = false; 
-        
+        isEditModeActive = false;
       } else {
         showNotification("Error", data.error, "error");
       }
@@ -699,7 +698,7 @@ function toggleReportMode() {
 
   if (textSpan.innerText === "Report") {
     isEditModeActive = true; // <-- ADDED: Turn ON the lock
-    
+
     textSpan.innerText = "Submit";
     btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span id="reportText">Submit</span>`;
     btnCancel.style.display = "inline-block";
@@ -733,8 +732,8 @@ function cancelReportMode() {
 
 function openLogStatusModal() {
   currentReportType = "pc";
-  currentHasIssues = false;
   const statusChanges = [];
+  let anyComponentBroken = false; // <-- FIX 1: Scanner for the whole unit's health
 
   const nameMap = {
     usb_status: "USB Port",
@@ -764,16 +763,20 @@ function openLogStatusModal() {
 
         if (originalPill && activeBtn) {
           const oldStatus = originalPill.innerText.trim();
-          let newStatus =
-            activeBtn.getAttribute("data-type") === "repair"
-              ? "For Repair"
-              : "Working";
-          if (dbColumn === "disk_health")
-            newStatus =
-              activeBtn.getAttribute("data-type") === "repair"
-                ? "Poor"
-                : "Healthy";
+          const isRepairToggle =
+            activeBtn.getAttribute("data-type") === "repair";
 
+          let newStatus = isRepairToggle ? "For Repair" : "Working";
+          if (dbColumn === "disk_health") {
+            newStatus = isRepairToggle ? "Poor" : "Healthy";
+          }
+
+          // --- FIX 1: If ANY component is currently broken, flag the whole unit ---
+          if (isRepairToggle) {
+            anyComponentBroken = true;
+          }
+
+          // If the user changed this specific status, log it for the cards
           if (oldStatus !== newStatus) {
             const niceName = nameMap[dbColumn] || dbColumn;
             statusChanges.push({
@@ -781,12 +784,12 @@ function openLogStatusModal() {
               old: oldStatus,
               new: newStatus,
             });
-            if (newStatus === "For Repair" || newStatus === "Poor")
-              currentHasIssues = true;
           }
         }
       }
     });
+
+  currentHasIssues = anyComponentBroken; // Set global flag for overall status!
 
   pendingAffectedString =
     statusChanges.length > 0
@@ -810,7 +813,7 @@ function openLogStatusModal() {
       const icon = isRepair ? "fa-exclamation-circle" : "fa-check-circle";
       const placeholderText = isRepair
         ? "REQUIRED: Why is this marked for repair?"
-        : "Optional: General notes...";
+        : "Optional: How was this fixed?"; // Updated placeholder for fixes
       const bgTint = isRepair ? "#fffbfa" : "#fff";
 
       htmlContent += `
@@ -855,7 +858,6 @@ function openLogStatusModal() {
   document.getElementById("logStatusChangeList").innerHTML = htmlContent;
   openModal("logStatusModal");
 }
-
 // --- FACILITY ASSETS REPORT ---
 function toggleFAReportMode() {
   if (!currentSelectedFAId) {
@@ -869,7 +871,7 @@ function toggleFAReportMode() {
 
   if (textSpan.innerText.trim() === "Report") {
     isEditModeActive = true; // <-- ADDED: Turn ON the lock
-    
+
     textSpan.innerText = "Submit";
     btn.innerHTML = `<i class="fas fa-paper-plane"></i> <span id="reportTextFA">Submit</span>`;
     btnCancel.style.display = "inline-block";
@@ -898,7 +900,7 @@ function toggleFAReportMode() {
 
 function cancelFAReportMode() {
   isEditModeActive = false; // <-- ADDED: Turn OFF the lock
-  
+
   if (currentSelectedFAId) {
     const activeItem = document.querySelector(
       "#facilityListContainer .asset-item.active",
@@ -991,6 +993,7 @@ function openFALogStatusModal() {
 }
 
 // --- SUBMISSION HANDLER ---
+// --- SUBMISSION HANDLER ---
 function confirmLogStatus() {
   const saveBtn = document.querySelector("#logStatusModal .btn-confirm");
   let allValid = true;
@@ -1007,7 +1010,6 @@ function confirmLogStatus() {
     }
   });
 
-  // Stop submission if a required box is empty
   if (!allValid) {
     showNotification(
       "Remarks Required",
@@ -1035,22 +1037,36 @@ function confirmLogStatus() {
         ? "For Repair"
         : "Working";
 
+    // Check if the status actually changed
+    const oldStatusEl = document.getElementById("original_fa_status");
+    const oldStatus = oldStatusEl ? oldStatusEl.value : "";
+    const statusChanged = oldStatus !== formattedStatus;
+
     // Format Remarks and Log Status
     const remarksBox =
       document.querySelector(".status-remark-field") ||
       document.querySelector(".general-remark-field");
     let faRemark = remarksBox ? remarksBox.value.trim() : "";
-    if (!currentHasIssues && faRemark === "")
-      faRemark = "Routine check. No issues found.";
 
-    // Set to "Updated" if there are no issues!
-    const historyStatus = currentHasIssues ? "For Repair" : "Updated";
+    // FIX 2: Handle FA "Working" Status correctly
+    if (faRemark === "") {
+      if (statusChanged) {
+        faRemark =
+          formattedStatus === "Working"
+            ? "Status updated to Working/Resolved."
+            : "Marked for repair.";
+      } else {
+        faRemark = "Routine check. No issues found.";
+      }
+    }
+
+    const historyStatus = statusChanged ? formattedStatus : "Updated";
 
     const formData = new FormData();
     formData.append("asset_id", currentSelectedFAId);
     formData.append("remarks", faRemark);
-    formData.append("report_status", historyStatus); // Goes to History log
-    formData.append("overall_status", formattedStatus); // Goes to Asset table
+    formData.append("report_status", historyStatus);
+    formData.append("overall_status", formattedStatus);
 
     fetch("includes/staff_log_report_fa.php", {
       method: "POST",
@@ -1089,25 +1105,29 @@ function confirmLogStatus() {
 
   // B. IF COMPUTER UNIT
   if (currentReportType === "pc") {
-    let componentLogs = []; // JSON array of individual logs
+    let componentLogs = [];
+    const remarkFields = document.querySelectorAll(".status-remark-field");
 
-    if (currentHasIssues) {
-      // Log each broken component individually
-      document.querySelectorAll(".status-remark-field").forEach((textarea) => {
+    // FIX 2: If there are ANY cards (fixes or breaks), log them all!
+    if (remarkFields.length > 0) {
+      remarkFields.forEach((textarea) => {
         const val = textarea.value.trim();
         const isIssue = textarea.getAttribute("data-issue") === "true";
         const compName = textarea.getAttribute("data-name");
 
-        if (isIssue) {
-          componentLogs.push({
-            affected: compName,
-            remark: val,
-            status: "For Repair",
-          });
-        }
+        componentLogs.push({
+          affected: compName,
+          // Use their remark, or apply a smart fallback
+          remark:
+            val !== ""
+              ? val
+              : isIssue
+                ? "Marked for repair"
+                : "Status updated to Working/Healthy",
+          status: isIssue ? "For Repair" : "Working",
+        });
       });
 
-      // Also grab optional general remarks if they typed them
       const generalBox = document.querySelector(".general-remark-field");
       if (generalBox && generalBox.value.trim() !== "") {
         componentLogs.push({
@@ -1117,7 +1137,7 @@ function confirmLogStatus() {
         });
       }
     } else {
-      // No Issues: Log the entire unit as "Updated"
+      // ONLY falls here if no toggles were touched at all
       const generalBox = document.querySelector(".general-remark-field");
       let genRemark =
         generalBox && generalBox.value.trim() !== ""
@@ -1132,13 +1152,14 @@ function confirmLogStatus() {
 
     const formData = new FormData();
     formData.append("set_id", currentEditingSetId);
+
+    // FIX 1: Use the global scanner for the true overall status
     formData.append(
       "overall_status",
       currentHasIssues ? "For Repair" : "Working",
     );
     formData.append("component_logs", JSON.stringify(componentLogs));
 
-    // Scoped query to avoid FA leakage into PC data
     document
       .querySelectorAll(
         "#view-computer .specs-content-box .status-toggle-group",

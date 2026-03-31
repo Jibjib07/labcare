@@ -19,6 +19,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conn->begin_transaction();
 
     try {
+        // --- 0. FETCH LAB ID ---
+        $info_stmt = $conn->prepare("SELECT lab_id FROM units WHERE set_id = ?");
+        $info_stmt->bind_param("s", $set_id);
+        $info_stmt->execute();
+        $info_result = $info_stmt->get_result();
+
+        $lab_id = 0; // Fallback
+        if ($row = $info_result->fetch_assoc()) {
+            $lab_id = (int)$row['lab_id']; // Grab the lab_id securely from the DB
+        }
+        $info_stmt->close();
+
         // 1. UPDATE PORTS
         if (isset($_POST['usb_status'])) {
             $stmt1 = $conn->prepare("UPDATE ports SET usb_status=?, wifi_status=?, mic_status=?, hdmi_status=?, headphone_status=?, display_status=?, inline_status=?, ethernet_status=? WHERE set_id=?");
@@ -49,19 +61,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt4->execute();
         $stmt4->close();
 
-        // 5. INDIVIDUAL HISTORY LOGS (The Foreach Loop)
+        // 5. INDIVIDUAL HISTORY LOGS (Now includes lab_id)
         $logs = json_decode($component_logs_json, true);
 
         if (!empty($logs) && is_array($logs)) {
             $action = "Report";
-            $stmt_hist = $conn->prepare("INSERT INTO unit_history (set_id, report_date, report_actor, report_affected, report_action, report_remarks, report_status) VALUES (?, NOW(), ?, ?, ?, ?, ?)");
+            // Added lab_id to the INSERT statement
+            $stmt_hist = $conn->prepare("INSERT INTO unit_history (set_id, lab_id, report_date, report_actor, report_affected, report_action, report_remarks, report_status) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?)");
 
             foreach ($logs as $log) {
                 $affected = $log['affected'];
                 $remark = $log['remark'];
                 $status = $log['status']; // Will safely insert 'For Repair' or 'Updated'
 
-                $stmt_hist->bind_param("ssssss", $set_id, $actor, $affected, $action, $remark, $status);
+                // "sisssss" translates to: String, Integer, String, String, String, String, String
+                $stmt_hist->bind_param("sisssss", $set_id, $lab_id, $actor, $affected, $action, $remark, $status);
                 $stmt_hist->execute();
             }
             $stmt_hist->close();
