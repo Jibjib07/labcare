@@ -136,7 +136,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Troubleshooting Management - LabCare</title>
+    <title>Troubleshooting Guide - LabCare</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/troubleshooting.css?v=<?php echo time(); ?>">
@@ -229,7 +229,7 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
     <div id="notification-container" class="notification-container"></div>
     <div class="main-content">
         <div class="page-header">
-            <h1>Troubleshooting Management</h1>
+            <h1>Troubleshooting Guide</h1>
             <p>Diagnose technical issues and access guided solutions for common hardware problems.</p>
         </div>
         <div class="troubleshoot-layout">
