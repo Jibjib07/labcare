@@ -20,7 +20,7 @@ $error = "";
 /* SAVE PROFILE */
 if (isset($_POST['save_profile'])) {
 
-    // 🔹 Trim inputs
+    // 🔹 Trim inputs (Name is back!)
     $user_name = trim($_POST['full_name']);
     $user_email = trim($_POST['email']);
 
@@ -42,58 +42,63 @@ if (isset($_POST['save_profile'])) {
             $error = "User not found.";
         } else {
 
-            // 🔹 Check for duplicate emails
-            $check = $conn->prepare("SELECT user_id FROM users WHERE user_email = ? AND user_id != ?");
-            $check->bind_param("si", $user_email, $user_id);
-            $check->execute();
-            $check_result = $check->get_result();
-
-            if ($check_result->num_rows > 0) {
-                $error = "That email address is already being used by another account.";
+            // If neither the name nor the email changed, just act like it saved successfully
+            if ($oldUser['user_name'] === $user_name && $oldUser['user_email'] === $user_email) {
+                $success = "saved";
             } else {
+                // 🔹 Check for duplicate emails
+                $check = $conn->prepare("SELECT user_id FROM users WHERE user_email = ? AND user_id != ?");
+                $check->bind_param("si", $user_email, $user_id);
+                $check->execute();
+                $check_result = $check->get_result();
 
-                // 🔹 Update user profile
-                $stmt = $conn->prepare("UPDATE users SET user_name = ?, user_email = ? WHERE user_id = ?");
-                $stmt->bind_param("ssi", $user_name, $user_email, $user_id);
-
-                if ($stmt->execute()) {
-
-                    $success = "saved";
-
-                    // 🔹 Update session values
-                    $_SESSION['user_name'] = $user_name;
-                    $_SESSION['user_email'] = $user_email;
-
-                    // 🔹 Prepare audit trail
-                    $oldData = [
-                        'old_name' => $oldUser['user_name'],
-                        'old_email' => $oldUser['user_email']
-                    ];
-                    $newData = [
-                        'new_name' => $user_name,
-                        'new_email' => $user_email
-                    ];
-
-                    $logStmt = $conn->prepare("
-                        INSERT INTO user_audit_trail 
-                        (admin_id, user_id, action_type, old_data, new_data, created_at) 
-                        VALUES (?, ?, ?, ?, ?, NOW())
-                    ");
-                    $actionType = 'Update';
-                    $oldDataJson = json_encode($oldData);
-                    $newDataJson = json_encode($newData);
-
-                    $logStmt->bind_param("iisss", $user_id, $user_id, $actionType, $oldDataJson, $newDataJson);
-                    $logStmt->execute();
-                    $logStmt->close();
+                if ($check_result->num_rows > 0) {
+                    $error = "That email address is already being used by another account.";
                 } else {
-                    $error = "Failed to update profile.";
+
+                    // 🔹 Update user profile (Name and Email)
+                    $stmt = $conn->prepare("UPDATE users SET user_name = ?, user_email = ? WHERE user_id = ?");
+                    $stmt->bind_param("ssi", $user_name, $user_email, $user_id);
+
+                    if ($stmt->execute()) {
+
+                        $success = "saved";
+
+                        // 🔹 Update session values
+                        $_SESSION['user_name'] = $user_name;
+                        $_SESSION['user_email'] = $user_email;
+
+                        // 🔹 Prepare audit trail (Logging both Name and Email again)
+                        $oldData = [
+                            'old_name' => $oldUser['user_name'],
+                            'old_email' => $oldUser['user_email']
+                        ];
+                        $newData = [
+                            'new_name' => $user_name,
+                            'new_email' => $user_email
+                        ];
+
+                        $logStmt = $conn->prepare("
+                            INSERT INTO user_audit_trail 
+                            (admin_id, user_id, action_type, old_data, new_data, created_at) 
+                            VALUES (?, ?, ?, ?, ?, NOW())
+                        ");
+                        $actionType = 'Update Profile';
+                        $oldDataJson = json_encode($oldData);
+                        $newDataJson = json_encode($newData);
+
+                        $logStmt->bind_param("iisss", $user_id, $user_id, $actionType, $oldDataJson, $newDataJson);
+                        $logStmt->execute();
+                        $logStmt->close();
+                    } else {
+                        $error = "Failed to update profile.";
+                    }
+
+                    $stmt->close();
                 }
 
-                $stmt->close();
+                $check->close();
             }
-
-            $check->close();
         }
     }
 }
@@ -235,6 +240,8 @@ $stmt->close();
         </div>
     </div>
 
+    <div id="toast-container" class="toast-container"></div>
+
     <?php if (!empty($success)) : ?>
         <input type="hidden" id="php_success" value="<?php echo htmlspecialchars($success); ?>">
     <?php endif; ?>
@@ -253,7 +260,7 @@ $stmt->close();
                     <h3>Profile Details</h3>
                     <div class="divider"></div>
 
-                    <?php if (!empty($error) && $error === "Full Name and Email Address are required.") : ?>
+                    <?php if (!empty($error)) : ?>
                         <input type="hidden" id="php_error" value="<?php echo htmlspecialchars($error); ?>">
                     <?php endif; ?>
 
@@ -272,6 +279,7 @@ $stmt->close();
                             <label>Email Address</label>
                             <input
                                 type="email"
+                                id="profile_email_input"
                                 name="email"
                                 class="input-field"
                                 value="<?php echo htmlspecialchars($user['user_email']); ?>"
@@ -307,23 +315,14 @@ $stmt->close();
                 <div class="info-block">
                     <h4>CVSU Mission</h4>
                     <p>
-                        Cavite State University shall provide
-                        <strong>excellent, equitable, and relevant educational opportunities</strong>
-                        in the arts, sciences, and technology through
-                        <strong>quality instruction</strong> and
-                        <strong>responsive research</strong> and
-                        <strong>development activities</strong>. It shall
-                        <strong>produce professional, skilled, and morally upright individuals</strong>
-                        for global competitiveness.
+                        Cavite State University shall provide excellent, equitable and relevant educational opportunities in the arts, sciences and technology through quality instruction and responsive research and development activities. It shall produce professional, skilled and morally upright individuals for global competitiveness.
                     </p>
                 </div>
 
                 <div class="info-block">
                     <h4>CVSU Vision</h4>
                     <p>
-                        The <strong>premier university</strong> in historic Cavite recognized for
-                        <strong>excellence</strong> in the development of
-                        <strong>globally competitive and morally upright individuals</strong>.
+                        The premier university in historic Cavite globally recognized for excellence in character development, academics, research, innovation and sustainable community engagement.
                     </p>
                 </div>
 
@@ -355,12 +354,12 @@ $stmt->close();
 
             <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" id="reset-name" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888;" readonly>
+                <input type="text" id="reset-name" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888; cursor: not-allowed;" readonly>
             </div>
 
             <div class="form-group">
                 <label>Email Address</label>
-                <input type="text" id="reset-email" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888;" readonly>
+                <input type="text" id="reset-email" class="input-field readonly-input" style="background-color: #f9f9f9; color: #888; cursor: not-allowed;" readonly>
             </div>
 
             <div class="modal-actions">
@@ -374,6 +373,26 @@ $stmt->close();
 
     <script>
         window.csrfToken = "<?php echo $_SESSION['csrf_token']; ?>";
+
+        // --- Error Border & Toast Logic ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const phpError = document.getElementById("php_error");
+            if (phpError) {
+                const errMsg = phpError.value;
+                const emailInput = document.getElementById("profile_email_input");
+
+                // Try to show the custom toast if the function exists, but DO NOT show a browser alert
+                if (typeof showNotification === 'function') {
+                    showNotification("Action Blocked", errMsg, "error");
+                }
+
+                // Add the red border if it's the specific duplicate email error
+                if (errMsg.includes("already being used") && emailInput) {
+                    emailInput.style.border = "2px solid #f44336";
+                    emailInput.style.backgroundColor = "#fffbfa";
+                }
+            }
+        });
     </script>
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/account_settings.js?v=<?php echo time(); ?>"></script>
