@@ -20,7 +20,7 @@ if ($unitsResult && $unitsResult->num_rows > 0) {
 
     while ($row = $unitsResult->fetch_assoc()) {
         $status = strtolower(trim($row['set_status']));
-        $purchase_date = $row['specs_purchase']; // Now grabbing from the joined specs table
+        $purchase_date = $row['specs_purchase']; 
 
         // A. Age Check (Global "For Condemn" calculation)
         if (!empty($purchase_date)) {
@@ -55,12 +55,11 @@ $labsResult = $conn->query($labsQuery);
 $totalLabs = ($labsResult) ? $labsResult->fetch_assoc()['total'] : 0;
 
 // 4. Total Active Users (Table: users)
-// Assuming you have a 'status' column. If not, just use: SELECT COUNT(*) as total FROM users
 $usersQuery = "SELECT COUNT(*) as total FROM users WHERE user_status = 'Active'";
 $usersResult = $conn->query($usersQuery);
 $totalUsers = ($usersResult) ? $usersResult->fetch_assoc()['total'] : 0;
 
-// Optional: Format numbers to have a leading zero if they are single digits (e.g., "8" becomes "08")
+// Format numbers to have a leading zero if they are single digits 
 $totalLabsFormatted = str_pad($totalLabs, 2, '0', STR_PAD_LEFT);
 $totalAssetsFormatted = str_pad($totalAssets, 2, '0', STR_PAD_LEFT);
 $totalUsersFormatted = str_pad($totalUsers, 2, '0', STR_PAD_LEFT);
@@ -83,7 +82,6 @@ if ($roomsResult) {
     <title>Dashboard - LabCare</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/dashboard.css?v=<?php echo time(); ?>">
 </head>
@@ -210,12 +208,11 @@ if ($roomsResult) {
                     <div class="supply-list-container">
                         <?php
                         // Query the supplies table.
-                        // The ORDER BY CASE statement forces "Out of Stock" items to appear at the top of the list
                         $supplyQuery = "SELECT supply_name, supply_status 
-                FROM supply 
-                WHERE supply_avail = 'Current'
-                ORDER BY CASE WHEN supply_status = 'Out of Stock' THEN 1 ELSE 2 END, 
-                         supply_name ASC";
+                                        FROM supply 
+                                        WHERE supply_avail = 'Current'
+                                        ORDER BY CASE WHEN supply_status = 'Out of Stock' THEN 1 ELSE 2 END, 
+                                                 supply_name ASC";
 
                         $supplyResult = $conn->query($supplyQuery);
 
@@ -230,22 +227,19 @@ if ($roomsResult) {
                                     $statusSpan = "<span class='green-text'>In Stock</span>";
                                 } else {
                                     $itemClass = "out-stock";
-                                    // Out of stock doesn't get the green-text class
                                     $statusSpan = "<span>Out of Stock</span>";
                                 }
 
-                                // Output the dynamic HTML block
                                 echo "
-                <div class='supply-item {$itemClass}'>
-                    <div class='supply-accent'></div>
-                    <div class='supply-info'>
-                        <h4>{$name}</h4>
-                        {$statusSpan}
-                    </div>
-                </div>";
+                                <div class='supply-item {$itemClass}'>
+                                    <div class='supply-accent'></div>
+                                    <div class='supply-info'>
+                                        <h4>{$name}</h4>
+                                        {$statusSpan}
+                                    </div>
+                                </div>";
                             }
                         } else {
-                            // Fallback if the table is empty
                             echo "<div style='padding: 15px; color: #888; text-align: center;'>No supply data available.</div>";
                         }
                         ?>
@@ -261,17 +255,20 @@ if ($roomsResult) {
                     </div>
 
                     <?php
-                    // 1. Fetch the data ONCE and store it in an array
+                    // Fetch recent 'For Repair' reports from unit_history and asset_history
+                    // Fetch recent 'For Repair' reports from unit_history and asset_history
                     $recentReportsQuery = "
-                        (SELECT uh.report_actor AS reporter, uh.report_date AS report_date, l.lab_room AS room, CONCAT('PC-', u.set_tag) AS tag, u.set_status AS status 
+                        (SELECT DISTINCT uh.report_actor AS reporter, uh.report_date AS report_date, l.lab_room AS room, CONCAT('PC-', u.set_tag) AS tag, u.set_status AS status 
                         FROM units u JOIN laboratories l ON u.lab_id = l.lab_id
                         JOIN (SELECT set_id, MAX(report_date) as max_date FROM unit_history GROUP BY set_id) latest ON u.set_id = latest.set_id
-                        JOIN unit_history uh ON latest.set_id = uh.set_id AND latest.max_date = uh.report_date WHERE u.set_status = 'For Repair')
+                        JOIN unit_history uh ON latest.set_id = uh.set_id AND latest.max_date = uh.report_date 
+                        WHERE u.set_status = 'For Repair' AND uh.report_status = 'For Repair')
                         UNION ALL
-                        (SELECT ah.report_actor AS reporter, ah.report_date AS report_date, l.lab_room AS room, CONCAT('FA-', a.asset_tag) AS tag, a.asset_status AS status 
+                        (SELECT DISTINCT ah.report_actor AS reporter, ah.report_date AS report_date, l.lab_room AS room, CONCAT('FA-', a.asset_tag) AS tag, a.asset_status AS status 
                         FROM assets a JOIN laboratories l ON a.lab_id = l.lab_id
                         JOIN (SELECT asset_id, MAX(report_date) as max_date FROM asset_history GROUP BY asset_id) latest ON a.asset_id = latest.asset_id
-                        JOIN asset_history ah ON latest.asset_id = ah.asset_id AND latest.max_date = ah.report_date WHERE a.asset_status = 'For Repair')
+                        JOIN asset_history ah ON latest.asset_id = ah.asset_id AND latest.max_date = ah.report_date 
+                        WHERE a.asset_status = 'For Repair' AND ah.report_status = 'For Repair')
                         ORDER BY report_date DESC LIMIT 6
                     ";
 
@@ -375,25 +372,20 @@ if ($roomsResult) {
 
             const labId = roomSelect.value;
 
-            // --- NEW: UPDATE THE LINK URL ---
             const detailsLink = document.getElementById('viewLabDetailsLink');
             if (detailsLink) {
                 detailsLink.href = `assets_management.php?lab_id=${encodeURIComponent(labId)}`;
             }
 
             try {
-                // CHANGED: Send lab_id to the PHP script instead of room string
                 const response = await fetch(`../includes/get_room_stats.php?lab_id=${encodeURIComponent(labId)}`);
-
                 const rawText = await response.text();
                 const data = JSON.parse(rawText);
 
-                // Update the Legend Numbers
                 document.getElementById('dashLegendWorking').innerText = data.working;
                 document.getElementById('dashLegendRepair').innerText = data.repair;
                 document.getElementById('dashLegendCondemn').innerText = data.condemn;
 
-                // Pass numbers to update the CSS Donut Chart
                 updateDonutChartVisual(data.working, data.repair, data.condemn);
 
             } catch (error) {
@@ -405,38 +397,26 @@ if ($roomsResult) {
             const chart = document.getElementById('dashboardDonutChart');
             if (!chart) return;
 
-            // Convert to integers
             const w = parseInt(working) || 0;
             const r = parseInt(repair) || 0;
-
-            // IMPORTANT: 'Condemn' is excluded from the total to prevent breaking 100%
-            // since those units are already counted inside 'w' or 'r'
             const total = w + r;
 
             if (total === 0) {
-                // If room is completely empty, make the chart solid gray
                 chart.style.background = `conic-gradient(#e0e0e0 0% 100%)`;
                 return;
             }
 
-            // Calculate percentages for the two physical states
             const workPct = (w / total) * 100;
+            const colorGreen = '#4caf50';
+            const colorYellow = '#ffc107';
 
-            // Exact colors from your CSS
-            const colorGreen = '#4caf50'; // Working
-            const colorYellow = '#ffc107'; // For Repair
-
-            // Inject the new 2-color gradient
-            // 0% to workPct is Green. workPct to 100% is Yellow.
             chart.style.background = `conic-gradient(
-        ${colorGreen} 0% ${workPct}%, 
-        ${colorYellow} ${workPct}% 100%
-    )`;
+                ${colorGreen} 0% ${workPct}%, 
+                ${colorYellow} ${workPct}% 100%
+            )`;
         }
 
-        // Run it once immediately when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("Dashboard loaded, initializing chart...");
             if (document.getElementById('dashboardRoomSelect')) {
                 updateDashboardLabStats();
             }

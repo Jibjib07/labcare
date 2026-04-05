@@ -540,6 +540,25 @@
   font-weight: 700;
 }
 
+/* Inline Validation Styles */
+.inline-feedback {
+    font-size: 0.8rem;
+    margin-top: 5px;
+    min-height: 18px; /* Prevents form jumping */
+    transition: color 0.3s ease;
+    font-weight: 500;
+}
+.inline-feedback.error-text { color: #e74c3c; }
+.inline-feedback.success-text { color: #2ecc71; }
+
+.form-input.input-error { 
+    border-color: #e74c3c !important; 
+    background-color: #fdf0ef; 
+}
+.form-input.input-success { 
+    border-color: #2ecc71 !important; 
+}
+
 /* =========================================
    6. RESPONSIVENESS (MOBILE FRIENDLY) & MASTER-DETAIL TOGGLE
    ========================================= */

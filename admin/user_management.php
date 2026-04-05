@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $specialChars = preg_match('@[^\w]@', $password);
 
             if (!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < 8) {
-                throw new Exception("Password does not meet security requirements.");
+                throw new Exception("Minimum 8 characters with uppercase, lowercase, number, and special character required.");
             }
             
             $check = $conn->prepare("SELECT user_id FROM users WHERE user_email = ?");
@@ -454,6 +454,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             <input type="password" id="add-password" class="form-input" placeholder="Enter password">
                             <i class="fas fa-eye toggle-password" data-target="add-password"></i>
                         </div>
+                        <div id="password-feedback" class="inline-feedback"></div>
                     </div>
                     <div class="form-group">
                         <label>Confirm Password</label>
@@ -461,6 +462,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             <input type="password" id="add-confirm-password" class="form-input" placeholder="Re-enter password">
                             <i class="fas fa-eye toggle-password" data-target="add-confirm-password"></i>
                         </div>
+                        <div id="confirm-password-feedback" class="inline-feedback"></div>
                     </div>
                     <div class="modal-actions" style="margin-top: 30px;">
                         <button type="button" id="btn-cancel-add" class="btn-cancel-new">Cancel</button>

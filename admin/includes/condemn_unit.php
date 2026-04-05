@@ -13,7 +13,7 @@ try {
     if (!$set_id) throw new Exception("No Set ID provided.");
 
     $reasons_array = json_decode($reasons_json, true);
-    $action_taken = !empty($reasons_array) ? implode(", ", $reasons_array) : 'Condemned';
+    $action_taken = !empty($reasons_array) ? implode(", ", $reasons_array) : 'Condemn';
 
     $conn->begin_transaction();
 
@@ -23,7 +23,7 @@ try {
     $stmt->execute();
 
     $actor = $_SESSION['user_name'] ?? 'Admin';
-    $affected = 'Entire Unit';
+    $affected = 'Entire Set';
     $report_status = 'Condemned';
 
     // 2. Insert into unit_history

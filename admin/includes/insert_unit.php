@@ -5,48 +5,8 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 try {
     require_once __DIR__ . '/../../includes/db.php';
 
-    // 1. NEW: Include the status updater!
+    // 1. Include the status updater!
     require_once __DIR__ . '/update_unit_status.php';
-
-    // =========================================================
-    // 1. UNIQUENESS VALIDATION (ADDING) - IGNORING CONDEMNED
-    // =========================================================
-    $new_specs_id = trim($_POST['property_id'] ?? '');
-    $new_mon_id = trim($_POST['monitor_property'] ?? '');
-
-    // Check System Unit ID
-    if ($new_specs_id !== '') {
-        $check_sys = $conn->prepare("
-            SELECT s.set_id 
-            FROM specs s 
-            JOIN units u ON s.set_id = u.set_id 
-            WHERE s.specs_property = ? 
-            AND (u.set_status != 'Condemned' OR u.set_status IS NULL)
-        ");
-        $check_sys->bind_param("s", $new_specs_id);
-        $check_sys->execute();
-        if ($check_sys->get_result()->num_rows > 0) {
-            throw new Exception("The System Unit Property ID '$new_specs_id' is already assigned to an active unit.");
-        }
-        $check_sys->close();
-    }
-
-    // Check Monitor ID
-    if ($new_mon_id !== '') {
-        $check_mon = $conn->prepare("
-            SELECT p.set_id 
-            FROM peripherals p 
-            JOIN units u ON p.set_id = u.set_id 
-            WHERE p.monitor_property = ? 
-            AND (u.set_status != 'Condemned' OR u.set_status IS NULL)
-        ");
-        $check_mon->bind_param("s", $new_mon_id);
-        $check_mon->execute();
-        if ($check_mon->get_result()->num_rows > 0) {
-            throw new Exception("The Monitor Property ID '$new_mon_id' is already assigned to an active monitor.");
-        }
-        $check_mon->close();
-    }
 
     // ---------------------------------------------------------
     // STEP 1: COLLECT ALL POST DATA FIRST
@@ -56,8 +16,7 @@ try {
     $lab_room = $_POST['lab_room'] ?? '';
     $statuses = $_POST['statuses'] ?? [];
 
-    // Specs Data
-    $prop_id = $_POST['property_id'] ?? '';
+    // Specs Data (Property ID removed)
     $cpu = $_POST['cpu'] ?? '';
     $brand = $_POST['brand'] ?? '';
     $os = $_POST['os'] ?? '';
@@ -83,13 +42,12 @@ try {
     $num_repair = isset($_POST['num_repair']) ? intval($_POST['num_repair']) : 0;
     $power_health = $_POST['power_health'] ?? 'Working';
 
-    // 2. NEW: Force the correct naming convention for Disk Health!
+    // Force the correct naming convention for Disk Health!
     $disk_health = $_POST['disk_health'] ?? 'Healthy';
     if ($disk_health === 'Working') $disk_health = 'Healthy';
     if ($disk_health === 'For Repair') $disk_health = 'Poor';
 
-    // Peripherals Data
-    $monitor_property = $_POST['monitor_property'] ?? '';
+    // Peripherals Data (Monitor Property ID removed)
     $monitor_brand = $_POST['monitor_brand'] ?? '';
     $monitor_status = $_POST['monitor_status'] ?? 'Working';
     $keyboard_brand = $_POST['keyboard_brand'] ?? '';
@@ -138,9 +96,9 @@ try {
         $stmt->bind_param("sssis", $new_set_id, $tag, $set_status, $lab_id, $lab_room);
 
         if ($stmt->execute()) {
-            // B. Insert into `specs` table
-            $stmt_specs = $conn->prepare("INSERT INTO specs (specs_property, specs_brand, specs_purchase, specs_cpu, specs_os, specs_gpu, specs_ram, specs_storage, specs_capacity, lab_room, set_tag, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_specs->bind_param("ssssssssssss", $prop_id, $brand, $purchase_date, $cpu, $os, $gpu, $ram, $storage, $capacity, $lab_room, $tag, $new_set_id);
+            // B. Insert into `specs` table (specs_property removed)
+            $stmt_specs = $conn->prepare("INSERT INTO specs (specs_brand, specs_purchase, specs_cpu, specs_os, specs_gpu, specs_ram, specs_storage, specs_capacity, lab_room, set_tag, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_specs->bind_param("sssssssssss", $brand, $purchase_date, $cpu, $os, $gpu, $ram, $storage, $capacity, $lab_room, $tag, $new_set_id);
             $stmt_specs->execute();
 
             // C. Insert into `ports` table
@@ -153,12 +111,12 @@ try {
             $stmt_health->bind_param("iisss", $com_age, $num_repair, $disk_health, $power_health, $new_set_id);
             $stmt_health->execute();
 
-            // E. Insert into `peripherals` table
-            $stmt_peripherals = $conn->prepare("INSERT INTO peripherals (monitor_property, monitor_brand, monitor_status, keyboard_brand, keyboard_status, mouse_brand, mouse_status, avr_brand, avr_status, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_peripherals->bind_param("ssssssssss", $monitor_property, $monitor_brand, $monitor_status, $keyboard_brand, $keyboard_status, $mouse_brand, $mouse_status, $avr_brand, $avr_status, $new_set_id);
+            // E. Insert into `peripherals` table (monitor_property removed)
+            $stmt_peripherals = $conn->prepare("INSERT INTO peripherals (monitor_brand, monitor_status, keyboard_brand, keyboard_status, mouse_brand, mouse_status, avr_brand, avr_status, set_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_peripherals->bind_param("sssssssss", $monitor_brand, $monitor_status, $keyboard_brand, $keyboard_status, $mouse_brand, $mouse_status, $avr_brand, $avr_status, $new_set_id);
             $stmt_peripherals->execute();
 
-            // 3. NEW: Force the system to scan the new PC for broken parts instantly!
+            // Force the system to scan the new PC for broken parts instantly!
             updateUnitStatus($conn, $new_set_id);
         }
 

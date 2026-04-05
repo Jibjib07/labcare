@@ -45,7 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
         body: data,
       });
       
-      // FIX #1: Read as text first to catch hidden PHP errors instead of crashing
       const rawText = await res.text();
       let result;
 
@@ -81,7 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return result;
     } catch (error) {
       console.error("Network Error:", error);
-      // Pass the ACTUAL error message up the chain
       return {
         status: "error",
         message: error.message || "Connection failed. Please check your internet.",
@@ -93,7 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const listContainer = document.getElementById("user-list-container");
   const searchInput = document.getElementById("search-input");
   const statusFilter = document.getElementById("status-filter");
-  const listTitle = document.getElementById("list-status-title");
 
   const infoName = document.getElementById("info-name");
   const infoEmail = document.getElementById("info-email");
@@ -154,12 +151,11 @@ document.addEventListener("DOMContentLoaded", () => {
     infoRole.innerText = item.getAttribute("data-role");
     infoStatus.innerText = item.getAttribute("data-status");
 
-    // Logic: Hide controls if viewing SELF
     const isSelf = Number(selectedUserId) === Number(loggedInId);
 
     if (isSelf) {
-      btnAction2.style.display = "none"; // Hide Deactivate
-      document.querySelector(".security-panel").style.visibility = "hidden"; // Hide Recovery
+      btnAction2.style.display = "none"; 
+      document.querySelector(".security-panel").style.visibility = "hidden"; 
       document.querySelector(".security-panel").style.opacity = "0";
     } else {
       btnAction2.style.display = "inline-block";
@@ -202,7 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isEditing) toggleEditMode();
       populateInfoPanel(item);
 
-      // 🟢 MOBILE TRANSITION LOGIC
       if (window.innerWidth <= 900) {
         const userName = item.getAttribute("data-name");
         const detailTitle = document.getElementById("mobile-detail-title");
@@ -216,7 +211,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 🟢 MOBILE BACK BUTTON LOGIC
   const mobileBackBtn = document.getElementById("mobile-back-btn");
   if (mobileBackBtn) {
     mobileBackBtn.addEventListener("click", () => {
@@ -264,7 +258,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
 
-      // 🟢 Save and Cancel buttons (Desktop original + Mobile specific icons)
       btnAction1.className = "btn-green-add";
       btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-check-circle"></i> Save</span><span class="mobile-icon"><i class="fas fa-save"></i></span>`;
 
@@ -277,7 +270,6 @@ document.addEventListener("DOMContentLoaded", () => {
       infoRole.innerText = infoRole.dataset.val;
       updateStatusVisuals();
 
-      // 🟢 Restore Edit button
       btnAction1.className = "btn-edit";
       btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-pen"></i> Edit</span><span class="mobile-icon"><i class="fas fa-pen"></i></span>`;
       populateInfoPanel(currentItem);
@@ -374,7 +366,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnConfirmReset) {
     btnConfirmReset.addEventListener("click", async function () {
-      // STEP 1: ARM STATE (FIRST CLICK)
       if (!resetArmed) {
         resetArmed = true;
 
@@ -384,7 +375,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         showToast("Confirm Action", "Click again to send reset link.", "error");
 
-        // 2-second delay lock
         resetTimeout = setTimeout(() => {
           this.disabled = false;
           this.innerHTML = `<i class="fas fa-lock"></i> Send Link`;
@@ -393,7 +383,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // STEP 2: ACTUAL EXECUTION (SECOND CLICK)
       try {
         setLoading(this, "Sending Link...");
 
@@ -432,11 +421,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("btn-cancel-reset").addEventListener("click", () => {
     resetModal.style.display = "none";
-
-    // Reset state
     resetArmed = false;
     clearTimeout(resetTimeout);
-
     btnConfirmReset.disabled = false;
     btnConfirmReset.innerHTML = `<i class="fas fa-lock"></i> Send Link`;
   });
@@ -448,7 +434,6 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("reset-name").value = currentItem.dataset.name;
       document.getElementById("reset-email").value = currentItem.dataset.email;
 
-      // Reset state every open
       resetArmed = false;
       clearTimeout(resetTimeout);
       btnConfirmReset.disabled = false;
@@ -458,7 +443,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Modals & Filters Logic...
   document
     .getElementById("btn-cancel-modal")
     .addEventListener("click", () => (deactivateModal.style.display = "none"));
@@ -494,7 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-  // FIX #3: Add User Role Toggle Logic
+  // Role Toggle Logic
   const addRoleBtns = document.querySelectorAll("#add-user-form .role-btn");
   const addRoleInput = document.getElementById("add-role");
 
@@ -506,13 +490,81 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // ======== INLINE PASSWORD VALIDATION ========
+  const addPassword = document.getElementById("add-password");
+  const addConfirm = document.getElementById("add-confirm-password");
+  const pwFeedback = document.getElementById("password-feedback");
+  const confirmFeedback = document.getElementById("confirm-password-feedback");
+
+  function getMissingPasswordRules(val) {
+    const rules = [];
+    if (val.length < 8) rules.push("8+ chars");
+    if (!/[A-Z]/.test(val)) rules.push("uppercase");
+    if (!/[a-z]/.test(val)) rules.push("lowercase");
+    if (!/[0-9]/.test(val)) rules.push("number");
+    if (!/[\W_]/.test(val)) rules.push("special char");
+    return rules;
+  }
+
+  addPassword.addEventListener("input", (e) => {
+    const val = e.target.value;
+    if (!val) {
+      pwFeedback.textContent = "";
+      addPassword.classList.remove("input-error", "input-success");
+      return;
+    }
+
+    const missing = getMissingPasswordRules(val);
+    if (missing.length > 0) {
+      pwFeedback.textContent = "Needs: " + missing.join(", ");
+      pwFeedback.className = "inline-feedback error-text";
+      addPassword.classList.add("input-error");
+      addPassword.classList.remove("input-success");
+    } else {
+      pwFeedback.innerHTML = `<i class="fas fa-check-circle"></i> Strong password`;
+      pwFeedback.className = "inline-feedback success-text";
+      addPassword.classList.add("input-success");
+      addPassword.classList.remove("input-error");
+    }
+
+    if (addConfirm.value) addConfirm.dispatchEvent(new Event("input"));
+  });
+
+  addConfirm.addEventListener("input", (e) => {
+    const val = e.target.value;
+    if (!val) {
+      confirmFeedback.textContent = "";
+      addConfirm.classList.remove("input-error", "input-success");
+      return;
+    }
+
+    if (val !== addPassword.value) {
+      confirmFeedback.textContent = "Passwords do not match.";
+      confirmFeedback.className = "inline-feedback error-text";
+      addConfirm.classList.add("input-error");
+      addConfirm.classList.remove("input-success");
+    } else {
+      confirmFeedback.innerHTML = `<i class="fas fa-check-circle"></i> Passwords match`;
+      confirmFeedback.className = "inline-feedback success-text";
+      addConfirm.classList.add("input-success");
+      addConfirm.classList.remove("input-error");
+    }
+  });
+
   // Add User Logic
   document
     .getElementById("btn-open-add-modal")
     .addEventListener("click", () => (addModal.style.display = "flex"));
+    
   document.getElementById("btn-cancel-add").addEventListener("click", () => {
     addModal.style.display = "none";
     document.getElementById("add-user-form").reset();
+    
+    // Clear validation styling when cancel is clicked
+    addPassword.classList.remove("input-error", "input-success");
+    addConfirm.classList.remove("input-error", "input-success");
+    pwFeedback.textContent = "";
+    confirmFeedback.textContent = "";
   });
 
   document
@@ -533,43 +585,27 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // FIX #2: Add email validation check
       if (!isValidEmail(email)) {
         showToast("Email Error", "Please enter a valid email address.", "error");
         return;
       }
 
-      const passwordRegex = {
-        upper: /[A-Z]/,
-        lower: /[a-z]/,
-        number: /[0-9]/,
-        special: /[\W_]/,
-      };
-
-      if (
-        !passwordRegex.upper.test(password) ||
-        !passwordRegex.lower.test(password) ||
-        !passwordRegex.number.test(password) ||
-        !passwordRegex.special.test(password) ||
-        password.length < 8
-      ) {
-        showToast(
-          "Password Error",
-          "Password does not meet security requirements.",
-          "error",
-        );
+      const missingRules = getMissingPasswordRules(password);
+      if (missingRules.length > 0) {
+        showToast("Weak Password", "Please fix the highlighted password errors.", "error");
+        addPassword.classList.add("input-error");
         return;
       }
 
       if (password !== confirmPw) {
-        showToast("Password Error", "Passwords do not match.", "error");
+        showToast("Password Mismatch", "Passwords do not match.", "error");
+        addConfirm.classList.add("input-error");
         return;
       }
 
       const confirmBtn = document.getElementById("btn-confirm-add");
 
       try {
-        // FIX #4: Add Loading State to prevent spamming
         setLoading(confirmBtn, "Creating...");
 
         const formData = new FormData();
@@ -594,7 +630,6 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         showToast("Creation Failed", err.message, "error");
       } finally {
-        // Reset the button after success or failure
         resetButton(confirmBtn);
       }
     });
@@ -625,12 +660,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const inputField = document.getElementById(targetId);
 
       if (inputField.type === "password") {
-        // Show password
         inputField.type = "text";
         this.classList.remove("fa-eye");
         this.classList.add("fa-eye-slash");
       } else {
-        // Hide password
         inputField.type = "password";
         this.classList.remove("fa-eye-slash");
         this.classList.add("fa-eye");

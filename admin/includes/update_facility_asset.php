@@ -11,23 +11,12 @@ try {
 
     // The JS script strips "edit_" from the IDs, leaving us with these keys:
     $name = trim($_POST['fa_name'] ?? '');
-    $property = trim($_POST['fa_property'] ?? '');
+    // $property has been removed
     $brand = trim($_POST['fa_brand'] ?? '');
     $status = trim($_POST['fa_status'] ?? 'Working');
 
     // =========================================================
-    // 1. UNIQUENESS VALIDATION
-    // =========================================================
-    if ($property !== '') {
-        $check = $conn->prepare("SELECT asset_id FROM assets WHERE asset_property = ? AND asset_id != ? AND asset_status != 'Condemned'");
-        $check->bind_param("ss", $property, $asset_id);
-        $check->execute();
-        if ($check->get_result()->num_rows > 0) throw new Exception("Property ID '$property' is already in use by another asset.");
-        $check->close();
-    }
-
-    // =========================================================
-    // 2. FETCH CURRENT DATA FOR HISTORY LOGGING
+    // 1. FETCH CURRENT DATA FOR HISTORY LOGGING
     // =========================================================
     $status_check = $conn->prepare("SELECT asset_status, lab_id FROM assets WHERE asset_id = ?");
     $status_check->bind_param("s", $asset_id);
@@ -37,17 +26,19 @@ try {
     $status_check->close();
 
     // =========================================================
-    // 3. UPDATE ASSET
+    // 2. UPDATE ASSET (asset_property removed from query and values)
     // =========================================================
     $conn->begin_transaction();
 
-    $stmt = $conn->prepare("UPDATE assets SET asset_name=?, asset_property=?, asset_brand=?, asset_status=?, latest_activity=NOW() WHERE asset_id=?");
-    $stmt->bind_param("sssss", $name, $property, $brand, $status, $asset_id);
+    $stmt = $conn->prepare("UPDATE assets SET asset_name=?, asset_brand=?, asset_status=?, latest_activity=NOW() WHERE asset_id=?");
+    
+    // Bind 4 strings ("ssss") instead of 5
+    $stmt->bind_param("ssss", $name, $brand, $status, $asset_id);
     $stmt->execute();
     $stmt->close();
 
     // =========================================================
-    // 4. INSERT HISTORY LOG (Matching the new JSON loop format)
+    // 3. INSERT HISTORY LOG (Matching the new JSON loop format)
     // =========================================================
     $actor = $_SESSION['user_name'] ?? 'Admin';
     $action = "Admin Edit/Update";

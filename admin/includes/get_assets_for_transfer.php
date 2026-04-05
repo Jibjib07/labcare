@@ -23,30 +23,30 @@ try {
     $sourceQuery = "SELECT lab_name, lab_room FROM laboratories WHERE lab_id = '$lab_id' LIMIT 1";
     $sourceResult = $conn->query($sourceQuery);
     if ($sourceResult && $row = $sourceResult->fetch_assoc()) {
-        // Formats as: Computer Lab 1 (Room 104)
         $response['source_name'] = $row['lab_name'] . " (" . $row['lab_room'] . ")";
     }
 
-    // 3. Fetch Computer Units (Same logic as before)
+    // 3. Fetch Computer Units (Cleaned up! Removed old specs_property constraints)
     $unitQuery = "
-        SELECT u.set_id, u.set_tag, u.set_status 
-        FROM units u 
-        LEFT JOIN specs s ON u.set_id = s.set_id 
-        LEFT JOIN peripherals p ON u.set_id = p.set_id 
-        WHERE u.lab_id = '$lab_id' 
-        AND u.set_status != 'Condemned' 
-        AND s.specs_property IS NOT NULL 
-        AND s.specs_property != '' 
-        AND p.monitor_property IS NOT NULL 
-        AND p.monitor_property != ''
+        SELECT set_id, set_tag, set_status 
+        FROM units 
+        WHERE lab_id = '$lab_id' 
+        AND (set_status != 'Condemned' OR set_status IS NULL)
+        ORDER BY CAST(set_tag AS UNSIGNED) ASC
     ";
     $unitResult = $conn->query($unitQuery);
     if ($unitResult) {
         $response['units'] = $unitResult->fetch_all(MYSQLI_ASSOC);
     }
 
-    // 4. Fetch Facility Assets (Same logic as before)
-    $assetQuery = "SELECT asset_id, asset_tag, asset_status FROM assets WHERE lab_id = '$lab_id' AND asset_status != 'Condemned'";
+    // 4. Fetch Facility Assets 
+    $assetQuery = "
+        SELECT asset_id, asset_tag, asset_status 
+        FROM assets 
+        WHERE lab_id = '$lab_id' 
+        AND asset_status != 'Condemned'
+        ORDER BY CAST(asset_tag AS UNSIGNED) ASC
+    ";
     $assetResult = $conn->query($assetQuery);
     if ($assetResult) {
         $response['facility'] = $assetResult->fetch_all(MYSQLI_ASSOC);

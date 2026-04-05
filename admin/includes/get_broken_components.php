@@ -45,16 +45,16 @@ try {
         if ($res && $row = $res->fetch_assoc()) {
             $port_map = [
                 'usb_status' => 'USB Ports',
-                'wifi_status' => 'Wi-Fi Card',
-                'mic_status' => 'Microphone Jack',
-                'hdmi_status' => 'HDMI Port',
-                'headphone_status' => 'Headphone Jack',
-                'display_status' => 'Display Port',
-                'inline_status' => 'In-Line Jack',
-                'ethernet_status' => 'Ethernet Port'
+                'wifi_status' => 'Display Ports (HDMI/VGA)',
+                'mic_status' => 'RAM',
+                'hdmi_status' => 'Network',
+                'headphone_status' => 'Storage',
+                'display_status' => 'Operating System',
+                'inline_status' => 'Audio Ports',
+                'ethernet_status' => 'Drivers'
             ];
             foreach ($port_map as $col => $name) {
-                if (isset($row[$col]) && $row[$col] === 'For Repair') {
+                if (isset($row[$col]) && $row[$col] === 'Not Working') {
                     $components[] = ['db_column' => $col, 'name' => $name, 'reporter_remarks' => $reporter_remarks];
                 }
             }
@@ -64,21 +64,21 @@ try {
         $res = $conn->query("SELECT * FROM health WHERE set_id='$id'");
         if ($res && $row = $res->fetch_assoc()) {
             // FIX: Support both 'Poor' (new format) and 'For Repair' (legacy format)
-            if (isset($row['disk_health']) && ($row['disk_health'] === 'Poor' || $row['disk_health'] === 'For Repair')) {
-                $components[] = ['db_column' => 'disk_health', 'name' => 'Disk Health (SMART)', 'reporter_remarks' => $reporter_remarks];
+            if (isset($row['disk_health']) && ($row['disk_health'] === 'Poor' || $row['disk_health'] === 'Poor')) {
+                $components[] = ['db_column' => 'disk_health', 'name' => 'Disk Health', 'reporter_remarks' => $reporter_remarks];
             }
-            if (isset($row['power_health']) && $row['power_health'] === 'For Repair') {
-                $components[] = ['db_column' => 'power_health', 'name' => 'Power Supply', 'reporter_remarks' => $reporter_remarks];
+            if (isset($row['power_health']) && $row['power_health'] === 'Poor') {
+                $components[] = ['db_column' => 'power_health', 'name' => 'System Performance', 'reporter_remarks' => $reporter_remarks];
             }
         }
 
         // Scan Peripherals
         $res = $conn->query("SELECT * FROM peripherals WHERE set_id='$id'");
         if ($res && $row = $res->fetch_assoc()) {
-            if (isset($row['monitor_status']) && $row['monitor_status'] === 'For Repair') $components[] = ['db_column' => 'monitor_status', 'name' => 'Monitor', 'reporter_remarks' => $reporter_remarks];
-            if (isset($row['mouse_status']) && $row['mouse_status'] === 'For Repair') $components[] = ['db_column' => 'mouse_status', 'name' => 'Mouse', 'reporter_remarks' => $reporter_remarks];
-            if (isset($row['keyboard_status']) && $row['keyboard_status'] === 'For Repair') $components[] = ['db_column' => 'keyboard_status', 'name' => 'Keyboard', 'reporter_remarks' => $reporter_remarks];
-            if (isset($row['avr_status']) && $row['avr_status'] === 'For Repair') $components[] = ['db_column' => 'avr_status', 'name' => 'AVR', 'reporter_remarks' => $reporter_remarks];
+            if (isset($row['monitor_status']) && $row['monitor_status'] === 'Not Working') $components[] = ['db_column' => 'monitor_status', 'name' => 'Monitor', 'reporter_remarks' => $reporter_remarks];
+            if (isset($row['mouse_status']) && $row['mouse_status'] === 'Not Working') $components[] = ['db_column' => 'mouse_status', 'name' => 'Mouse', 'reporter_remarks' => $reporter_remarks];
+            if (isset($row['keyboard_status']) && $row['keyboard_status'] === 'Not Working') $components[] = ['db_column' => 'keyboard_status', 'name' => 'Keyboard', 'reporter_remarks' => $reporter_remarks];
+            if (isset($row['avr_status']) && $row['avr_status'] === 'Not Working') $components[] = ['db_column' => 'avr_status', 'name' => 'Power (PSU/AVR)', 'reporter_remarks' => $reporter_remarks];
         }
 
         // --- FALLBACK: If NO components are broken, but the parent unit is still For Repair ---

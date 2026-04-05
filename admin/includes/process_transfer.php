@@ -37,6 +37,10 @@ try {
         $stmt_u_h = $conn->prepare("INSERT INTO unit_history (set_id, lab_id, report_date, report_actor, report_affected, report_action, report_remarks, report_status) VALUES (?, ?, NOW(), ?, 'Entire Unit', 'Transfer', ?, 'Transferred')");
 
         foreach ($units as $id) {
+            // GET OLD ROOM NAME BEFORE OVERWRITING
+            $old_room_res = $conn->query("SELECT lab_room FROM units WHERE set_id = '$id'");
+            $old_room = ($old_room_res && $row = $old_room_res->fetch_assoc()) ? $row['lab_room'] : 'Unknown';
+
             // FIND NEXT FREE TAG FOR COMPUTER UNITS
             $tag_res = $conn->query("SELECT set_tag FROM units WHERE lab_id = '$target_lab_id' AND (set_status != 'Condemned' OR set_status IS NULL) ORDER BY CAST(set_tag AS UNSIGNED) ASC");
             $taken = [];
@@ -50,7 +54,8 @@ try {
             $stmt_u->bind_param("ssss", $target_lab_id, $new_room, $new_tag, $id);
             $stmt_u->execute();
 
-            $msg = "Transferred to $new_room. New Tag: PC-$new_tag. Reason: $reason_summary. Notes: $remarks";
+            // FORMATTED MESSAGE WITH OLD AND NEW ROOM
+            $msg = "Transferred From $old_room to $new_room. New Tag: PC-$new_tag. Reason: $reason_summary. Notes: $remarks";
             $stmt_u_h->bind_param("ssss", $id, $target_lab_id, $actor, $msg);
             $stmt_u_h->execute();
         }
@@ -63,6 +68,10 @@ try {
         $stmt_a_h = $conn->prepare("INSERT INTO asset_history (asset_id, lab_id, report_date, report_actor, report_affected, report_action, report_remarks, report_status) VALUES (?, ?, NOW(), ?, 'Facility Asset', 'Transfer', ?, 'Transferred')");
 
         foreach ($assets as $id) {
+            // GET OLD ROOM NAME BEFORE OVERWRITING
+            $old_room_res_a = $conn->query("SELECT lab_room FROM assets WHERE asset_id = '$id'");
+            $old_room_a = ($old_room_res_a && $row_a = $old_room_res_a->fetch_assoc()) ? $row_a['lab_room'] : 'Unknown';
+
             // FIND NEXT FREE TAG FOR FACILITY ASSETS
             $tag_res_a = $conn->query("SELECT asset_tag FROM assets WHERE lab_id = '$target_lab_id' ORDER BY CAST(asset_tag AS UNSIGNED) ASC");
             $taken_a = [];
@@ -76,7 +85,8 @@ try {
             $stmt_a->bind_param("ssss", $target_lab_id, $new_room, $new_tag_a, $id);
             $stmt_a->execute();
 
-            $msg = "Transferred to $new_room. New Tag: $new_tag_a. Reason: $reason_summary. Notes: $remarks";
+            // FORMATTED MESSAGE WITH OLD AND NEW ROOM
+            $msg = "Transferred From $old_room_a to $new_room. New Tag: FA-$new_tag_a. Reason: $reason_summary. Notes: $remarks";
             $stmt_a_h->bind_param("ssss", $id, $target_lab_id, $actor, $msg);
             $stmt_a_h->execute();
         }

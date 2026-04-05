@@ -778,7 +778,7 @@ body {
   color: #555;
   flex: 1;
   transition: all 0.2s;
-  min-width: 90px;
+  min-width: 120px;
 }
 
 .status-btn:hover {
@@ -1948,6 +1948,7 @@ body {
   .status-pill.orange {
     background-color: #fff4e5 !important;
     color: #ff9800 !important;
+    padding: 8px 16px;
   }
 
   .sub-detail-row {

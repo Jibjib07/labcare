@@ -14,7 +14,7 @@ try {
     if (!$asset_id) throw new Exception("No Asset ID provided.");
 
     $reasons_array = json_decode($reasons_json, true);
-    $action_taken = !empty($reasons_array) ? implode(", ", $reasons_array) : 'Condemned';
+    $action_taken = !empty($reasons_array) ? implode(", ", $reasons_array) : 'Condemn';
 
     $conn->begin_transaction();
 

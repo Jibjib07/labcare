@@ -46,6 +46,14 @@ try {
             }
         }
 
+        if (isset($row['power_health'])) {
+            if ($row['power_health'] === 'Working') {
+                $row['power_health'] = 'Healthy';
+            } else if ($row['power_health'] === 'For Repair') {
+                $row['power_health'] = 'Poor';
+            }
+        }
+
         // =========================================================
         // FETCH RECENT ACTIVITY LOGS (LIMIT 5)
         // =========================================================

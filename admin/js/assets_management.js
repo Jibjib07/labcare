@@ -345,6 +345,15 @@ function openModal(modalId, ...args) {
       resetTransferModal();
       populateTransferModal(labId);
     }
+    
+    // --- NEW: Force JS to scan gaps when Add Computer modal opens! ---
+    if (modalId === "addComputerModal") {
+      // Small timeout ensures the DOM is ready before scanning
+      setTimeout(() => {
+        calculateNextUnitNumber();
+      }, 50);
+    }
+    // -----------------------------------------------------------------
   }
 }
 
@@ -839,137 +848,185 @@ function calculateComputerAge() {
 }
 
 function getActiveToggle(groupId) {
-  const activeBtn = document.querySelector(`#${groupId} .status-btn.active`);
-  if (activeBtn) {
-    // Maps the HTML 'data-type' directly to your Database exact wording
-    return activeBtn.getAttribute("data-type") === "repair"
-      ? "For Repair"
-      : "Working";
-  }
-  return "Working"; // Fallback just in case
+    const group = document.getElementById(groupId);
+    if (!group) return "Working";
+    
+    const activeBtn = group.querySelector(".status-btn.active");
+    if (activeBtn) {
+        const type = activeBtn.getAttribute("data-type");
+        
+        // Health metrics use Healthy/Poor
+        if (groupId === "disk_toggle" || groupId === "power_toggle") {
+            return type === "repair" ? "Poor" : "Healthy";
+        }
+        
+        // All other components use Working / Not Working
+        return type === "repair" ? "Not Working" : "Working";
+    }
+    return "Working"; // Fallback
 }
 
-function submitNewUnit() {
-  const labRoom = document.getElementById("room_number_input").value;
+async function submitNewUnit() {
+  // ==========================================
+  // 1. STRICT FORM VALIDATION
+  // ==========================================
+  const requiredFields = [
+    // Identity & Specs
+    "spec_brand", "spec_cpu", "purchase_date_input", "spec_os", 
+    "spec_gpu", "spec_ram", "spec_storage", "spec_capacity",
+    // Software & Hardware
+    "usb_ports_count",
+    // Peripherals
+    "monitor_brand_input", "mouse_brand_input", 
+    "keyboard_brand_input", "avr_brand_input"
+  ];
+
+  let isValid = true;
+  let firstInvalidField = null;
+
+  requiredFields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (!el.value.trim()) {
+        isValid = false;
+        el.style.border = "2px solid #f44336"; // Turn border red
+        if (!firstInvalidField) firstInvalidField = el; // Remember the first empty one
+      } else {
+        el.style.border = ""; // Reset border if filled
+      }
+    }
+  });
+
+  if (!isValid) {
+    showNotification(
+      "Missing Information",
+      "Please fill out all text fields before creating the unit.",
+      "error"
+    );
+
+    // Smart Tab Switching: Automatically go to the tab with the missing field
+    if (firstInvalidField) {
+      const parentTab = firstInvalidField.closest(".modal-tab-content");
+      if (parentTab) {
+        const tabId = parentTab.id;
+        // Find the button that controls this tab
+        const tabBtn = document.querySelector(`.modal-tabs-nav .spec-tab[onclick*="${tabId}"]`);
+        if (tabBtn) {
+          switchModalTab(tabId, tabBtn);
+        }
+      }
+      // Focus the cursor on the empty box
+      firstInvalidField.focus();
+    }
+    return; // Abort submission!
+  }
+
+  // ==========================================
+  // 2. DATA GATHERING & SUBMISSION
+  // ==========================================
+  const getVal = (id) => document.getElementById(id)?.value || "";
+
+  const labRoom = getVal("room_number_input");
   const urlParams = new URLSearchParams(window.location.search);
   const labId = urlParams.get("lab_id") || 0;
 
   // Determine tags to send
   let unitTags = [];
-  if (isBulkMode) {
-    const count = parseInt(document.getElementById("bulk_count").value) || 2;
+  if (typeof isBulkMode !== 'undefined' && isBulkMode) {
+    const count = parseInt(getVal("bulk_count")) || 2;
     unitTags = availableNumbersList.slice(0, count);
   } else {
-    unitTags = [document.getElementById("smart_unit_no").value];
+    const smartUnitNo = getVal("smart_unit_no");
+    if (smartUnitNo) unitTags = [smartUnitNo];
   }
 
+  // Early exit if no tags are selected
   if (unitTags.length === 0) return;
 
-  // ... [Keep your status toggle collection] ...
-  const statusButtons = document.querySelectorAll(".status-btn.active");
-  let statusArray = [];
-  statusButtons.forEach((btn) =>
-    statusArray.push(btn.getAttribute("data-type")),
-  );
-
   const formData = new FormData();
-  // Send the array of tags as a JSON string
+
+  // --- CORE DATA & STATUSES ---
   formData.append("unit_tags", JSON.stringify(unitTags));
   formData.append("lab_id", labId);
   formData.append("lab_room", labRoom);
-  statusArray.forEach((status) => formData.append("statuses[]", status));
 
-  // --- NEW: APPEND SPECS DATA ---
-  formData.append(
-    "property_id",
-    document.getElementById("spec_property").value,
-  );
-  formData.append("cpu", document.getElementById("spec_cpu").value);
-  formData.append("brand", document.getElementById("spec_brand").value);
-  formData.append("os", document.getElementById("spec_os").value);
-  formData.append(
-    "purchase_date",
-    document.getElementById("purchase_date_input").value,
-  );
-  formData.append("gpu", document.getElementById("spec_gpu").value);
-  formData.append("ram", document.getElementById("spec_ram").value);
-  formData.append("storage", document.getElementById("spec_storage").value);
-  formData.append("capacity", document.getElementById("spec_capacity").value);
+  let statusArray = [];
+  document.querySelectorAll(".status-btn.active").forEach((btn) => {
+    const statusType = btn.getAttribute("data-type");
+    formData.append("statuses[]", statusType);
+    statusArray.push(statusType);
+  });
 
-  // --- NEW: APPEND PORTS DATA ---
-  formData.append(
-    "usb_ports",
-    document.getElementById("usb_ports_count").value,
-  );
-  formData.append("usb_status", getActiveToggle("usb_toggle"));
-  formData.append("wifi_status", getActiveToggle("wifi_toggle"));
-  formData.append("mic_status", getActiveToggle("mic_toggle"));
-  formData.append("hdmi_status", getActiveToggle("hdmi_toggle"));
-  formData.append("headphone_status", getActiveToggle("headphone_toggle"));
-  formData.append("display_status", getActiveToggle("display_toggle"));
-  formData.append("inline_status", getActiveToggle("inline_toggle"));
-  formData.append("ethernet_status", getActiveToggle("ethernet_toggle"));
+  // --- NEW: CALCULATE OVERALL SET STATUS FOR NEW UNITS ---
+  const finalUnitStatus = statusArray.includes("repair") ? "For Repair" : "Working";
+  formData.append("set_status", finalUnitStatus);
 
-  // --- NEW: APPEND HEALTH DATA ---
-  let rawAgeStr = document.getElementById("computer_age_display").value;
-  let comAge = parseInt(rawAgeStr);
-  if (isNaN(comAge)) comAge = 0;
+  // --- SPECS DATA ---
+  const specFields = ["cpu", "brand", "os", "gpu", "ram", "storage", "capacity"];
+  specFields.forEach(field => formData.append(field, getVal(`spec_${field}`)));
+  formData.append("purchase_date", getVal("purchase_date_input"));
 
-  formData.append("com_age", comAge);
+  // --- PORTS DATA ---
+  formData.append("usb_ports", getVal("usb_ports_count"));
+  
+  const toggles = ["usb", "wifi", "mic", "hdmi", "headphone", "display", "inline", "ethernet"];
+  toggles.forEach(t => formData.append(`${t}_status`, getActiveToggle(`${t}_toggle`)));
+
+  // --- HEALTH DATA ---
+  const comAge = parseInt(getVal("computer_age_display"));
+  formData.append("com_age", isNaN(comAge) ? 0 : comAge);
   formData.append("disk_health", getActiveToggle("disk_toggle"));
-  formData.append(
-    "num_repair",
-    document.getElementById("num_repair_input").value || 0,
-  );
+  formData.append("num_repair", getVal("num_repair_input") || 0);
   formData.append("power_health", getActiveToggle("power_toggle"));
 
-  // --- NEW: APPEND PERIPHERALS DATA ---
-  formData.append(
-    "monitor_property",
-    document.getElementById("monitor_property_input").value,
-  );
-  formData.append(
-    "monitor_brand",
-    document.getElementById("monitor_brand_input").value,
-  );
-  formData.append("monitor_status", getActiveToggle("monitor_toggle"));
+  // --- PERIPHERALS DATA ---
+  const peripherals = ["monitor", "mouse", "keyboard", "avr"];
+  peripherals.forEach(p => {
+    formData.append(`${p}_brand`, getVal(`${p}_brand_input`));
+    formData.append(`${p}_status`, getActiveToggle(`${p}_toggle`));
+  });
 
-  formData.append(
-    "mouse_brand",
-    document.getElementById("mouse_brand_input").value,
-  );
-  formData.append("mouse_status", getActiveToggle("mouse_toggle"));
+  // Visual feedback on the button
+  const createBtn = document.querySelector("#addComputerModal .btn-create");
+  const origBtnHtml = createBtn.innerHTML;
+  createBtn.disabled = true;
+  createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
-  formData.append(
-    "keyboard_brand",
-    document.getElementById("keyboard_brand_input").value,
-  );
-  formData.append("keyboard_status", getActiveToggle("keyboard_toggle"));
+  // --- NETWORK REQUEST ---
+  try {
+    const response = await fetch("includes/insert_unit.php", { 
+      method: "POST", 
+      body: formData 
+    });
+    
+    const data = await response.json();
 
-  formData.append(
-    "avr_brand",
-    document.getElementById("avr_brand_input").value,
-  );
-  formData.append("avr_status", getActiveToggle("avr_toggle"));
+    createBtn.disabled = false;
+    createBtn.innerHTML = origBtnHtml;
 
-  fetch("includes/insert_unit.php", { method: "POST", body: formData })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        // Close modal, save toast to memory, and reload!
-        closeModal("addComputerModal");
-        reloadWithToast(
-          "Units Added",
-          "New units were added successfully.",
-          "success",
-        );
-      } else {
-        showNotification("Database Error", data.error, "error");
-      }
-    })
-    .catch((error) =>
-      showNotification("Connection Error", "Failed to save units.", "error"),
-    );
+    if (data.success) {
+      closeModal("addComputerModal");
+      
+      // Clear inputs for next time
+      requiredFields.forEach(id => {
+        const el = document.getElementById(id);
+        if(el && id !== "purchase_date_input") el.value = "";
+      });
+
+      reloadWithToast(
+        "Units Added",
+        "New units were added successfully.",
+        "success"
+      );
+    } else {
+      showNotification("Database Error", data.error || "Unknown error occurred.", "error");
+    }
+  } catch (error) {
+    console.error("Failed to submit unit data:", error);
+    createBtn.disabled = false;
+    createBtn.innerHTML = origBtnHtml;
+    showNotification("Connection Error", "Failed to save units.", "error");
+  }
 }
 
 let isBulkMode = false;
@@ -979,25 +1036,17 @@ function toggleAddMode(mode) {
   const circleSingle = document.getElementById("circle_single");
   const circleMultiple = document.getElementById("circle_multiple");
   const bulkContainer = document.getElementById("bulk_input_container");
-  const propIdInput = document.getElementById("spec_property");
 
   if (mode === "single") {
     isBulkMode = false;
     circleSingle.classList.add("checked");
     circleMultiple.classList.remove("checked");
     bulkContainer.style.display = "none";
-
-    propIdInput.disabled = false;
-    propIdInput.style.background = "#fff";
   } else {
     isBulkMode = true;
     circleMultiple.classList.add("checked");
     circleSingle.classList.remove("checked");
     bulkContainer.style.display = "flex";
-
-    propIdInput.value = "";
-    propIdInput.disabled = true;
-    propIdInput.style.background = "#f4f4f4";
   }
 
   // Crucial fix: Always recalculate and update the screen when switching modes
@@ -1064,43 +1113,56 @@ function selectUnit(element, setId) {
 
           if (data.history && data.history.length > 0) {
             data.history.forEach((log, index) => {
+              
+              // --- NEW STATUS MAPPING & COLORS ---
+              let displayStatus = log.report_status || "Logged";
               let badgeColor = "gray";
-              if (
-                log.report_status === "Resolved" ||
-                log.report_status === "Working"
-              )
-                badgeColor = "green";
-              if (
-                log.report_status === "Reported" ||
-                log.report_status === "For Repair"
-              )
-                badgeColor = "yellow";
-              if (log.report_status === "Condemned") badgeColor = "red";
+              let extraStyle = ""; // Used to force black font if needed
+
+              // 1. Fixed Statuses
+              if (["Resolved", "Working", "Healthy"].includes(log.report_status)) {
+                  badgeColor = "green";
+              } 
+              // 2. Broken Statuses -> Translated to "Issue Reported"
+              else if (["Reported", "For Repair", "Not Working", "Poor"].includes(log.report_status)) {
+                  badgeColor = "yellow";
+                  displayStatus = "Issue Reported"; 
+              } 
+              // 3. Condemned
+              else if (log.report_status === "Condemned") {
+                  badgeColor = "red";
+              } 
+              // 4. Transferred & Updated -> Gray badge, Black text
+              // 4. Transferred & Updated -> Gray badge, Black text
+              else if (["Transferred", "Updated"].includes(log.report_status)) {
+                  badgeColor = ""; // Clear class to prevent conflicts
+                  // Force the pill shape and colors using inline CSS
+                  extraStyle = "background-color: #e0e0e0; color: #555555; font-weight: 700; padding: 4px 12px; border-radius: 12px; font-size: 11px; display: inline-block;"; 
+              }
 
               const item = document.createElement("div");
               item.style.padding = "15px 20px";
               item.style.backgroundColor = "#fff";
 
-              // Add a divider line between logs, but not after the very last one
               if (index < data.history.length - 1) {
                 item.style.borderBottom = "1px solid #eaeaea";
               }
 
               item.innerHTML = `
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                                <div style="font-size: 13px; color: #555;">
-                                    <strong style="color: #1b4d3e; font-size: 14px;"><i class="fas fa-user-circle"></i> ${log.report_actor || "System"}</strong> 
-                                    <span style="margin-left: 8px; color: #888;"><i class="far fa-clock"></i> ${log.formatted_date}</span>
-                                </div>
-                                <span class="badge ${badgeColor}">${log.report_status || "Logged"}</span>
-                            </div>
-                            <div style="font-size: 13px; color: #333;">
-                                <div style="margin-bottom: 8px;"><strong>Affected:</strong> <span style="color: #d32f2f; font-weight: 500;">${log.report_affected || "N/A"}</span></div>
-                                <div style="background: #f4f6f8; padding: 10px 12px; border-radius: 6px; color: #555; border-left: 3px solid #ccc;">
-                                    <em>"${log.report_remarks || "No remarks provided"}"</em>
-                                </div>
-                            </div>
-                        `;
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="font-size: 13px; color: #555;">
+                        <strong style="color: #1b4d3e; font-size: 14px;"><i class="fas fa-user-circle"></i> ${log.report_actor || "System"}</strong> 
+                        <span style="margin-left: 8px; color: #888;"><i class="far fa-clock"></i> ${log.formatted_date}</span>
+                    </div>
+                    <span class="badge ${badgeColor}" style="${extraStyle}">${displayStatus}</span>
+                </div>
+                <div style="font-size: 13px; color: #333;">
+                    <div style="margin-bottom: 8px;"><strong>Affected:</strong> <span style="color: #d32f2f; font-weight: 500;">${log.report_affected || "N/A"}</span></div>
+                    <div style="background: #f4f6f8; padding: 10px 12px; border-radius: 6px; color: #555; border-left: 3px solid #ccc;">
+                        <em>"${log.report_remarks || "No remarks provided"}"</em>
+                    </div>
+                </div>
+              `;
               historyBody.appendChild(item);
             });
           } else {
@@ -1113,23 +1175,23 @@ function selectUnit(element, setId) {
         if (btnResolve) {
           const d = data.data;
           // Scanner: If ANY part is broken, light up the Resolve button!
+          // FIX: Added "Not Working" to all standard component checks and cleaned up syntax
           const isBroken =
             d.set_status === "For Repair" ||
             d.disk_health === "Poor" ||
-            d.disk_health === "For Repair" ||
-            d.power_health === "For Repair" ||
-            d.usb_status === "For Repair" ||
-            d.wifi_status === "For Repair" ||
-            d.mic_status === "For Repair" ||
-            d.hdmi_status === "For Repair" ||
-            d.headphone_status === "For Repair" ||
-            d.display_status === "For Repair" ||
-            d.inline_status === "For Repair" ||
-            d.ethernet_status === "For Repair" ||
-            d.monitor_status === "For Repair" ||
-            d.mouse_status === "For Repair" ||
-            d.keyboard_status === "For Repair" ||
-            d.avr_status === "For Repair";
+            d.power_health === "Poor" ||
+            ["For Repair", "Not Working"].includes(d.usb_status) ||
+            ["For Repair", "Not Working"].includes(d.wifi_status) ||
+            ["For Repair", "Not Working"].includes(d.mic_status) ||
+            ["For Repair", "Not Working"].includes(d.hdmi_status) ||
+            ["For Repair", "Not Working"].includes(d.headphone_status) ||
+            ["For Repair", "Not Working"].includes(d.display_status) ||
+            ["For Repair", "Not Working"].includes(d.inline_status) ||
+            ["For Repair", "Not Working"].includes(d.ethernet_status) ||
+            ["For Repair", "Not Working"].includes(d.monitor_status) ||
+            ["For Repair", "Not Working"].includes(d.mouse_status) ||
+            ["For Repair", "Not Working"].includes(d.keyboard_status) ||
+            ["For Repair", "Not Working"].includes(d.avr_status);
 
           if (isBroken) {
             // Make button active and green
@@ -1159,76 +1221,72 @@ function selectUnit(element, setId) {
 }
 
 function populateRightPanel(data) {
-  for (const [key, value] of Object.entries(data)) {
-    // 1. Text & Inputs (view_specs_cpu / edit_specs_cpu)
-    const viewEl = document.getElementById("view_" + key);
-    const editEl = document.getElementById("edit_" + key);
+    for (const [key, value] of Object.entries(data)) {
+        // 1. Find the View and Edit elements
+        const viewEl = document.getElementById("view_" + key);
+        const editEl = document.getElementById("edit_" + key);
 
-    if (viewEl) {
-      if (key === "com_age") {
-        const ageVal = parseInt(value) || 0;
-        viewEl.innerText = value !== null ? ageVal + " Years" : "0 Years";
+        // SAFETY CHECK: Only try to set text if the View element actually exists
+      if (viewEl) {
+        if (key === "com_age") {
+          const ageVal = parseInt(value) || 0;
+          viewEl.innerText = value !== null ? ageVal + " Years" : "0 Years";
 
-        // --- INJECT FOR CONDEMN PILL STRICTLY IN HEALTH TAB ---
-        const condemnBadge = document.getElementById("view_condemn_badge");
-        if (condemnBadge) {
-          if (ageVal >= 5) {
-            condemnBadge.innerHTML =
-              '<span class="badge red">For Condemn</span>';
-          } else {
-            condemnBadge.innerHTML = ""; // Hide if less than 5 years old
+          const condemnBadge = document.getElementById("view_condemn_badge");
+          if (condemnBadge) {
+            if (ageVal >= 5) {
+              condemnBadge.innerHTML =
+                '<span class="badge red">For Condemn</span>';
+            } else {
+              condemnBadge.innerHTML = "";
+            }
           }
+        } else if (key === "set_tag") {
+          // --- NEW: Automatically attach the "PC-" prefix! ---
+          viewEl.innerText = value ? "PC-" + value : "N/A";
+        } else {
+          viewEl.innerText = value || "N/A";
         }
-        // -----------------------------------------------------------
-      } else {
-        viewEl.innerText = value || "N/A";
-      }
-    }
-    if (editEl) editEl.value = value || "";
-
-    // 2. Status Pills & Toggles (pill_usb_status / toggle_usb_status)
-    const toggleGroup = document.getElementById("toggle_" + key);
-    if (toggleGroup) {
-      const pill = document.getElementById("pill_" + key);
-
-      if (pill) {
-        // --- TRANSLATOR STRICTLY FOR DISK HEALTH ---
-        let displayValue = value || "Unknown";
-
-        if (key === "disk_health") {
-          // Treat both "Working" and "Healthy" as Healthy
-          if (value === "Working" || value === "Healthy")
-            displayValue = "Healthy";
-          // Treat both "For Repair" and "Poor" as Poor
-          if (value === "For Repair" || value === "Poor") displayValue = "Poor";
-        }
-
-        pill.innerText = displayValue;
-        // -------------------------------------------
-
-        // Colors cleanly evaluate the raw database value
-        let pillColor = "purple";
-        if (value === "Working" || value === "Healthy") pillColor = "green";
-        if (value === "For Condemn") pillColor = "red";
-        if (value === "For Repair" || value === "Poor") pillColor = "orange";
-
-        pill.className = `status-pill view-mode ${pillColor}`;
       }
 
-      // Sync the underlying toggle buttons (Even if hidden in Admin Edit mode, Staff/Logic needs this accurate)
-      toggleGroup.querySelectorAll(".status-btn").forEach((btn) => {
-        btn.classList.remove("active");
-
-        // Safely check if the database value implies a "repair/broken" state
-        const targetType =
-          value === "For Repair" || value === "Poor" ? "repair" : "working";
-
-        if (btn.getAttribute("data-type") === targetType) {
-          btn.classList.add("active");
+        // SAFETY CHECK: Only try to set value if the Edit input actually exists
+        // This prevents the "Cannot set properties of null" error!
+        if (editEl) {
+            editEl.value = value || "";
         }
-      });
+
+        // 2. Status Pills & Toggles
+        const toggleGroup = document.getElementById("toggle_" + key);
+        if (toggleGroup) {
+            const pill = document.getElementById("pill_" + key);
+
+            if (pill) {
+                let displayValue = value || "Unknown";
+
+                // FIX: Added power_health here too
+                if (key === "disk_health" || key === "power_health") {
+                    if (value === "Working" || value === "Healthy") displayValue = "Healthy";
+                    if (value === "For Repair" || value === "Poor") displayValue = "Poor";
+                }
+                pill.innerText = displayValue;
+
+                let pillColor = "orange";
+                if (value === "Working" || value === "Healthy") pillColor = "green";
+                if (value === "For Condemn") pillColor = "red";
+                if (value === "For Repair" || value === "Poor") pillColor = "orange";
+
+                pill.className = `status-pill view-mode ${pillColor}`;
+            }
+
+            toggleGroup.querySelectorAll(".status-btn").forEach((btn) => {
+                btn.classList.remove("active");
+                const targetType = (value === "For Repair" || value === "Poor") ? "repair" : "working";
+                if (btn.getAttribute("data-type") === targetType) {
+                    btn.classList.add("active");
+                }
+            });
+        }
     }
-  }
 }
 function toggleEditMode() {
   // 1. Detect which view is currently visible
@@ -1525,11 +1583,11 @@ function openCondemnModal() {
   openModal("condemnModal");
 }
 function submitCondemnAction() {
-  // 1. Get the ID from the modal input (where we just stored it in openCondemnModal)
+  // 1. Get the ID and Raw Remarks
   const setId = document.getElementById("condemn_set_id").value;
-  const remarks = document.getElementById("condemn_remarks").value;
+  const rawRemarks = document.getElementById("condemn_remarks").value.trim();
 
-  // 2. Collect reasons
+  // 2. Collect checked reasons
   const reasons = [];
   document
     .querySelectorAll('input[name="condemn_reason"]:checked')
@@ -1538,7 +1596,7 @@ function submitCondemnAction() {
     });
 
   // 3. Validation
-  if (reasons.length === 0 && remarks.trim() === "") {
+  if (reasons.length === 0 && rawRemarks === "") {
     showNotification(
       "Validation Error",
       "Please select a reason or provide remarks.",
@@ -1546,6 +1604,10 @@ function submitCondemnAction() {
     );
     return;
   }
+
+  // --- NEW: COMBINE AND FORMAT THE STRING ---
+  const reasonSummary = reasons.length > 0 ? reasons.join(", ") : "Unspecified";
+  const finalRemarks = `Reason: ${reasonSummary}. Notes: ${rawRemarks || "None provided."}`;
 
   // 4. Determine Target
   const isFacilityView =
@@ -1557,32 +1619,38 @@ function submitCondemnAction() {
   // 5. Build Form Data
   const formData = new FormData();
   if (isFacilityView) {
-    formData.append("asset_id", setId); // PHP expects asset_id
+    formData.append("asset_id", setId); 
   } else {
-    formData.append("set_id", setId); // PHP expects set_id
+    formData.append("set_id", setId); 
   }
-  formData.append("reasons", JSON.stringify(reasons));
-  formData.append("remarks", remarks);
+  
+  // Send the newly formatted string directly to the 'remarks' variable!
+  formData.append("remarks", finalRemarks); 
 
   // 6. Execution
+  const btn = document.querySelector(".btn-confirm-condemn");
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
   fetch(targetUrl, { method: "POST", body: formData })
     .then((res) => res.json())
     .then((data) => {
       if (data.success) {
         closeModal("condemnModal");
-        saveCurrentState(); // ADD THIS
-        location.reload();
+        if (typeof saveCurrentState === "function") saveCurrentState();
+        location.reload(); // Refresh to see the new log!
       } else {
-        showNotification(
-          "Database Error",
-          data.error || "Update failed",
-          "error",
-        );
+        showNotification("Database Error", data.error || "Update failed", "error");
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
       }
     })
     .catch((err) => {
       console.error("Fetch error:", err);
       showNotification("Connection Error", "Failed to reach server.", "error");
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
     });
 }
 
@@ -1597,7 +1665,6 @@ function openAdminLogModal(type) {
 
   // Ensures all database columns translate to beautiful text
   const nameMap = {
-    specs_property: "Property ID",
     specs_cpu: "CPU",
     specs_brand: "Brand",
     specs_os: "OS",
@@ -1605,29 +1672,27 @@ function openAdminLogModal(type) {
     specs_ram: "RAM",
     specs_storage: "Storage Type",
     specs_capacity: "Storage Capacity",
-    specs_purchase: "Purchase Date", // Fixed translation!
-    monitor_property: "Monitor Prop ID",
+    specs_purchase: "Acquisition Date", // Fixed translation!
     monitor_brand: "Monitor Brand",
     mouse_brand: "Mouse Brand",
     keyboard_brand: "Keyboard Brand",
     avr_brand: "AVR Brand",
     usb_ports: "Available USB Ports",
-    usb_status: "USB Port",
-    wifi_status: "Wi-Fi",
-    mic_status: "Microphone Jack",
-    hdmi_status: "HDMI",
-    headphone_status: "Headphone Jack",
-    display_status: "Display Port",
-    inline_status: "In-line Jack",
-    ethernet_status: "Ethernet Port",
+    usb_status: "USB Ports",
+    wifi_status: "Display Ports (HDMI/VGA)",
+    mic_status: "RAM",
+    hdmi_status: "Network",
+    headphone_status: "Storage",
+    display_status: "Operating System",
+    inline_status: "Audio Ports",
+    ethernet_status: "Drivers",
     disk_health: "Disk Health",
-    power_health: "Power Supply",
+    power_health: "System Performance",
     monitor_status: "Monitor",
     mouse_status: "Mouse",
     keyboard_status: "Keyboard",
-    avr_status: "AVR",
+    avr_status: "Power (PSU/AVR)",
     set_status: "Overall Unit Status",
-    fa_property: "Property ID",
     fa_name: "Asset Name",
     fa_brand: "Brand",
   };
@@ -1653,14 +1718,16 @@ function openAdminLogModal(type) {
             const oldStatus = originalPill.innerText.trim();
             let newStatus =
               activeBtn.getAttribute("data-type") === "repair"
-                ? "For Repair"
+                ? "Not Working"
                 : "Working";
-            if (dbColumn === "disk_health")
+
+            // FIX: Added power_health to the Healthy/Poor check
+            if (dbColumn === "disk_health" || dbColumn === "power_health") {
               newStatus =
                 activeBtn.getAttribute("data-type") === "repair"
                   ? "Poor"
                   : "Healthy";
-
+            }
             if (oldStatus !== newStatus) {
               const niceName = nameMap[dbColumn] || dbColumn;
               statusChanges.push({
@@ -1712,15 +1779,16 @@ function openAdminLogModal(type) {
       document.getElementById("toggle_fa_status").style.display !== "none"
     ) {
       const oldStatus = originalPill.value.trim();
-      const newStatus =
-        activeBtn.getAttribute("data-type") === "repair"
-          ? "For Repair"
-          : "Working";
-      if (oldStatus !== newStatus) {
+      
+      // FIX: Phantom Update Guard - group all "broken" terminology together
+      const isOldBroken = ["For Repair", "Not Working", "Missing Parts"].includes(oldStatus);
+      const isNewBroken = activeBtn.getAttribute("data-type") === "repair";
+
+      if (isOldBroken !== isNewBroken) {
         statusChanges.push({
           name: "Asset Status",
           old: oldStatus,
-          new: newStatus,
+          new: isNewBroken ? "Not Working" : "Working", // <--- Displays "Not Working" in Modal
         });
       }
     }
@@ -1728,7 +1796,6 @@ function openAdminLogModal(type) {
     // 2. FA TEXT INPUT SCANNER
     const faInputs = [
       { id: "fa_name", label: "Asset Name" },
-      { id: "fa_property", label: "Property ID" },
       { id: "fa_brand", label: "Brand" },
     ];
 
@@ -1881,20 +1948,14 @@ function confirmLogStatus() {
         if (group.style.display !== "none" && activeBtn) {
           let val =
             activeBtn.getAttribute("data-type") === "repair"
-              ? "For Repair"
+              ? "Not Working" // <--- CHANGED THIS
               : "Working";
-          if (dbColumn === "disk_health")
-            val =
-              activeBtn.getAttribute("data-type") === "repair"
-                ? "Poor"
-                : "Healthy";
+          if (dbColumn === "disk_health" || dbColumn === "power_health")
+            val = activeBtn.getAttribute("data-type") === "repair" ? "Poor" : "Healthy";
           formData.append(dbColumn, val);
         } else {
           const pill = document.getElementById("pill_" + dbColumn);
-          formData.append(
-            dbColumn,
-            pill ? pill.innerText.trim() : "For Repair",
-          );
+          formData.append(dbColumn, pill ? pill.innerText.trim() : "Not Working"); // <--- CHANGED THIS
         }
       });
   } else {
@@ -1903,16 +1964,14 @@ function confirmLogStatus() {
     const activeBtn = group ? group.querySelector(".status-btn.active") : null;
 
     if (group && group.style.display !== "none" && activeBtn) {
-      // FIXED: Changed "asset_status" to "fa_status" to match the PHP script
       formData.append(
         "fa_status",
         activeBtn.getAttribute("data-type") === "repair"
-          ? "For Repair"
+          ? "For Repair" // <--- Master status sent to Database!
           : "Working",
       );
     } else {
       const pill = document.getElementById("pill_fa_status");
-      // FIXED: Changed "asset_status" to "fa_status" to match the PHP script
       formData.append("fa_status", pill ? pill.innerText.trim() : "For Repair");
     }
   }
@@ -1939,148 +1998,6 @@ function confirmLogStatus() {
 // 7. FINALIZE DEPLOYMENT LOGIC (Missing IDs)
 // ==========================================
 
-function openMissingIdModal(roomNumber) {
-  forceCloseEditMode();
-  fetch(`includes/get_missing_ids.php?room=${roomNumber}`)
-    .then((res) => res.text())
-    .then((text) => {
-      try {
-        const data = JSON.parse(text);
-
-        if (data.success) {
-          const tbody = document.getElementById("missingIdsTableBody");
-          tbody.innerHTML = "";
-          document.getElementById("missing_count_text").innerText =
-            data.units.length;
-
-          data.units.forEach((unit) => {
-            const sysId = unit.specs_property || "";
-            const monId = unit.monitor_property || "";
-
-            let badgeClass = "purple";
-            let badgeText = "No Property ID";
-
-            if (sysId && monId) {
-              badgeClass = unit.status === "For Repair" ? "yellow" : "green";
-              badgeText = unit.status;
-            }
-
-            // Upgraded to Mobile-Safe Card Layout instead of a Table Row!
-            const card = document.createElement("div");
-            card.className = "missing-id-card";
-            card.style.cssText =
-              "background: #fff; border: 1px solid #eaeaea; border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
-
-            card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px;">
-                    <strong style="font-size: 16px; color: #1b4d3e;"><i class="fas fa-desktop"></i> PC-${unit.set_tag}</strong>
-                    <span class="badge ${badgeClass} status-badge" data-original-status="${unit.status}">${badgeText}</span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 5px;">
-                    <div>
-                        <label style="font-size: 12px; color: #666; font-weight: 600; display: block; margin-bottom: 5px;">System Unit Property ID</label>
-                        <input type="text" class="modal-input serial-input sys-input" data-id="${unit.set_id}" value="${sysId}" placeholder="Enter system unit ID..." oninput="checkSerialInputs(this)" style="width: 100%; box-sizing: border-box;">
-                    </div>
-                    <div>
-                        <label style="font-size: 12px; color: #666; font-weight: 600; display: block; margin-bottom: 5px;">Monitor Property ID</label>
-                        <input type="text" class="modal-input serial-input mon-input" data-id="${unit.set_id}" value="${monId}" placeholder="Enter monitor ID..." oninput="checkSerialInputs(this)" style="width: 100%; box-sizing: border-box;">
-                    </div>
-                </div>
-            `;
-            tbody.appendChild(card);
-          });
-
-          openModal("missingIdModal");
-        } else {
-          alert("Database Error: " + data.error);
-        }
-      } catch (e) {
-        console.error("JSON Parse Error", e);
-      }
-    })
-    .catch((err) => console.error("Fetch request failed:", err));
-}
-
-// Dynamically updates the badge
-function checkSerialInputs(inputElement) {
-  // Finds the parent card instead of a table row
-  const container =
-    inputElement.closest(".missing-id-card") || inputElement.closest("tr");
-  if (!container) return;
-
-  const sysVal = container.querySelector(".sys-input").value.trim();
-  const monVal = container.querySelector(".mon-input").value.trim();
-  const badge = container.querySelector(".status-badge");
-  const origStatus = badge.getAttribute("data-original-status");
-
-  if (sysVal !== "" && monVal !== "") {
-    badge.className = `badge ${origStatus === "For Repair" ? "yellow" : "green"} status-badge`;
-    badge.innerText = origStatus;
-  } else {
-    badge.className = "badge purple status-badge";
-    badge.innerText = "No Property ID";
-  }
-}
-
-function finalizeDeployment() {
-  // Scans for the new cards!
-  const rows = document.querySelectorAll(
-    "#missingIdsTableBody .missing-id-card, #missingIdsTableBody tr",
-  );
-  let payload = [];
-
-  rows.forEach((container) => {
-    const sysInput = container.querySelector(".sys-input");
-    const monInput = container.querySelector(".mon-input");
-
-    if (sysInput && monInput) {
-      payload.push({
-        set_id: sysInput.getAttribute("data-id"),
-        specs_property: sysInput.value.trim(),
-        monitor_property: monInput.value.trim(),
-      });
-    }
-  });
-
-  if (payload.length === 0) {
-    alert("No units found to update!");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("payload", JSON.stringify(payload));
-
-  fetch("includes/save_missing_ids.php", { method: "POST", body: formData })
-    .then((res) => res.text())
-    .then((text) => {
-      try {
-        const data = JSON.parse(text);
-        if (data.success) {
-          closeModal("missingIdModal");
-          reloadWithToast(
-            "Deployment Finalized",
-            "Property IDs successfully assigned.",
-            "success",
-          );
-        } else {
-          showNotification("Finalization Failed", data.error, "error");
-        }
-      } catch (e) {
-        showNotification(
-          "Server Error",
-          "Invalid response from server.",
-          "error",
-        );
-      }
-    })
-    .catch((err) =>
-      showNotification(
-        "Connection Error",
-        "Failed to finalize deployment.",
-        "error",
-      ),
-    );
-}
 
 // ==========================================
 // 10. FACILITY ASSETS LOGIC
@@ -2092,7 +2009,7 @@ function updateFAStatusColor(selectElement) {
     selectElement.style.backgroundColor = "#e8f5e9"; // Light Green
     selectElement.style.color = "#2e7d32"; // Dark Green
     selectElement.style.borderColor = "#c8e6c9";
-  } else if (selectElement.value === "For Repair") {
+  } else if (selectElement.value === "Not Working") {
     selectElement.style.backgroundColor = "#fff3e0"; // Light Orange
     selectElement.style.color = "#e65100"; // Dark Orange
     selectElement.style.borderColor = "#ffe0b2";
@@ -2141,7 +2058,6 @@ function submitFacilityAsset() {
 
   // Grab elements
   const nameEl = document.getElementById("fa_asset_name");
-  const propertyEl = document.getElementById("fa_asset_property");
   const brandEl = document.getElementById("fa_brand");
   const statusEl = document.getElementById("fa_status");
   const tagEl = document.getElementById("fa_set_tag");
@@ -2159,16 +2075,6 @@ function submitFacilityAsset() {
     return;
   }
 
-  // 2. Check Property ID
-  if (!propertyEl.value.trim()) {
-    showNotification(
-      "Input Required",
-      "Please enter the Property ID or Serial Number.",
-      "error",
-    );
-    propertyEl.focus();
-    return;
-  }
 
   // 3. Check Brand
   if (!brandEl.value.trim()) {
@@ -2206,7 +2112,6 @@ function submitFacilityAsset() {
   formData.append("asset_id", window.currentPendingFAId);
   formData.append("asset_tag", tagEl.value);
   formData.append("asset_name", nameEl.value.trim());
-  formData.append("asset_property", propertyEl.value.trim());
   formData.append("asset_brand", brandEl.value.trim());
   formData.append("asset_status", statusEl.value);
   formData.append("lab_id", labId);
@@ -2227,13 +2132,14 @@ function submitFacilityAsset() {
         closeModal("addFacilityAssetModal");
         // Clear fields for next use
         nameEl.value = "";
-        propertyEl.value = "";
         brandEl.value = "";
+        
         reloadWithToast(
           "Asset Added",
           "New asset successfully created.",
           "success",
         );
+
       } else {
         // Error from PHP (e.g., duplicate property ID)
         showNotification(
@@ -2289,11 +2195,14 @@ function selectFacilityAsset(element, assetId) {
         const asset = data.data;
 
         // --- POPULATE TEXT BOXES (Mapped to new grid IDs) ---
+        // Populates the new Asset ID box
+        document.getElementById("view_fa_id").innerText = asset.asset_id || "N/A";
+        
         document.getElementById("view_fa_header_title").innerText =
           `FA-${asset.asset_tag} Details`;
 
-        document.getElementById("view_fa_property").innerText =
-          asset.asset_property || "N/A";
+        // (The view_fa_property line was deleted from here)
+
         document.getElementById("view_fa_name").innerText =
           asset.asset_name || "N/A";
         document.getElementById("view_fa_brand").innerText =
@@ -2301,18 +2210,26 @@ function selectFacilityAsset(element, assetId) {
 
         // --- POPULATE STATUS PILL ---
         const statusPill = document.getElementById("pill_fa_status");
-        statusPill.innerText = asset.asset_status;
+        
+        // 1. Translate the DB status to the UI status
+        let displayStatus = asset.asset_status;
+        if (asset.asset_status === "For Repair") {
+            displayStatus = "Not Working";
+        }
+        
+        statusPill.innerText = displayStatus;
         statusPill.className = "status-pill view-mode"; // Reset classes
 
-        // 2. FIX: Dynamic Status Coloring uses "orange" to perfectly match CU
+        // 2. Apply the correct background colors
         if (asset.asset_status === "Working") {
           statusPill.classList.add("green");
         } else if (
-          asset.asset_status === "For Repair" ||
-          asset.asset_status === "Missing Parts"
+          ["For Repair", "Not Working", "Missing Parts"].includes(asset.asset_status)
         ) {
-          statusPill.classList.add("orange"); // Changed from yellow to orange
-        } else {
+          statusPill.classList.add("orange"); 
+        } else if (
+          ["Condemned", "For Condemn"].includes(asset.asset_status)
+        ) {
           statusPill.classList.add("red");
         }
 
@@ -2350,17 +2267,32 @@ function selectFacilityAsset(element, assetId) {
 
           if (data.history && data.history.length > 0) {
             data.history.forEach((log, index) => {
-              // Color Logic for Badges
+              
+              // --- NEW STATUS MAPPING & COLORS ---
+              let displayStatus = log.report_status || "Logged";
               let badgeColor = "gray";
-              if (["Resolved", "Working"].includes(log.report_status))
-                badgeColor = "green";
-              if (
-                ["Reported", "For Repair", "Missing Parts"].includes(
-                  log.report_status,
-                )
-              )
-                badgeColor = "yellow";
-              if (log.report_status === "Condemned") badgeColor = "red";
+              let extraStyle = ""; 
+
+              // 1. Fixed Statuses
+              if (["Resolved", "Working", "Healthy"].includes(log.report_status)) {
+                  badgeColor = "green";
+              } 
+              // 2. Broken Statuses -> Translated to "Issue Reported"
+              else if (["Reported", "For Repair", "Not Working", "Poor", "Missing Parts"].includes(log.report_status)) {
+                  badgeColor = "yellow";
+                  displayStatus = "Issue Reported"; 
+              } 
+              // 3. Condemned
+              else if (log.report_status === "Condemned") {
+                  badgeColor = "red";
+              } 
+              // 4. Transferred & Updated -> Gray badge, Black text
+              // 4. Transferred & Updated -> Gray badge, Black text
+              else if (["Transferred", "Updated"].includes(log.report_status)) {
+                  badgeColor = ""; // Clear class to prevent conflicts
+                  // Force the pill shape and colors using inline CSS
+                  extraStyle = "background-color: #e0e0e0; color: #555555; font-weight: 700; padding: 4px 12px; border-radius: 12px; font-size: 11px; display: inline-block;"; 
+              }
 
               const card = document.createElement("div");
               card.className = "activity-card";
@@ -2375,7 +2307,7 @@ function selectFacilityAsset(element, assetId) {
                         <strong style="color: #1b4d3e;"><i class="fas fa-user-circle"></i> ${log.report_actor || "System"}</strong> 
                         <span style="margin-left: 10px; color: #999; font-size: 11px;"><i class="far fa-clock"></i> ${log.formatted_date}</span>
                     </div>
-                    <span class="badge ${badgeColor}">${log.report_status || "Logged"}</span>
+                    <span class="badge ${badgeColor}" style="${extraStyle}">${displayStatus}</span>
                 </div>
                 
                 <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
@@ -2426,66 +2358,60 @@ function selectFacilityAsset(element, assetId) {
 // ==========================================
 
 function toggleFAEditMode() {
-  const btn = document.getElementById("editToggleButtonFA");
-  const textSpan = document.getElementById("editTextFA");
-  const btnCancel = document.getElementById("btnCancelEditFA");
-  const btnCondemn = document.getElementById("btnCondemnFA");
-  const btnResolve = document.getElementById("btnResolveFA");
+    const btn = document.getElementById("editToggleButtonFA");
+    const textSpan = document.getElementById("editTextFA");
+    const btnCancel = document.getElementById("btnCancelEditFA");
+    const btnCondemn = document.getElementById("btnCondemnFA");
+    const btnResolve = document.getElementById("btnResolveFA");
 
-  if (textSpan.textContent.trim() === "Edit") {
-    isEditModeActive = true;
-    btn.innerHTML = `<i class="fas fa-save"></i> <span class="btn-text" id="editTextFA">Save</span>`;
-    btn.style.backgroundColor = "#4caf50";
-    btn.style.color = "white";
+    if (textSpan.textContent.trim() === "Edit") {
+        isEditModeActive = true;
+        btn.innerHTML = `<i class="fas fa-save"></i> <span class="btn-text" id="editTextFA">Save</span>`;
+        btn.style.backgroundColor = "#4caf50";
+        btn.style.color = "white";
 
-    if (btnCancel) {
-      btnCancel.style.display = "inline-flex";
-      btnCancel.classList.add("show-cancel");
+        if (btnCancel) {
+            btnCancel.style.display = "inline-flex";
+            btnCancel.classList.add("show-cancel");
+        }
+        if (btnCondemn) btnCondemn.style.display = "none";
+        if (btnResolve) btnResolve.style.display = "none";
+
+        // REMOVED fa_property from this list
+        const faInputs = ["fa_name", "fa_brand"]; 
+        faInputs.forEach((id) => {
+            const viewEl = document.getElementById("view_" + id);
+            const editEl = document.getElementById("edit_" + id);
+            
+            // ADDED SAFETY CHECK: Only proceed if BOTH elements exist
+            if (viewEl && editEl) {
+                let val = viewEl.innerText.trim();
+                if (val === "---" || val === "N/A") val = "";
+                editEl.value = val;
+            }
+        });
+
+        document.querySelectorAll("#view-facility-right .view-mode:not(.status-pill)").forEach((el) => (el.style.display = "none"));
+        document.querySelectorAll("#view-facility-right .edit-mode:not(.status-toggle-group)").forEach((el) => (el.style.display = "block"));
+
+        const pill = document.getElementById("pill_fa_status");
+        const toggleGroup = document.getElementById("toggle_fa_status");
+
+        if (pill && toggleGroup) {
+            const currentStatus = pill.innerText.trim();
+            if (currentStatus === "Working" || currentStatus === "Healthy") {
+                pill.style.display = "none";
+                toggleGroup.style.display = "flex";
+            } else {
+                pill.style.display = ""; 
+                toggleGroup.style.display = "none";
+                pill.classList.remove("green");
+                pill.classList.add("yellow");
+            }
+        }
+    } else {
+        openAdminLogModal("fa");
     }
-    if (btnCondemn) btnCondemn.style.display = "none";
-    if (btnResolve) btnResolve.style.display = "none";
-
-    // Sync Text Inputs (Grab text from view mode and put it into the input boxes)
-    const faInputs = ["fa_property", "fa_name", "fa_brand"];
-    faInputs.forEach((id) => {
-      const viewEl = document.getElementById("view_" + id);
-      const editEl = document.getElementById("edit_" + id);
-      if (viewEl && editEl) {
-        let val = viewEl.innerText.trim();
-        if (val === "---" || val === "N/A") val = "";
-        editEl.value = val;
-      }
-    });
-
-    // Hide View Mode, Show Edit Mode
-    document
-      .querySelectorAll("#view-facility-right .view-mode:not(.status-pill)")
-      .forEach((el) => (el.style.display = "none"));
-    document
-      .querySelectorAll(
-        "#view-facility-right .edit-mode:not(.status-toggle-group)",
-      )
-      .forEach((el) => (el.style.display = "block"));
-
-    // Handle Status Toggle Lock
-    const pill = document.getElementById("pill_fa_status");
-    const toggleGroup = document.getElementById("toggle_fa_status");
-
-    if (pill && toggleGroup) {
-      const currentStatus = pill.innerText.trim();
-      if (currentStatus === "Working" || currentStatus === "Healthy") {
-        pill.style.display = "none";
-        toggleGroup.style.display = "flex";
-      } else {
-        pill.style.display = ""; // <--- FIX: Changed from "block" to ""
-        toggleGroup.style.display = "none";
-        pill.classList.remove("green");
-        pill.classList.add("yellow");
-      }
-    }
-  } else {
-    openAdminLogModal("fa");
-  }
 }
 
 // 3. Process Transfer (Left exactly as you had it - it works perfectly!)
@@ -2769,8 +2695,8 @@ function openResolveModal(type) {
     return;
   }
 
-  // 3. Fetching
-  fetch(`includes/get_broken_components.php?type=${type}&id=${setId}`)
+  // 3. Fetching (NEW: Added &t=${Date.now()} to bust the cache!)
+  fetch(`includes/get_broken_components.php?type=${type}&id=${setId}&t=${Date.now()}`)
     .then((res) => res.json())
     .then((data) => {
       if (data.success) {
@@ -2788,9 +2714,10 @@ function openResolveModal(type) {
           const componentName = type === "fa" ? ` ${comp.name}` : comp.name;
 
           let workingText = "Working";
-          let brokenText = "For Repair";
+          let brokenText = "Not Working"; // <--- FIX: Changed from For Repair
 
-          if (comp.db_column === "disk_health") {
+          // FIX: Added power_health to this check so it accurately says "Poor"
+          if (comp.db_column === "disk_health" || comp.db_column === "power_health") {
             workingText = "Healthy";
             brokenText = "Poor";
           }
