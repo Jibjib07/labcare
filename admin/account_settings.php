@@ -315,23 +315,14 @@ $stmt->close();
                 <div class="info-block">
                     <h4>CVSU Mission</h4>
                     <p>
-                        Cavite State University shall provide
-                        <strong>excellent, equitable, and relevant educational opportunities</strong>
-                        in the arts, sciences, and technology through
-                        <strong>quality instruction</strong> and
-                        <strong>responsive research</strong> and
-                        <strong>development activities</strong>. It shall
-                        <strong>produce professional, skilled, and morally upright individuals</strong>
-                        for global competitiveness.
+                        Cavite State University shall provide excellent, equitable and relevant educational opportunities in the arts, sciences and technology through quality instruction and responsive research and development activities. It shall produce professional, skilled and morally upright individuals for global competitiveness.
                     </p>
                 </div>
 
                 <div class="info-block">
                     <h4>CVSU Vision</h4>
                     <p>
-                        The <strong>premier university</strong> in historic Cavite recognized for
-                        <strong>excellence</strong> in the development of
-                        <strong>globally competitive and morally upright individuals</strong>.
+                        The premier university in historic Cavite globally recognized for excellence in character development, academics, research, innovation and sustainable community engagement.
                     </p>
                 </div>
 

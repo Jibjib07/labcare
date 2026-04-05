@@ -148,26 +148,44 @@ document.addEventListener("DOMContentLoaded", () => {
   function populateInfoPanel(item) {
     const selectedUserId = item.getAttribute("data-id");
     const loggedInId = document.getElementById("logged-in-admin-id").value;
+    const selectedUserRole = item.getAttribute("data-role").toLowerCase();
 
     infoName.innerText = item.getAttribute("data-name");
     infoEmail.innerText = item.getAttribute("data-email");
     infoRole.innerText = item.getAttribute("data-role");
     infoStatus.innerText = item.getAttribute("data-status");
 
-    // Logic: Hide controls if viewing SELF
     const isSelf = Number(selectedUserId) === Number(loggedInId);
+    const isTargetAdmin = selectedUserRole === 'admin';
+    const securityPanel = document.querySelector(".security-panel");
 
-    if (isSelf) {
-      btnAction2.style.display = "none"; // Hide Deactivate
-      document.querySelector(".security-panel").style.visibility = "hidden"; // Hide Recovery
-      document.querySelector(".security-panel").style.opacity = "0";
+    // --- 1. EDIT & DEACTIVATE LOGIC ---
+    if (isTargetAdmin && !isSelf) {
+        // Hide Edit and Deactivate for other Admins
+        btnAction1.style.display = "none"; 
+        btnAction2.style.display = "none"; 
+    } else if (isSelf) {
+        // Hide Deactivate for yourself, but keep Edit visible
+        btnAction1.style.display = "inline-flex";
+        btnAction2.style.display = "none";
     } else {
-      btnAction2.style.display = "inline-block";
-      document.querySelector(".security-panel").style.visibility = "visible";
-      document.querySelector(".security-panel").style.opacity = "1";
-      updateStatusVisuals();
+        // Show everything for Staff
+        btnAction1.style.display = "inline-flex";
+        btnAction2.style.display = "inline-block";
     }
 
+    // --- 2. ACCOUNT RECOVERY LOGIC (REINSTATED) ---
+    if (isSelf) {
+        // You cannot send a reset link to yourself from here (security best practice)
+        securityPanel.style.display = "none";
+    } else {
+        // Visible for both Staff AND other Admins
+        securityPanel.style.display = "block";
+        securityPanel.style.visibility = "visible";
+        securityPanel.style.opacity = "1";
+    }
+
+    // Store data for the edit mode toggle
     infoName.dataset.val = infoName.innerText;
     infoEmail.dataset.val = infoEmail.innerText;
     infoRole.dataset.val = infoRole.innerText;
@@ -226,63 +244,62 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function toggleEditMode() {
+function toggleEditMode() {
     isEditing = !isEditing;
 
+    // Get the entire row container for the Role
+    const roleRow = infoRole.closest('.info-item');
+
     if (isEditing) {
-      const selectedUserId = currentItem.getAttribute("data-id");
-      const loggedInId = document.getElementById("logged-in-admin-id").value;
+        // 1. Admin-to-Admin Security Check
+        const selectedUserRole = currentItem.getAttribute("data-role");
+        const selectedUserId = currentItem.getAttribute("data-id");
+        const loggedInId = document.getElementById("logged-in-admin-id").value;
+        const isSelf = Number(selectedUserId) === Number(loggedInId);
 
-      infoName.innerHTML = `<input type="text" id="edit-name" value="${infoName.dataset.val}" class="edit-gray-input">`;
-      infoEmail.innerHTML = `<input type="email" id="edit-email" value="${infoEmail.dataset.val}" class="edit-gray-input">`;
+        if (selectedUserRole.toLowerCase() === 'admin' && !isSelf) {
+            isEditing = false;
+            showToast("Access Denied", "You cannot edit another administrator.", "error");
+            return;
+        }
 
-      const currentRole = infoRole.dataset.val;
-      const isSelf = Number(selectedUserId) === Number(loggedInId);
-      const disabledAttr = isSelf
-        ? 'style="opacity: 0.6; pointer-events: none; cursor: not-allowed;"'
-        : "";
-      const selfNote = isSelf
-        ? '<br><span style="color: #f39c12; font-size: 11px;">You cannot change your own role.</span>'
-        : "";
+        // 2. Transform Name and Email into inputs
+        infoName.innerHTML = `<input type="text" id="edit-name" value="${infoName.dataset.val}" class="edit-gray-input">`;
+        infoEmail.innerHTML = `<input type="email" id="edit-email" value="${infoEmail.dataset.val}" class="edit-gray-input">`;
 
-      infoRole.innerHTML = `
-            <div class="role-toggle" ${disabledAttr}>
-                <button type="button" class="role-btn ${currentRole === "Admin" ? "active" : ""}" data-val="Admin" style="flex: 1;">Admin</button>
-                <button type="button" class="role-btn ${currentRole === "Staff" ? "active" : ""}" data-val="Staff" style="flex: 1;">Staff</button>
-                <input type="hidden" id="edit-role-val" value="${currentRole}">
-            </div>
-            ${selfNote}
-        `;
+        // 3. COMPLETELY HIDE the Role section (Label + Value + Gap)
+        if (roleRow) {
+            roleRow.style.display = 'none';
+        }
 
-      infoRole.querySelectorAll(".role-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          infoRole
-            .querySelectorAll(".role-btn")
-            .forEach((b) => b.classList.remove("active"));
-          e.target.classList.add("active");
-          document.getElementById("edit-role-val").value = e.target.dataset.val;
-        });
-      });
+        // 4. Update Action Buttons
+        btnAction1.className = "btn-green-add";
+        btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-check-circle"></i> Save</span><span class="mobile-icon"><i class="fas fa-save"></i></span>`;
 
-      // 🟢 Save and Cancel buttons (Desktop original + Mobile specific icons)
-      btnAction1.className = "btn-green-add";
-      btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-check-circle"></i> Save</span><span class="mobile-icon"><i class="fas fa-save"></i></span>`;
+        btnAction2.style.display = "inline-flex";
+        btnAction2.className = "btn-cancel-new";
+        btnAction2.innerHTML = `<span class="desktop-text">Cancel</span><span class="mobile-icon"><i class="fas fa-times"></i></span>`;
 
-      btnAction2.style.display = "inline-flex";
-      btnAction2.className = "btn-cancel-new";
-      btnAction2.innerHTML = `<span class="desktop-text">Cancel</span><span class="mobile-icon"><i class="fas fa-times"></i></span>`;
     } else {
-      infoName.innerText = infoName.dataset.val;
-      infoEmail.innerText = infoEmail.dataset.val;
-      infoRole.innerText = infoRole.dataset.val;
-      updateStatusVisuals();
+        // 5. RESTORE: Revert all fields
+        infoName.innerText = infoName.dataset.val;
+        infoEmail.innerText = infoEmail.dataset.val;
+        
+        // Unhide the Role section and restore text
+        if (roleRow) {
+            roleRow.style.display = 'block';
+        }
+        infoRole.innerText = infoRole.dataset.val;
 
-      // 🟢 Restore Edit button
-      btnAction1.className = "btn-edit";
-      btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-pen"></i> Edit</span><span class="mobile-icon"><i class="fas fa-pen"></i></span>`;
-      populateInfoPanel(currentItem);
+        updateStatusVisuals();
+
+        // Restore btnAction1 to EDIT
+        btnAction1.className = "btn-edit";
+        btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-pen"></i> Edit</span><span class="mobile-icon"><i class="fas fa-pen"></i></span>`;
+        
+        populateInfoPanel(currentItem);
     }
-  }
+}
 
   // Action: Save Edit
   if (btnAction1) {
