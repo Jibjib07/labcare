@@ -58,6 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
         $new_room = "Room " . $raw_new_room;
     }
 
+    // Check for duplicates, excluding the current room
     $check_query = "SELECT * FROM laboratories 
                     WHERE (lab_name = '$new_name' OR lab_room = '$new_room') 
                     AND LOWER(lab_status) = 'active' 
@@ -73,9 +74,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
             $edit_error = "Room Number '$new_room' is already assigned elsewhere.";
         }
     } else {
+        // Execute the update
         $update_query = "UPDATE laboratories SET lab_name = '$new_name', lab_room = '$new_room' WHERE lab_id = '$lab_id'";
 
         if ($conn->query($update_query)) {
+            // If the room number changed, cascade the update to units and assets
             if ($original_room !== $new_room) {
                 $conn->query("UPDATE units SET lab_room = '$new_room' WHERE lab_room = '$original_room'");
                 $conn->query("UPDATE assets SET lab_room = '$new_room' WHERE lab_room = '$original_room'");

@@ -45,7 +45,7 @@ if ($unitsResult && $unitsResult->num_rows > 0) {
 $issuesQuery = "
     SELECT report_affected, COUNT(*) as issue_count 
     FROM unit_history 
-    WHERE report_affected NOT IN ('Entire Set', 'Unspecified') 
+    WHERE report_affected NOT IN ('Entire Set', 'Unspecified Issue') 
       AND report_affected IS NOT NULL
     GROUP BY report_affected 
     ORDER BY issue_count DESC 
