@@ -39,16 +39,15 @@ if (isset($_GET['fetch_id'])) {
 
 // --- 2. DATABASE PROCESSING LOGIC ---
 
-// E. Handle Inventory Transaction (Stock In / Stock Out)
+// E. Handle Inventory Transaction
 if (isset($_POST['submit_transaction'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
-    $trans_type = mysqli_real_escape_string($conn, $_POST['trans_type']); // 'release' or 'restock'
+    $trans_type = mysqli_real_escape_string($conn, $_POST['trans_type']);
     $trans_qty = intval($_POST['trans_quantity']);
     $remarks = mysqli_real_escape_string($conn, trim($_POST['trans_remarks']));
     $date = date('Y-m-d H:i:s');
     $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
 
-    // Auto-generate remarks if empty
     if (empty($remarks)) {
         if ($trans_type === 'restock') {
             $remarks = "Stock Replenished";
@@ -57,33 +56,33 @@ if (isset($_POST['submit_transaction'])) {
         }
     }
 
-    // Get current quantity
-    $get_qty_query = "SELECT supply_quantity FROM supply WHERE supply_id = '$id'";
+    // UPDATED: Fetch unit_type alongside supply_quantity
+    $get_qty_query = "SELECT supply_quantity, unit_type FROM supply WHERE supply_id = '$id'";
     $res = mysqli_query($conn, $get_qty_query);
+    
     if ($row = mysqli_fetch_assoc($res)) {
         $current_qty = intval($row['supply_quantity']);
+        $unit_type = htmlspecialchars($row['unit_type']); // Extract the unit type
 
         if ($trans_type === 'release') {
-            // Backend Error Trapping: Prevent dropping below 0
             if ($current_qty <= 0 || $trans_qty > $current_qty) {
                 header("Location: supply_inventory.php?error=insufficient_stock&id=$id");
                 exit();
             }
             $new_qty = $current_qty - $trans_qty;
-            $activity_text = "Stock Released (-$trans_qty)";
+            // UPDATED: Added $unit_type to the string
+            $activity_text = "Stock Released (-$trans_qty $unit_type)";
         } else {
-            // Restock
             $new_qty = $current_qty + $trans_qty;
-            $activity_text = "Stock Replenished (+$trans_qty)";
+            // UPDATED: Added $unit_type to the string
+            $activity_text = "Stock Replenished (+$trans_qty $unit_type)";
         }
 
-        // Auto-update status
         $new_status = ($new_qty > 0) ? "In Stock" : "Out of Stock";
 
         $update_query = "UPDATE supply SET supply_quantity = '$new_qty', supply_status = '$new_status', latest_activity = '$date' WHERE supply_id = '$id'";
         if (mysqli_query($conn, $update_query)) {
 
-            // UPDATED: Included supply_quantity (logging the new resulting quantity)
             $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                            VALUES ('$date', '$activity_text', '$new_status', '$actor', '$remarks', '$id', '$new_qty')";
             mysqli_query($conn, $hist_query);

@@ -43,15 +43,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
 
 // --- EDIT LABORATORY LOGIC ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
+    
+    // CRITICAL FIX: These two variables were missing from the previous version
+    $lab_id = $conn->real_escape_string($_POST['edit_lab_id']);
+    $original_room = $conn->real_escape_string($_POST['original_room_number']);
+    
     $new_name = $conn->real_escape_string(trim($_POST['edit_room_name']));
     $raw_new_room = trim($_POST['edit_room_number']);
 
+    // Handle "Not Applicable" logic
     if (strtoupper($raw_new_room) === 'N/A') {
         $new_room = $new_name;
     } else {
         $new_room = "Room " . $raw_new_room; // Autogenerate the prefix
     }
 
+    // Check for duplicates, excluding the current room
     $check_query = "SELECT * FROM laboratories 
                     WHERE (lab_name = '$new_name' OR lab_room = '$new_room') 
                     AND LOWER(lab_status) = 'active' 
@@ -67,9 +74,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
             $edit_error = "Room Number '$new_room' is already assigned elsewhere.";
         }
     } else {
+        // Execute the update
         $update_query = "UPDATE laboratories SET lab_name = '$new_name', lab_room = '$new_room' WHERE lab_id = '$lab_id'";
 
         if ($conn->query($update_query)) {
+            // If the room number changed, cascade the update to units and assets
             if ($original_room !== $new_room) {
                 $conn->query("UPDATE units SET lab_room = '$new_room' WHERE lab_room = '$original_room'");
                 $conn->query("UPDATE assets SET lab_room = '$new_room' WHERE lab_room = '$original_room'");

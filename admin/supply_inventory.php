@@ -152,10 +152,13 @@ if (isset($_POST['submit_transaction'])) {
         }
     }
 
-    $get_qty_query = "SELECT supply_quantity FROM supply WHERE supply_id = '$id'";
+    // UPDATED: Fetch unit_type alongside supply_quantity
+    $get_qty_query = "SELECT supply_quantity, unit_type FROM supply WHERE supply_id = '$id'";
     $res = mysqli_query($conn, $get_qty_query);
+    
     if ($row = mysqli_fetch_assoc($res)) {
         $current_qty = intval($row['supply_quantity']);
+        $unit_type = htmlspecialchars($row['unit_type']); // Extract the unit type
 
         if ($trans_type === 'release') {
             if ($current_qty <= 0 || $trans_qty > $current_qty) {
@@ -163,10 +166,12 @@ if (isset($_POST['submit_transaction'])) {
                 exit();
             }
             $new_qty = $current_qty - $trans_qty;
-            $activity_text = "Stock Released (-$trans_qty)";
+            // UPDATED: Added $unit_type to the string
+            $activity_text = "Stock Released (-$trans_qty $unit_type)";
         } else {
             $new_qty = $current_qty + $trans_qty;
-            $activity_text = "Stock Replenished (+$trans_qty)";
+            // UPDATED: Added $unit_type to the string
+            $activity_text = "Stock Replenished (+$trans_qty $unit_type)";
         }
 
         $new_status = ($new_qty > 0) ? "In Stock" : "Out of Stock";
