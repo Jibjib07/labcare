@@ -68,7 +68,11 @@ function openEditModal(button) {
 
     // 2. Fill the inputs inside the modal
     document.getElementById('edit_room_name').value = roomName;
-    document.getElementById('edit_room_number').value = roomNumber;
+    if (roomNumber.toLowerCase().startsWith('room ')) {
+    document.getElementById('edit_room_number').value = roomNumber.substring(5); // Removes "Room "
+    } else {
+        document.getElementById('edit_room_number').value = roomNumber;
+    }
     document.getElementById('edit_total_units').value = totalUnits;
     
     // 3. Fill the hidden input so the PHP knows which record to update
@@ -126,11 +130,22 @@ function selectRoom(element, roomNumber) {
     document.querySelectorAll('.room-item, .m-room-card').forEach(el => el.classList.remove('active'));
     if (element) element.classList.add('active');
 
-    // B. Update Schedule Title
+    // B. Update Schedule Title (Handles "N/A" rooms like Library)
+    const roomNameElement = element ? element.querySelector('h4, .lab-name') : null;
+    const roomName = roomNameElement ? roomNameElement.textContent.trim() : roomNumber;
     const st = document.getElementById('schedule-title');
-    if(st) st.textContent = 'Room ' + roomNumber + ' Schedule';
+    
+    if (st) {
+        if (roomNumber.toLowerCase() === roomName.toLowerCase()) {
+            st.textContent = roomName + ' Schedule';
+        } else {
+            st.textContent = 'Room ' + roomNumber + ' Schedule';
+        }
+    }
 
     const schedDisplay = document.getElementById('schedule-display');
+    const clearBtn = document.getElementById('btnClearSchedule');
+
     if(schedDisplay) {
         schedDisplay.innerHTML = '<i class="fas fa-spinner fa-spin" style="color:#8c52ff; font-size: 1.5rem;"></i>';
     }
@@ -139,33 +154,32 @@ function selectRoom(element, roomNumber) {
     fetch(`../includes/get_room_stats.php?room=${roomNumber}`)
         .then(response => response.json())
         .then(data => {
-            // 1. Update Desktop Stats
+            // 1. Update Stats (Desktop & Mobile)
             updateUI('val-working', data.working);
             updateUI('val-repair', data.repair);
             updateUI('val-condemned', data.condemn);
             updateUI('val-total', data.total_units);
             updateUI('val-assets', data.total_assets);
-
-            // 2. Update Mobile Stats
             updateUI('m-val-working', data.working);
             updateUI('m-val-repair', data.repair);
             updateUI('m-val-condemned', data.condemn);
             updateUI('m-val-total', data.total_units);
 
-            // 3. Display Schedule Image (Fits 300px, No Scroll)
+            // 2. Handle Schedule Image and "Clear" Button Visibility
+            // Inside fetch(...get_room_stats.php).then(data => { ...
             if (data.schedule && data.schedule !== '') {
-               schedDisplay.innerHTML = `
-        <img src="${data.schedule}" 
-             class="schedule-img-fit" 
-             style="cursor: zoom-in;" 
-             onclick="openScheduleModal(this.src)">`;
+                if (clearBtn) clearBtn.style.display = 'inline-flex';
+                schedDisplay.innerHTML = `<img src="${data.schedule}" class="schedule-img-fit" onclick="openScheduleModal(this.src)">`;
             } else {
-                schedDisplay.innerHTML = `<p style="color: #999; font-size: 0.9rem;">No schedule uploaded for Room ${roomNumber}.</p>`;
+                // This is the part that runs after you successfully clear the DB
+                if (clearBtn) clearBtn.style.display = 'none';
+                schedDisplay.innerHTML = `<p style="color: #999; font-size: 0.9rem;">No schedule uploaded.</p>`;
             }
         })
         .catch(err => {
             console.error('Fetch error:', err);
-            if(schedDisplay) schedDisplay.innerHTML = '<p style="color:red;">Error loading data.</p>';
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (schedDisplay) schedDisplay.innerHTML = '<p style="color:red;">Error loading data.</p>';
         });
 }
 
@@ -187,7 +201,7 @@ if (scheduleInput && scheduleDisplay) {
                 return;
             }
 
-            // 1. Instant UI Feedback: Local Preview (Same fit-logic as DB load)
+            // 1. Instant UI Feedback: Local Preview (Faded version)
             const reader = new FileReader();
             reader.onload = function(event) {
                 scheduleDisplay.innerHTML = `
@@ -203,6 +217,7 @@ if (scheduleInput && scheduleDisplay) {
             formData.append('schedule_image', file);
             formData.append('room_number', currentSelectedRoom); 
 
+            // Using 'includes/upload_schedule.php' as per your admin folder reference
             fetch('includes/upload_schedule.php', {
                 method: 'POST',
                 body: formData
@@ -210,19 +225,29 @@ if (scheduleInput && scheduleDisplay) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                 scheduleDisplay.innerHTML = `
-        <img src="${data.file_path}" 
-             class="schedule-img-fit" 
-             style="cursor: zoom-in;" 
-             onclick="openScheduleModal(this.src)">`;
+                    /**
+                     * REFRESH LOGIC:
+                     * Instead of just updating the image, we find the active room element 
+                     * and call selectRoom() again. This re-fetches the stats from the DB
+                     * and automatically shows the "Clear" button.
+                     */
+                    const activeEl = document.querySelector('.room-item.active, .m-room-card.active');
+                    selectRoom(activeEl, currentSelectedRoom);
+                    
+                    // Reset the input so the same file can be uploaded again if cleared
+                    scheduleInput.value = '';
                 } else {
                     alert("Upload failed: " + data.error);
-                    selectRoom(null, currentSelectedRoom); 
+                    // Revert UI to previous state
+                    const activeEl = document.querySelector('.room-item.active, .m-room-card.active');
+                    selectRoom(activeEl, currentSelectedRoom); 
                 }
             })
             .catch(error => {
                 console.error("Upload error:", error);
-                selectRoom(null, currentSelectedRoom);
+                alert("Could not connect to the upload script.");
+                const activeEl = document.querySelector('.room-item.active, .m-room-card.active');
+                selectRoom(activeEl, currentSelectedRoom);
             });
         }
     });
@@ -245,18 +270,36 @@ document.addEventListener('DOMContentLoaded', function() {
 // let currentQRRoom = '';
  
 function openEditModal(button) {
-    // Grab the data, including the lab_id
+    // Grab the data
     const labId = button.getAttribute('data-id');
     const roomName = button.getAttribute('data-name');
     const roomNumber = button.getAttribute('data-room');
     const totalUnits = button.getAttribute('data-units');
 
-    // Fill the Edit Modal inputs
-    document.getElementById('edit_lab_id').value = labId; // Storing the ID!
+    // Fill standard inputs
+    document.getElementById('edit_lab_id').value = labId;
     document.getElementById('edit_room_name').value = roomName;
-    document.getElementById('edit_room_number').value = roomNumber;
     document.getElementById('edit_total_units').value = totalUnits;
     document.getElementById('original_room_number').value = roomNumber;
+
+// --- NEW: Handle the N/A logic for Edit Modal ---
+const editRoomInput = document.getElementById('edit_room_number');
+const editNaCheckbox = document.getElementById('edit_no_room_number');
+
+// If the Room Number equals the Room Name, treat it as "Not Applicable"
+if (roomNumber.toLowerCase() === roomName.toLowerCase()) {
+    editNaCheckbox.checked = true;
+    editRoomInput.value = 'N/A'; // Still show N/A in the input box so the user understands
+    editRoomInput.style.backgroundColor = "#f5f5f5";
+    editRoomInput.style.cursor = "not-allowed";
+    editRoomInput.readOnly = true;
+} else {
+        editNaCheckbox.checked = false;
+        editRoomInput.value = roomNumber;
+        editRoomInput.style.backgroundColor = "#fff";
+        editRoomInput.style.cursor = "text";
+        editRoomInput.readOnly = false;
+    }
 
     openModal('editLabModal');
 }
@@ -333,27 +376,16 @@ function openScheduleModal(imgSrc) {
 }
 
 
-function searchLaboratories() {
-    // 1. Get the search query and make it lowercase
+function searchLaboratories() { // You can rename this to searchRooms
     const input = document.getElementById("labSearchInput");
     const filter = input.value.toLowerCase();
-    
-    // 2. Grab all the laboratory items (Desktop rows and Mobile cards)
     const items = document.querySelectorAll('.room-item, .m-room-card');
     
-    // 3. Loop through each item
     items.forEach(item => {
-        // Get the text content (Room Number and Name)
         const textValue = item.textContent || item.innerText;
-        
-        // 4. If the text includes the search query, show it; otherwise, hide it
+        // The logic remains the same, but the user-facing search now feels broader
         if (textValue.toLowerCase().includes(filter)) {
-            // Check if it's a table row or a div to maintain layout
-            if (item.tagName === 'TR') {
-                item.style.display = ''; // Default for table rows
-            } else {
-                item.style.display = 'flex'; // Default for mobile cards
-            }
+            item.style.display = (item.tagName === 'TR') ? '' : 'flex';
         } else {
             item.style.display = 'none';
         }
@@ -428,5 +460,71 @@ async function submitArchiveLab() {
         }
     } catch (error) {
         console.error(error);
+    }
+}
+
+function toggleRoomNumber(checkbox) {
+    const roomInput = document.getElementById('lab_room_input');
+    
+    if (checkbox.checked) {
+        // Disable the input and set a placeholder value
+        roomInput.value = "N/A";
+        roomInput.style.backgroundColor = "#f5f5f5";
+        roomInput.style.cursor = "not-allowed";
+        roomInput.readOnly = true;
+    } else {
+        // Re-enable the input
+        roomInput.value = "";
+        roomInput.style.backgroundColor = "#fff";
+        roomInput.style.cursor = "text";
+        roomInput.readOnly = false;
+        roomInput.focus();
+    }
+}
+
+function toggleEditRoomNumber(checkbox) {
+    const roomInput = document.getElementById('edit_room_number');
+    
+    if (checkbox.checked) {
+        roomInput.value = "N/A";
+        roomInput.style.backgroundColor = "#f5f5f5";
+        roomInput.style.cursor = "not-allowed";
+        roomInput.readOnly = true;
+    } else {
+        // If they uncheck it, clear the field so they can type a real number
+        roomInput.value = "";
+        roomInput.style.backgroundColor = "#fff";
+        roomInput.style.cursor = "text";
+        roomInput.readOnly = false;
+        roomInput.focus();
+    }
+}
+
+function clearSchedule() {
+    if (!currentSelectedRoom) return;
+
+    if (confirm(`Are you sure you want to clear the schedule for ${currentSelectedRoom}?`)) {
+        const formData = new FormData();
+        formData.append('room_number', currentSelectedRoom);
+
+        // REMOVE the ../ because the includes folder is inside the admin folder with your page
+        fetch('includes/clear_schedule.php', { 
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh UI
+                const activeEl = document.querySelector('.room-item.active, .m-room-card.active');
+                selectRoom(activeEl, currentSelectedRoom);
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => {
+            console.error("Path Error:", error);
+            alert("Still can't find the file. Check the console!");
+        });
     }
 }

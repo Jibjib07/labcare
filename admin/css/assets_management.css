@@ -1434,6 +1434,7 @@ body {
   cursor: pointer;
   border-radius: 4px;
   transition: 0.3s;
+  width: 150px;
 }
 
 /* Green highlight for Working */

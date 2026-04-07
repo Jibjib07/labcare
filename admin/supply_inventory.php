@@ -14,7 +14,6 @@ if (isset($_GET['fetch_id'])) {
     $res = mysqli_query($conn, $query);
     $supply = mysqli_fetch_assoc($res);
 
-    // UPDATED: Added supply_quantity to the SELECT statement
     $log_query = "SELECT suphisto_date, suphisto_act, suphisto_actor, suphisto_remarks, supply_quantity 
                   FROM supply_history 
                   WHERE supply_id = '$id' 
@@ -29,7 +28,7 @@ if (isset($_GET['fetch_id'])) {
                 'activity' => $log['suphisto_act'],
                 'user' => $log['suphisto_actor'],
                 'remarks' => $log['suphisto_remarks'],
-                'quantity' => $log['supply_quantity'] // Passed to JS just in case you need it later
+                'quantity' => $log['supply_quantity']
             ];
         }
     }
@@ -43,6 +42,7 @@ if (isset($_GET['fetch_id'])) {
 // A. Add New Supply
 if (isset($_POST['submit_supply'])) {
     $supply_name = mysqli_real_escape_string($conn, trim($_POST['supply_name']));
+    $unit_type = mysqli_real_escape_string($conn, $_POST['unit_type']); // NEW
     $quantity = isset($_POST['supply_quantity']) ? intval($_POST['supply_quantity']) : 0;
     if ($quantity < 0) {
         $quantity = 0;
@@ -55,40 +55,40 @@ if (isset($_POST['submit_supply'])) {
     }
 
     $date = date('Y-m-d H:i:s');
-    $insert_query = "INSERT INTO supply (supply_name, supply_status, supply_avail, latest_activity, supply_quantity) 
-                     VALUES ('$supply_name', '$status', 'Current', '$date', '$quantity')";
+    // UPDATED: Added unit_type to INSERT
+    $insert_query = "INSERT INTO supply (supply_name, unit_type, supply_status, supply_avail, latest_activity, supply_quantity) 
+                     VALUES ('$supply_name', '$unit_type', '$status', 'Current', '$date', '$quantity')";
 
     if (mysqli_query($conn, $insert_query)) {
         $new_id = mysqli_insert_id($conn);
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
 
-        // UPDATED: Included supply_quantity
         $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
-                       VALUES ('$date', 'Added', '$status', '$actor', 'Added to inventory with $quantity units', '$new_id', '$quantity')";
+                       VALUES ('$date', 'Added', '$status', '$actor', 'Added to inventory with $quantity $unit_type', '$new_id', '$quantity')";
         mysqli_query($conn, $hist_query);
         header("Location: supply_inventory.php?success=added&id=$new_id");
         exit();
     }
 }
 
-// B. Handle Update (Name only)
+// B. Handle Update (Name & Unit Type)
 if (isset($_POST['submit_update'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
     $new_name = mysqli_real_escape_string($conn, trim($_POST['supply_name']));
+    $unit_type = mysqli_real_escape_string($conn, $_POST['unit_type']); // NEW
     $old_status = mysqli_real_escape_string($conn, $_POST['original_status']);
     $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
     $date = date('Y-m-d H:i:s');
 
-    // Fetch current quantity to log it accurately
     $q_res = mysqli_query($conn, "SELECT supply_quantity FROM supply WHERE supply_id = '$id'");
     $curr_qty = ($q_row = mysqli_fetch_assoc($q_res)) ? intval($q_row['supply_quantity']) : 0;
 
-    $update_query = "UPDATE supply SET supply_name = '$new_name', latest_activity = '$date' WHERE supply_id = '$id'";
+    // UPDATED: Added unit_type to UPDATE
+    $update_query = "UPDATE supply SET supply_name = '$new_name', unit_type = '$unit_type', latest_activity = '$date' WHERE supply_id = '$id'";
     if (mysqli_query($conn, $update_query)) {
 
-        // UPDATED: Included supply_quantity
         $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
-                       VALUES ('$date', 'Details Updated', '$old_status', '$actor', 'Supply name updated', '$id', '$curr_qty')";
+                       VALUES ('$date', 'Details Updated', '$old_status', '$actor', 'Supply details updated', '$id', '$curr_qty')";
         mysqli_query($conn, $hist_query);
         header("Location: supply_inventory.php?success=updated&id=$id");
         exit();
@@ -100,7 +100,6 @@ if (isset($_POST['submit_archive'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
     $date = date('Y-m-d H:i:s');
 
-    // Fetch current quantity to log it accurately before archiving
     $q_res = mysqli_query($conn, "SELECT supply_quantity FROM supply WHERE supply_id = '$id'");
     $curr_qty = ($q_row = mysqli_fetch_assoc($q_res)) ? intval($q_row['supply_quantity']) : 0;
 
@@ -108,7 +107,6 @@ if (isset($_POST['submit_archive'])) {
     if (mysqli_query($conn, $archive_query)) {
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
 
-        // UPDATED: Included supply_quantity
         $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                        VALUES ('$date', 'Archived', 'Out of Stock', '$actor', 'Item moved to archive', '$id', '$curr_qty')";
         mysqli_query($conn, $hist_query);
@@ -122,7 +120,6 @@ if (isset($_POST['submit_restore'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
     $date = date('Y-m-d H:i:s');
 
-    // Fetch current quantity to log it accurately
     $q_res = mysqli_query($conn, "SELECT supply_quantity FROM supply WHERE supply_id = '$id'");
     $curr_qty = ($q_row = mysqli_fetch_assoc($q_res)) ? intval($q_row['supply_quantity']) : 0;
 
@@ -130,7 +127,6 @@ if (isset($_POST['submit_restore'])) {
     if (mysqli_query($conn, $restore_query)) {
         $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
 
-        // UPDATED: Included supply_quantity
         $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                        VALUES ('$date', 'Restored', 'Out of Stock', '$actor', 'Item restored from archive', '$id', '$curr_qty')";
         mysqli_query($conn, $hist_query);
@@ -142,13 +138,12 @@ if (isset($_POST['submit_restore'])) {
 // E. Handle Inventory Transaction
 if (isset($_POST['submit_transaction'])) {
     $id = mysqli_real_escape_string($conn, $_POST['supply_id']);
-    $trans_type = mysqli_real_escape_string($conn, $_POST['trans_type']); // 'release' or 'restock'
+    $trans_type = mysqli_real_escape_string($conn, $_POST['trans_type']);
     $trans_qty = intval($_POST['trans_quantity']);
     $remarks = mysqli_real_escape_string($conn, trim($_POST['trans_remarks']));
     $date = date('Y-m-d H:i:s');
     $actor = isset($_SESSION['user_name']) ? mysqli_real_escape_string($conn, $_SESSION['user_name']) : "System";
 
-    // Auto-generate remarks if empty
     if (empty($remarks)) {
         if ($trans_type === 'restock') {
             $remarks = "Stock Replenished";
@@ -157,14 +152,12 @@ if (isset($_POST['submit_transaction'])) {
         }
     }
 
-    // Get current quantity
     $get_qty_query = "SELECT supply_quantity FROM supply WHERE supply_id = '$id'";
     $res = mysqli_query($conn, $get_qty_query);
     if ($row = mysqli_fetch_assoc($res)) {
         $current_qty = intval($row['supply_quantity']);
 
         if ($trans_type === 'release') {
-            // Backend Error Trapping: Prevent dropping below 0
             if ($current_qty <= 0 || $trans_qty > $current_qty) {
                 header("Location: supply_inventory.php?error=insufficient_stock&id=$id");
                 exit();
@@ -172,18 +165,15 @@ if (isset($_POST['submit_transaction'])) {
             $new_qty = $current_qty - $trans_qty;
             $activity_text = "Stock Released (-$trans_qty)";
         } else {
-            // Restock
             $new_qty = $current_qty + $trans_qty;
             $activity_text = "Stock Replenished (+$trans_qty)";
         }
 
-        // Auto-update status
         $new_status = ($new_qty > 0) ? "In Stock" : "Out of Stock";
 
         $update_query = "UPDATE supply SET supply_quantity = '$new_qty', supply_status = '$new_status', latest_activity = '$date' WHERE supply_id = '$id'";
         if (mysqli_query($conn, $update_query)) {
 
-            // UPDATED: Included supply_quantity (logging the new resulting quantity)
             $hist_query = "INSERT INTO supply_history (suphisto_date, suphisto_act, suphisto_stat, suphisto_actor, suphisto_remarks, supply_id, supply_quantity) 
                            VALUES ('$date', '$activity_text', '$new_status', '$actor', '$remarks', '$id', '$new_qty')";
             mysqli_query($conn, $hist_query);
@@ -324,9 +314,15 @@ if (isset($_POST['submit_transaction'])) {
                         </div>
                     </div>
 
-                    <div class="detail-group" style="margin-bottom: 20px;">
-                        <label>Supply Name:</label>
-                        <div class="detail-box" style="background: white; border: 1px solid #eaeaea; justify-content: flex-start; padding: 12px 15px;" id="view_supply_name">Select an item</div>
+                    <div class="detail-grid" style="margin-bottom: 20px; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="detail-group">
+                            <label>Supply Name:</label>
+                            <div class="detail-box" style="background: white; border: 1px solid #eaeaea; justify-content: flex-start; padding: 12px 15px;" id="view_supply_name">Select an item</div>
+                        </div>
+                        <div class="detail-group">
+                            <label>Unit Type:</label>
+                            <div class="detail-box" style="background: white; border: 1px solid #eaeaea; justify-content: flex-start; padding: 12px 15px; color: #555; font-weight: 600;" id="view_unit_type">-</div>
+                        </div>
                     </div>
 
                     <div class="detail-grid" style="margin-bottom: 25px; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -337,7 +333,7 @@ if (isset($_POST['submit_transaction'])) {
                         </div>
                         <div class="detail-group">
                             <label>Quantity:</label>
-                            <div class="detail-box" style="background: white; border: 1px solid #eaeaea; color: #111; justify-content: flex-start; padding: 12px 15px;" id="view_supply_quantity">
+                            <div class="detail-box" style="background: white; border: 1px solid #eaeaea; color: #111; font-weight: 700; justify-content: flex-start; padding: 12px 15px;" id="view_supply_quantity">
                             </div>
                         </div>
                     </div>
@@ -364,10 +360,20 @@ if (isset($_POST['submit_transaction'])) {
                             </div>
                         </div>
 
-                        <div class="detail-grid" style="display: block;">
+                        <div class="detail-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
                             <div class="detail-group">
                                 <label>Supply Name:</label>
                                 <input type="text" name="supply_name" id="edit_supply_name" class="modal-input" required>
+                            </div>
+                            <div class="detail-group">
+                                <label>Unit Type:</label>
+                                <select name="unit_type" id="edit_unit_type" class="modal-input" required>
+                                    <option value="Pieces">Pieces</option>
+                                    <option value="Meters">Meters</option>
+                                    <option value="Boxes">Boxes</option>
+                                    <option value="Sets">Sets</option>
+                                    <option value="Rolls">Rolls</option>
+                                </select>
                             </div>
                         </div>
                     </form>
@@ -459,12 +465,24 @@ if (isset($_POST['submit_transaction'])) {
             </div>
             <form action="supply_inventory.php" method="POST" id="addSupplyForm">
                 <div class="modal-body-grid">
-                    <div class="full-width">
-                        <label class="modal-label">Supply Name:</label>
-                        <input type="text" name="supply_name" class="modal-input" required placeholder="Input supply name.">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; grid-column: span 2;">
+                        <div>
+                            <label class="modal-label">Supply Name:</label>
+                            <input type="text" name="supply_name" class="modal-input" required placeholder="Input supply name.">
+                        </div>
+                        <div>
+                            <label class="modal-label">Unit Type:</label>
+                            <select name="unit_type" class="modal-input" required>
+                                <option value="Pieces">Pieces</option>
+                                <option value="Meters">Meters</option>
+                                <option value="Boxes">Boxes</option>
+                                <option value="Sets">Sets</option>
+                                <option value="Rolls">Rolls</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="full-width">
-                        <label class="modal-label">Quantity:</label>
+                    <div class="full-width" style="margin-top: 10px;">
+                        <label class="modal-label">Initial Quantity:</label>
                         <input type="number" name="supply_quantity" id="add_supply_quantity" class="modal-input" min="0" step="1" required placeholder="Enter quantity">
                     </div>
                 </div>

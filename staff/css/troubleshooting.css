@@ -2,152 +2,151 @@
    1. SHARED UTILITIES
    ========================================= */
 .page-header {
-    margin-bottom: 25px;
+  margin-bottom: 25px;
 }
 .page-header h1 {
-    font-size: 28px;
-    color: #000;
-    margin: 0;
-    font-weight: 900;
-    letter-spacing: -0.5px;
+  font-size: 28px;
+  color: #000;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.5px;
 }
 .page-header p {
-    color: #555;
-    font-size: 14px;
-    margin-top: 5px;
-    margin-bottom: 0;
+  color: #555;
+  font-size: 14px;
+  margin-top: 5px;
+  margin-bottom: 0;
 }
 
 .white-panel {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .troubleshoot-layout {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    gap: 20px;
-    align-items: start;
-    align-content: start;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 20px;
+  align-items: start;
+  align-content: start;
 }
 
 .panel-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-    margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 .panel-header-row h3 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 700;
-    color: #222;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
 }
 
 /* =========================================
    2. BUTTONS & ACTIONS
    ========================================= */
 .action-buttons {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .btn-green-add,
 .btn-edit,
 .btn-save,
 .btn-restore {
-    background-color: #4caf50 !important;
-    color: #ffffff !important;
-    border: none;
-    height: 38px;
-    padding: 0px 16px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: background 0.2s;
+  background-color: #4caf50 !important;
+  color: #ffffff !important;
+  border: none;
+  height: 38px;
+  padding: 0px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s;
 }
 
 .btn-archive {
-    background: #ff5722;
-    height: 38px;
-    color: white;
-    border: none;
-    padding: 16px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
+  background: #ff5722;
+  height: 38px;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-cancel,
 .btn-cancel-edit {
-    background: #ffffff !important;
-    border: 1px solid #d1d1d1 !important; /* The requested border */
-    color: #444 !important;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 0 15px;
-    height: 38px;
-    border-radius: 6px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s;
+  background: #ffffff !important;
+  border: 1px solid #d1d1d1 !important;
+  color: #444 !important;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 15px;
+  height: 38px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
 }
 
 .btn-cancel:hover,
 .btn-cancel-edit:hover {
-    background: #f5f5f5 !important;
-    border-color: #bbb !important;
-    color: #000 !important;
+  background: #f5f5f5 !important;
+  border-color: #bbb !important;
+  color: #000 !important;
 }
 
 /* DESKTOP MODE: Hide the Icon inside Cancel buttons */
 @media (min-width: 769px) {
-    .btn-cancel i, 
-    .btn-cancel-edit i {
-        display: none !important; /* Text only on desktop */
-    }
+  .btn-cancel i,
+  .btn-cancel-edit i {
+    display: none !important;
+  }
 }
 
-/* MOBILE MODE: (Adjust existing Section 7) */
+/* MOBILE MODE */
 @media (max-width: 768px) {
-    /* ... existing rules ... */
-
-    .btn-cancel, .btn-cancel-edit {
-        width: 40px !important;
-        height: 40px !important;
-        padding: 0 !important;
-    }
+  .btn-cancel,
+  .btn-cancel-edit {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+  }
 }
 
 .btn-edit:hover,
 .btn-archive:hover,
 .btn-save:hover,
 .btn-restore:hover {
-    opacity: 0.9;
+  opacity: 0.9;
 }
 .btn-cancel:hover,
 .btn-cancel-edit:hover {
-    color: #222;
+  color: #222;
 }
 
 .btn-save:disabled,
@@ -155,350 +154,371 @@
 .btn-archive:disabled,
 .btn-restore:disabled,
 .btn-green-add:disabled {
-    background-color: #ccc !important;
-    cursor: not-allowed !important;
-    opacity: 0.6;
+  background-color: #ccc !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
 }
 
 /* =========================================
    3. LEFT PANEL & RIGHT PANEL LOGIC
    ========================================= */
 .right-detail-panel {
-    animation: slideUpFade 0.3s ease-out;
-    overflow: hidden;
+  animation: slideUpFade 0.3s ease-out;
+  overflow: hidden;
+  height: 650px;
 }
 
 .left-list-panel {
-    height: 700px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  height: 650px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
+.status-toggle-row {
+  display: flex;
+  margin-bottom: 15px;
+}
 
 .toggle-group {
-    display: flex;
-    background-color: #f0f0f0;
-    padding: 4px;
-    border-radius: 10px;
-    width: 100%;
+  display: flex;
+  background-color: #f0f0f0;
+  padding: 4px;
+  border-radius: 10px;
+  width: 100%;
 }
 
 .status-toggle-btn {
-    flex: 1;
-    border: none;
-    padding: 10px;
-    border-radius: 7px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 700;
-    transition: all 0.3s ease;
-    background: transparent;
-    color: #666;
-    font-family: inherit;
+  flex: 1;
+  border: none;
+  padding: 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  background: transparent;
+  color: #666;
+  font-family: inherit;
 }
 
 .status-toggle-btn.active {
-    background-color: #4caf50;
-    color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #4caf50;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-filter-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 .search-input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 13px;
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
 }
 .filter-dropdown {
   flex: 0.5;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 13px;
-    color: #555;
-    background-color: #fff;
-    cursor: pointer;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #555;
+  background-color: #fff;
+  cursor: pointer;
 }
 
 /* =========================================
-   4. LIST CONTAINER STYLING (Updated for Wrapping)
+   4. LIST CONTAINER STYLING
    ========================================= */
 
 .list-container {
-    flex: 1;
-    overflow-y: auto;
-    border: none; 
-    border-radius: 6px;
-    background: #fff;
+  flex: 1;
+  overflow-y: auto;
+  border: none;
+  border-radius: 6px;
+  background: #fff;
 }
 
 .supply-row.asset-item {
-    min-height: 50px; /* Changed from height to min-height */
-    flex-shrink: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px; /* Added vertical padding for wrapped text */
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-    transition: background 0.2s ease;
+  min-height: 50px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .supply-row.asset-item:hover {
-    background-color: #fafafa;
+  background-color: #fafafa;
 }
 
 /* Selected State */
 .supply-row.asset-item.active-row {
-    background-color: #f1f8f1 !important;
-    border-left: 4px solid #4caf50;
+  background-color: #f1f8f1 !important;
+  border-left: 4px solid #4caf50;
 }
 
 /* Left side Title Container */
 .item-info {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  overflow: hidden;
 }
 
 .item-name {
-    font-weight: 700;
-    color: #333;
-    font-size: 13px;
-    white-space: normal; /* Changed from nowrap to normal for wrapping */
-    overflow: visible; /* Removed ellipsis logic */
-    text-overflow: unset; /* Removed ellipsis logic */
-    line-height: 1.4; /* Added for readability on multiple lines */
-    padding-right: 10px; /* Space before the category */
+  font-weight: 700;
+  color: #333;
+  font-size: 13px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.4;
+  padding-right: 10px;
 }
 
 /* Right side Category Container */
 .supply-status-cell {
-    display: flex;
-    align-items: center;
-    margin-left: 15px;
-    flex-shrink: 0; /* Ensures the category doesn't get squashed */
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
+  flex-shrink: 0;
 }
 
 .badge-text {
-    color: #888;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    white-space: nowrap; /* Keep category text on one line */
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 /* CUSTOM SCROLLBAR FOR LIST */
 .list-container::-webkit-scrollbar {
-    width: 6px;
+  width: 6px;
 }
 .list-container::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 .list-container::-webkit-scrollbar-thumb {
-    background: #ddd;
-    border-radius: 10px;
+  background: #ddd;
+  border-radius: 10px;
 }
 
 /* =========================================
    5. DETAIL VIEW & TEXTAREAS
    ========================================= */
 .detail-content {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .detail-group label {
-    display: block;
-    font-size: 13px;
-    color: #222;
-    margin-bottom: 5px;
-    font-weight: 700;
+  display: block;
+  font-size: 13px;
+  color: #222;
+  margin-bottom: 5px;
+  font-weight: 700;
 }
 
 .detail-input,
 .detail-textarea,
 .detail-select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    background-color: #fcfcfc;
-    color: #444;
-    font-size: 13px;
-    font-family: inherit;
-    line-height: 1.5;
-    box-sizing: border-box;
-    display: block;
-    resize: none; 
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fcfcfc;
+  color: #444;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.5;
+  box-sizing: border-box;
+  display: block;
+  resize: none;
 }
 
 .detail-input,
 .detail-select {
-    height: 45px;
+  height: 45px;
 }
 
 .detail-textarea {
-    min-height: 45px;
-    height: auto;
-    overflow: hidden;
+  min-height: 45px;
+  height: auto;
+  overflow: hidden;
+}
+
+/* View Mode Typography */
+.view-mode {
+  padding: 10px 12px;
+  color: #444;
+  font-size: 13px;
+  line-height: 1.5;
+  background-color: transparent;
+  border: 1px solid transparent;
 }
 
 /* =========================================
    6. MODALS & ANIMATIONS
    ========================================= */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    backdrop-filter: blur(2px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 }
 
 .modal-content {
-    width: 600px;
-    max-width: 90%;
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-    animation: slideIn 0.3s ease;
+  width: 600px;
+  max-width: 90%;
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease;
 }
 
 @keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUpFade {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Notification Toast */
 .notification-container {
-    position: fixed;
-    top: 25px;
-    right: 25px;
-    z-index: 100000;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .toast {
-    background: #ffffff;
-    min-width: 320px;
-    padding: 16px 20px;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-    border-left: 5px solid #ddd;
+  background: #ffffff;
+  min-width: 320px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  border-left: 5px solid #ddd;
 }
 
 .toast-success {
-    border-left-color: #4caf50;
+  border-left-color: #4caf50;
 }
 .toast-archive {
-    border-left-color: #ff5722;
+  border-left-color: #ff5722;
+}
+.toast-error {
+  border-left-color: #f44336;
 }
 
 .toast-icon {
-    font-size: 20px;
-    display: flex;
-    align-items: center;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
 }
 .toast-success .toast-icon {
-    color: #4caf50;
+  color: #4caf50;
 }
 .toast-archive .toast-icon {
-    color: #ff5722;
+  color: #ff5722;
+}
+.toast-error .toast-icon {
+  color: #f44336;
 }
 
 .toast-title {
-    font-weight: 800;
-    font-size: 14px;
-    color: #333;
+  font-weight: 800;
+  font-size: 14px;
+  color: #333;
 }
 .toast-sub {
-    font-size: 12px;
-    color: #777;
+  font-size: 12px;
+  color: #777;
 }
 
 @keyframes slideInRight {
-    from {
-        transform: translateX(120%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
 }
 
 /* Modal Form Specifics */
 .modal-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 .form-group label {
-    font-size: 13px;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 5px;
 }
 .form-group input,
 .form-group textarea,
 .form-group select {
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-    width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
 }
 .form-group textarea {
-    min-height: 80px;
+  min-height: 80px;
+  resize: none;
 }
 
 /* =========================================
@@ -507,65 +527,124 @@
 
 /* --- TABLET VIEW --- */
 @media (max-width: 1024px) {
-    .troubleshoot-layout { 
-        grid-template-columns: 1fr; /* Switch to single column stack */
-    }
-    .left-list-panel, .right-detail-panel {
-        height: auto;
-        min-height: 400px;
-        max-height: 600px;
-    }
+  .troubleshoot-layout {
+    grid-template-columns: 1fr;
+  }
+  .left-list-panel,
+  .right-detail-panel {
+    height: auto;
+    min-height: 400px;
+    max-height: 600px;
+  }
 }
 
 /* --- MOBILE VIEW (SWAP LOGIC) --- */
 @media (max-width: 768px) {
-    .page-header h1 { font-size: 22px; }
-    
-    .troubleshoot-layout { display: flex; flex-direction: column; }
+  .page-header h1 {
+    font-size: 22px;
+  }
 
-    /* Constrain height to phone screen */
-    .left-list-panel, 
-    .right-detail-panel { 
-        height: 80vh !important; 
-        max-height: none;
-        padding: 15px !important; 
-    }
+  .troubleshoot-layout {
+    display: flex;
+    flex-direction: column;
+  }
 
-    /* Swap mechanism */
-    .left-list-panel { display: flex !important; }
-    .right-detail-panel { display: none !important; }
+  .left-list-panel,
+  .right-detail-panel {
+    height: 80vh !important;
+    max-height: none;
+    padding: 15px !important;
+  }
 
-    .troubleshoot-layout.show-mobile-detail .left-list-panel { display: none !important; }
-    .troubleshoot-layout.show-mobile-detail .right-detail-panel { display: flex !important; }
+  .left-list-panel {
+    display: flex !important;
+  }
+  .right-detail-panel {
+    display: none !important;
+  }
 
-    .mobile-back-row { display: flex !important; margin-bottom: 10px; }
+  .troubleshoot-layout.show-mobile-detail .left-list-panel {
+    display: none !important;
+  }
+  .troubleshoot-layout.show-mobile-detail .right-detail-panel {
+    display: flex !important;
+  }
 
-    /* Action buttons: Icon only */
-    .action-buttons { gap: 8px !important; flex-wrap: nowrap !important; }
+  .mobile-back-row {
+    display: flex !important;
+    margin-bottom: 10px;
+  }
 
-    .btn-green-add span, .btn-edit span, .btn-save span, .btn-archive span, 
-    .btn-restore span, .btn-cancel-edit span, .btn-cancel span {
-        display: none !important;
-    }
+  .action-buttons {
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+  }
 
-    .btn-green-add, .btn-edit, .btn-save, .btn-archive, .btn-restore, 
-    .btn-cancel-edit, .btn-cancel {
-        width: 40px !important; height: 40px !important; min-width: 40px !important;
-        padding: 0 !important; border-radius: 8px !important;
-    }
+  .btn-green-add span,
+  .btn-edit span,
+  .btn-save span,
+  .btn-archive span,
+  .btn-restore span,
+  .btn-cancel-edit span,
+  .btn-cancel span {
+    display: none !important;
+  }
 
-    .btn-green-add i, .btn-edit i, .btn-save i, .btn-archive i, 
-    .btn-restore i, .btn-cancel i, .btn-cancel-edit i {
-        margin: 0 !important; font-size: 18px !important;
-    }
-    
-    .search-filter-row { flex-direction: column; }
-    .filter-dropdown { flex: 1; }
+  .btn-green-add,
+  .btn-edit,
+  .btn-save,
+  .btn-archive,
+  .btn-restore,
+  .btn-cancel-edit,
+  .btn-cancel {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .btn-green-add i,
+  .btn-edit i,
+  .btn-save i,
+  .btn-archive i,
+  .btn-restore i,
+  .btn-cancel i,
+  .btn-cancel-edit i {
+    margin: 0 !important;
+    font-size: 18px !important;
+  }
+
+  .search-filter-row {
+    flex-direction: column;
+  }
+  .filter-dropdown {
+    flex: 1;
+  }
 }
 
 /* --- SMALL MOBILE --- */
 @media (max-width: 480px) {
-    .white-panel { padding: 12px; }
-    .item-name { font-size: 13px; }
-    .badge-text { font-size: 10px; }
+  .white-panel {
+    padding: 12px;
+  }
+  .item-name {
+    font-size: 13px;
+  }
+  .badge-text {
+    font-size: 10px;
+  }
+}
+
+/* --- SMALL MOBILE --- */
+@media (max-width: 480px) {
+  .white-panel {
+    padding: 12px;
+  }
+  .item-name {
+    font-size: 13px;
+  }
+  .badge-text {
+    font-size: 10px;
+  }
 }

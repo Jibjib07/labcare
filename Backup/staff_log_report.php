@@ -7,8 +7,9 @@ header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $set_id = $_POST['set_id'] ?? '';
     $overall_status = $_POST['overall_status'] ?? 'Working';
-    $component_logs_json = $_POST['component_logs'] ?? '[]'; // Grab the JSON
+    $component_logs_json = $_POST['component_logs'] ?? '[]'; 
 
+    // Uses the exact session name we found earlier!
     $actor = $_SESSION['user_name'] ?? 'Staff';
 
     if (empty($set_id)) {
@@ -27,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $lab_id = 0; // Fallback
         if ($row = $info_result->fetch_assoc()) {
-            $lab_id = (int)$row['lab_id']; // Grab the lab_id securely from the DB
+            $lab_id = (int)$row['lab_id']; 
         }
         $info_stmt->close();
 
@@ -56,26 +57,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // 4. UPDATE PARENT UNIT STATUS
+        // This MUST stay as $overall_status so the actual PC gets marked "For Repair" in the system
         $stmt4 = $conn->prepare("UPDATE units SET set_status=?, latest_activity=NOW() WHERE set_id=?");
         $stmt4->bind_param("ss", $overall_status, $set_id);
         $stmt4->execute();
         $stmt4->close();
 
-        // 5. INDIVIDUAL HISTORY LOGS (Now includes lab_id)
+        // 5. INDIVIDUAL HISTORY LOGS 
         $logs = json_decode($component_logs_json, true);
 
         if (!empty($logs) && is_array($logs)) {
             $action = "Report";
-            // Added lab_id to the INSERT statement
             $stmt_hist = $conn->prepare("INSERT INTO unit_history (set_id, lab_id, report_date, report_actor, report_affected, report_action, report_remarks, report_status) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?)");
 
             foreach ($logs as $log) {
                 $affected = $log['affected'];
                 $remark = $log['remark'];
-                $status = $log['status']; // Will safely insert 'For Repair' or 'Updated'
+                $comp_status = $log['status']; // e.g., 'For Repair', 'Working'
 
-                // "sisssss" translates to: String, Integer, String, String, String, String, String
-                $stmt_hist->bind_param("sisssss", $set_id, $lab_id, $actor, $affected, $action, $remark, $status);
+                // --- THE FIX: Intercept broken states to trigger the yellow pill! ---
+                $db_report_status = $comp_status;
+                if (in_array($comp_status, ['For Repair', 'Poor', 'Not Working', 'Not Working/Missing'])) {
+                    $db_report_status = 'Issue Reported';
+                }
+
+                // Notice we bind $db_report_status at the end instead of $comp_status
+                $stmt_hist->bind_param("sisssss", $set_id, $lab_id, $actor, $affected, $action, $remark, $db_report_status);
                 $stmt_hist->execute();
             }
             $stmt_hist->close();

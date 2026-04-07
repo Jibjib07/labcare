@@ -336,9 +336,6 @@ $stmt->close();
                     </p>
                 </div>
 
-                <div class="disclaimer">
-                    <strong>Disclaimer:</strong> This system is for Computer Laboratory Use Only.
-                </div>
             </div>
 
         </div>

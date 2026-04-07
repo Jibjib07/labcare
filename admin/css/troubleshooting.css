@@ -165,10 +165,11 @@
 .right-detail-panel {
   animation: slideUpFade 0.3s ease-out;
   overflow: hidden;
+  height: 650px;
 }
 
 .left-list-panel {
-  height: 700px;
+  height: 650px;
   display: flex;
   flex-direction: column;
   overflow: hidden;

@@ -8,7 +8,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let snapID = "";
   let snapName = "";
   let snapStatus = "";
-  let snapQuantity = 0; // NEW: Track the currently loaded quantity
+  let snapQuantity = 0; 
+  let snapUnit = ""; // NEW: Track the unit type
 
   function forceCloseSupplyEditMode() {
     if (isEditModeActive) {
@@ -70,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (phpSuccess) {
     const messages = {
       added: "New supply added to inventory.",
-      updated: "Supply name has been updated.",
+      updated: "Supply details have been updated.",
       archived: "Item has been moved to Archive.",
       restored: "Item has been restored to Current Inventory.",
       transaction: "Inventory transaction recorded successfully.",
@@ -82,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   }
 
-  // ERROR MESSAGES (NEW)
+  // ERROR MESSAGES
   const phpError = document.getElementById("php_error");
   if (phpError) {
     const errMessages = {
@@ -237,7 +238,6 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("trans_quantity").value = "1";
       document.getElementById("trans_remarks").value = "";
 
-      // Default to Release
       document.getElementById("trans_type").value = "release";
       document
         .querySelectorAll(".trans-tab")
@@ -248,7 +248,6 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("trans_modal_desc").innerText =
         "Removing items for use in a laboratory.";
 
-      // Enforce required remarks for Release
       transRemarks.required = true;
       transRemarks.placeholder = "Explain the reason...";
 
@@ -256,7 +255,6 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 
-  // TRANSACTION TABS TOGGLE (REMARKS REQUIREMENT LOGIC)
   const transTabs = document.querySelectorAll(".trans-tab");
   const transTypeInput = document.getElementById("trans_type");
   const transDesc = document.getElementById("trans_modal_desc");
@@ -275,13 +273,12 @@ document.addEventListener("DOMContentLoaded", function () {
         transRemarks.placeholder = "Explain the reason...";
       } else {
         transDesc.innerText = "Adding items back to the inventory.";
-        transRemarks.required = false; // Remove requirement for Restock
+        transRemarks.required = false; 
         transRemarks.placeholder = "Optional: Add a note or leave blank...";
       }
     });
   });
 
-  // TRANSACTION FORM SUBMIT VALIDATION (QUANTITY TRAPPING)
   const transactionForm = document.getElementById("transactionForm");
   if (transactionForm) {
     transactionForm.onsubmit = function (e) {
@@ -370,7 +367,8 @@ document.addEventListener("DOMContentLoaded", function () {
           snapID = data.supply.supply_id;
           snapName = data.supply.supply_name.trim();
           snapStatus = data.supply.supply_status.trim();
-          snapQuantity = parseInt(data.supply.supply_quantity) || 0; // Save quantity globally for error trapping
+          snapQuantity = parseInt(data.supply.supply_quantity) || 0; 
+          snapUnit = data.supply.unit_type || "Pieces"; // Catch new unit type
 
           updateRightPanel(data.supply, data.history);
         }
@@ -382,6 +380,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const nameElement = document.getElementById("view_supply_name");
     if (nameElement) nameElement.innerText = supply.supply_name;
 
+    // UPDATED: Push unit type to the new view container
+    const unitElement = document.getElementById("view_unit_type");
+    if (unitElement) unitElement.innerText = snapUnit;
+
     const statusContainer = document.getElementById("view_supply_status");
     if (statusContainer) {
       const displayStatus =
@@ -392,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function () {
           : displayStatus === "Archived"
             ? "#555"
             : "#f44336";
-      statusContainer.innerHTML = `<span>${displayStatus}</span>`;
+      statusContainer.innerHTML = `<span style="color: ${fontColor}; font-weight: 700;">${displayStatus}</span>`;
     }
 
     const quantityContainer = document.getElementById("view_supply_quantity");
@@ -405,6 +407,12 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("restore_supply_id").value = snapID;
     document.getElementById("edit_supply_name").value = snapName;
     document.getElementById("original_status").value = snapStatus;
+    
+    // UPDATED: Push unit type into edit dropdown
+    const editUnitType = document.getElementById("edit_unit_type");
+    if (editUnitType) {
+        editUnitType.value = snapUnit;
+    }
 
     const isArchived = supply.supply_avail === "Archived";
     document.getElementById("transaction-action-wrapper").style.display =
@@ -424,10 +432,13 @@ document.addEventListener("DOMContentLoaded", function () {
         let formattedDate = log.date;
         const parsedDate = new Date(log.date);
         if (!isNaN(parsedDate)) {
-          formattedDate = parsedDate.toLocaleDateString("en-US", {
+          formattedDate = parsedDate.toLocaleString("en-US", {
             month: "long",
             day: "2-digit",
             year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true
           });
         }
 

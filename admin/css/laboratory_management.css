@@ -808,3 +808,24 @@
   align-items: center;
   gap: 8px;
 }
+
+.schedule-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-red-outline {
+    border: 1px solid #c53030 ;
+    color: #ffffff;
+    padding: 6px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.2s;
+    background-color: #c53030;
+}
+

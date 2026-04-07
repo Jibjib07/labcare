@@ -27,7 +27,10 @@ if (!empty($asset_id)) {
 
         while ($h_row = $hist_res->fetch_assoc()) {
             $date = new DateTime($h_row['report_date']);
-            $h_row['formatted_date'] = $date->format('M d, Y');
+            
+            // --- NEW: Added 'h:i A' for 12-hour time with AM/PM! ---
+            $h_row['formatted_date'] = $date->format('M d, Y h:i A');
+            
             $history_data[] = $h_row;
         }
         $hist_stmt->close();

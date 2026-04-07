@@ -1124,17 +1124,17 @@ function selectUnit(element, setId) {
                   badgeColor = "green";
               } 
               // 2. Broken Statuses -> Translated to "Issue Reported"
-              else if (["Reported", "For Repair", "Not Working", "Poor"].includes(log.report_status)) {
+              else if (["Reported", "Issue Reported", "For Repair", "Not Working", "Poor"].includes(log.report_status)) {
                   badgeColor = "yellow";
                   displayStatus = "Issue Reported"; 
-              } 
+              }
               // 3. Condemned
               else if (log.report_status === "Condemned") {
                   badgeColor = "red";
               } 
               // 4. Transferred & Updated -> Gray badge, Black text
               // 4. Transferred & Updated -> Gray badge, Black text
-              else if (["Transferred", "Updated"].includes(log.report_status)) {
+              else if (["Transferred", "Updated", "Added"].includes(log.report_status)) {
                   badgeColor = ""; // Clear class to prevent conflicts
                   // Force the pill shape and colors using inline CSS
                   extraStyle = "background-color: #e0e0e0; color: #555555; font-weight: 700; padding: 4px 12px; border-radius: 12px; font-size: 11px; display: inline-block;"; 
@@ -1194,15 +1194,19 @@ function selectUnit(element, setId) {
             ["For Repair", "Not Working"].includes(d.avr_status);
 
           if (isBroken) {
-            // Make button active and green
+            // Restore standard Resolve button
+            btnResolve.innerHTML = '<i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>';
             btnResolve.className = "btn-confirm";
+            btnResolve.style.backgroundColor = ""; // Reset to CSS default (Green)
             btnResolve.style.marginLeft = "8px";
             btnResolve.onclick = () => openResolveModal("pc");
           } else {
-            // Make button greyed out
-            btnResolve.className = "btn-resolve hide-on-mobile";
-            btnResolve.style.marginLeft = "0";
-            btnResolve.onclick = null;
+            // NEW: Change to Report button
+            btnResolve.innerHTML = '<i class="fas fa-flag"></i> <span class="btn-text">Report</span>';
+            btnResolve.className = "btn-confirm"; 
+            btnResolve.style.backgroundColor = "#ff9800"; // Orange Warning Color
+            btnResolve.style.marginLeft = "8px";
+            btnResolve.onclick = () => openReportModal("pc");
           }
         }
         // --------------------------------------------------------
@@ -1268,19 +1272,27 @@ function populateRightPanel(data) {
                     if (value === "Working" || value === "Healthy") displayValue = "Healthy";
                     if (value === "For Repair" || value === "Poor") displayValue = "Poor";
                 }
+
+                // --- NEW: Translate Mouse & Keyboard status for the View Pill! ---
+                if (key === "mouse_status" || key === "keyboard_status") {
+                    if (value === "For Repair" || value === "Not Working") {
+                        displayValue = "Not Working/Missing";
+                    }
+                }
+
                 pill.innerText = displayValue;
 
                 let pillColor = "orange";
                 if (value === "Working" || value === "Healthy") pillColor = "green";
                 if (value === "For Condemn") pillColor = "red";
-                if (value === "For Repair" || value === "Poor") pillColor = "orange";
+                if (value === "For Repair" || value === "Poor" || value === "Not Working") pillColor = "orange";
 
                 pill.className = `status-pill view-mode ${pillColor}`;
             }
 
             toggleGroup.querySelectorAll(".status-btn").forEach((btn) => {
                 btn.classList.remove("active");
-                const targetType = (value === "For Repair" || value === "Poor") ? "repair" : "working";
+                const targetType = (value === "For Repair" || value === "Poor" || value === "Not Working") ? "repair" : "working";
                 if (btn.getAttribute("data-type") === targetType) {
                     btn.classList.add("active");
                 }
@@ -1606,8 +1618,8 @@ function submitCondemnAction() {
   }
 
   // --- NEW: COMBINE AND FORMAT THE STRING ---
-  const reasonSummary = reasons.length > 0 ? reasons.join(", ") : "Unspecified";
-  const finalRemarks = `Reason: ${reasonSummary}. Notes: ${rawRemarks || "None provided."}`;
+  const reasonSummary = reasons.length > 0 ? reasons.join(", ") : "Others (Unspecified)";
+  const finalRemarks = `Reason: ${reasonSummary}. Remarks: ${rawRemarks || "None provided."}`;
 
   // 4. Determine Target
   const isFacilityView =
@@ -1672,7 +1684,7 @@ function openAdminLogModal(type) {
     specs_ram: "RAM",
     specs_storage: "Storage Type",
     specs_capacity: "Storage Capacity",
-    specs_purchase: "Acquisition Date", // Fixed translation!
+    specs_purchase: "Acquisition Date", 
     monitor_brand: "Monitor Brand",
     mouse_brand: "Mouse Brand",
     keyboard_brand: "Keyboard Brand",
@@ -1721,19 +1733,27 @@ function openAdminLogModal(type) {
                 ? "Not Working"
                 : "Working";
 
-            // FIX: Added power_health to the Healthy/Poor check
             if (dbColumn === "disk_health" || dbColumn === "power_health") {
               newStatus =
                 activeBtn.getAttribute("data-type") === "repair"
                   ? "Poor"
                   : "Healthy";
             }
+            
+            // Compare the RAW status first to prevent phantom updates
             if (oldStatus !== newStatus) {
               const niceName = nameMap[dbColumn] || dbColumn;
+              
+              // --- NEW: Adjust display text for Mouse/Keyboard in the Modal! ---
+              let displayNewStatus = newStatus;
+              if ((niceName === "Mouse" || niceName === "Keyboard") && newStatus === "Not Working") {
+                  displayNewStatus = "Not Working/Missing";
+              }
+
               statusChanges.push({
                 name: niceName,
                 old: oldStatus,
-                new: newStatus,
+                new: displayNewStatus, // <--- Use the display version here!
               });
             }
           }
@@ -1780,7 +1800,6 @@ function openAdminLogModal(type) {
     ) {
       const oldStatus = originalPill.value.trim();
       
-      // FIX: Phantom Update Guard - group all "broken" terminology together
       const isOldBroken = ["For Repair", "Not Working", "Missing Parts"].includes(oldStatus);
       const isNewBroken = activeBtn.getAttribute("data-type") === "repair";
 
@@ -1788,7 +1807,7 @@ function openAdminLogModal(type) {
         statusChanges.push({
           name: "Asset Status",
           old: oldStatus,
-          new: isNewBroken ? "Not Working" : "Working", // <--- Displays "Not Working" in Modal
+          new: isNewBroken ? "Not Working" : "Working", 
         });
       }
     }
@@ -1837,7 +1856,7 @@ function openAdminLogModal(type) {
                   <strong>Affected Fields:</strong><br>${affectedList}
               </div>
               <div style="flex: 2;">
-                  <textarea id="general_remarks" class="log-remark-input" data-name="Details Update" placeholder="Optional: Notes for these changes..." style="width: 100%; height: 100%; min-height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px;"></textarea>
+                  <textarea id="general_remarks" class="log-remark-input" data-name="Details Update" placeholder="Optional: Remarks for these changes..." style="width: 100%; height: 100%; min-height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px;"></textarea>
               </div>
           </div>
       </div>
@@ -1867,7 +1886,7 @@ function openAdminLogModal(type) {
                 </div>
                 <div style="flex: 2; display: flex; flex-direction: column; gap: 5px;">
                     <label style="font-size: 13px; font-weight: 600; color: #333;">Remarks:</label>
-                    <textarea class="log-remark-input status-remark-field" data-name="${stat.name}" placeholder="Optional: Why is this marked for repair?" style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box;"></textarea>
+                    <textarea class="log-remark-input status-remark-field" data-name="${stat.name}" data-status="${stat.new}" placeholder="Required: Please provide a reason for this update..." style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box;"></textarea>
                 </div>
             </div>
         </div>
@@ -1895,27 +1914,66 @@ function confirmLogStatus() {
     formData.append("asset_id", currentSelectedFAId);
   }
 
+  // --- NEW: STRICT FORM VALIDATION ---
+  let isRemarksValid = true;
+
+  // 1. Check Component Status Remarks (These are STILL REQUIRED)
+  const statusRemarkInputs = document.querySelectorAll("#logStatusDynamicContent .status-remark-field");
+  statusRemarkInputs.forEach((input) => {
+    if (input.value.trim() === "") {
+      isRemarksValid = false;
+      input.style.border = "2px solid #f44336"; // Turn border red
+    } else {
+      input.style.border = "1px solid #ddd"; // Reset border
+    }
+  });
+
+  // 2. Stop submission if any STATUS remark is empty
+  if (!isRemarksValid) {
+    showNotification(
+      "Missing Information",
+      "Please provide remarks for all status updates before saving.",
+      "error"
+    );
+    return; // Aborts the save process instantly!
+  }
+  // ------------------------------------
+
+
   // --- 2. HANDLE GENERAL REMARKS ---
+  // THE FIX: We have to define the variable right here!
   const generalRemarksInput = document.getElementById("general_remarks");
+
   if (generalRemarksInput) {
     let userNotes = generalRemarksInput.value.trim();
-    let finalGeneral = `Details Update. Notes: ${userNotes || "None provided"}`;
+    // Keep formatting for General Remarks, since they don't have a specific "component status"
+    let finalGeneral = `Details Update. Notes: ${userNotes || "None provided."}`;
     formData.append("general_remarks", finalGeneral);
   } else {
     formData.append("general_remarks", "");
   }
 
   // --- 3. HANDLE STATUS REMARKS ---
-  const statusRemarkInputs = document.querySelectorAll(
-    "#logStatusDynamicContent .status-remark-field",
-  );
   let statusLogsArray = [];
 
   statusRemarkInputs.forEach((input) => {
     let userNotes = input.value.trim();
     const fieldName = input.getAttribute("data-name");
-    let finalStatus = `Status Update. Notes: ${userNotes || "None provided"}`;
-    statusLogsArray.push({ component: fieldName, remark: finalStatus });
+    
+    // Grab the specific status from the HTML, fallback to "Updated"
+    let newStatus = input.getAttribute("data-status") || "Updated";
+
+    // --- NEW: Intercept Mouse/Keyboard to match the UI button exactly! ---
+    if ((fieldName === "Mouse" || fieldName === "Keyboard") && newStatus === "Not Working") {
+        newStatus = "Not Working/Missing";
+    }
+
+    // Push ONLY the raw notes and the status! Let PHP do all the formatting.
+    statusLogsArray.push({ 
+        component: fieldName, 
+        remark: userNotes, 
+        status: newStatus 
+    });
   });
 
   formData.append("status_logs", JSON.stringify(statusLogsArray));
@@ -1946,16 +2004,23 @@ function confirmLogStatus() {
         const activeBtn = group.querySelector(".status-btn.active");
 
         if (group.style.display !== "none" && activeBtn) {
-          let val =
-            activeBtn.getAttribute("data-type") === "repair"
-              ? "Not Working" // <--- CHANGED THIS
-              : "Working";
-          if (dbColumn === "disk_health" || dbColumn === "power_health")
-            val = activeBtn.getAttribute("data-type") === "repair" ? "Poor" : "Healthy";
+          
+          // --- NEW: Handle 3 possible states (Working, Repair, Missing) ---
+          let val = "Working";
+          const dataType = activeBtn.getAttribute("data-type");
+          
+          if (dataType === "repair") val = "Not Working";
+          if (dataType === "missing") val = "Missing"; // Catch the new button!
+
+          // Keep the special overrides for disk and power
+          if (dbColumn === "disk_health" || dbColumn === "power_health") {
+            val = dataType === "repair" ? "Poor" : "Healthy";
+          }
+          
           formData.append(dbColumn, val);
         } else {
           const pill = document.getElementById("pill_" + dbColumn);
-          formData.append(dbColumn, pill ? pill.innerText.trim() : "Not Working"); // <--- CHANGED THIS
+          formData.append(dbColumn, pill ? pill.innerText.trim() : "Not Working"); 
         }
       });
   } else {
@@ -1975,6 +2040,7 @@ function confirmLogStatus() {
       formData.append("fa_status", pill ? pill.innerText.trim() : "For Repair");
     }
   }
+  
   // --- 5. SEND TO THE CORRECT PHP SCRIPT ---
   fetch(targetUrl, { method: "POST", body: formData })
     .then((res) => res.json())
@@ -2247,13 +2313,17 @@ function selectFacilityAsset(element, assetId) {
             asset.asset_status === "Missing Parts"
           ) {
             // ACTIVE STATE: Green highlight
+            btnResolveFA.innerHTML = '<i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>';
             btnResolveFA.className = "btn-confirm";
+            btnResolveFA.style.backgroundColor = ""; 
             btnResolveFA.style.opacity = "1";
             btnResolveFA.style.cursor = "pointer";
             btnResolveFA.onclick = () => openResolveModal("fa");
           } else {
-            // DISABLED STATE: Grey border
+            // DISABLED STATE: Greyed out
+            btnResolveFA.innerHTML = '<i class="fas fa-tools"></i> <span class="btn-text">Resolve</span>';
             btnResolveFA.className = "btn-resolve hide-on-mobile";
+            btnResolveFA.style.backgroundColor = ""; 
             btnResolveFA.style.opacity = "1";
             btnResolveFA.style.cursor = "not-allowed";
             btnResolveFA.onclick = null;
@@ -2278,7 +2348,7 @@ function selectFacilityAsset(element, assetId) {
                   badgeColor = "green";
               } 
               // 2. Broken Statuses -> Translated to "Issue Reported"
-              else if (["Reported", "For Repair", "Not Working", "Poor", "Missing Parts"].includes(log.report_status)) {
+              else if (["Reported", "Issue Reported", "For Repair", "Not Working", "Poor", "Missing Parts"].includes(log.report_status)) {
                   badgeColor = "yellow";
                   displayStatus = "Issue Reported"; 
               } 
@@ -2287,37 +2357,34 @@ function selectFacilityAsset(element, assetId) {
                   badgeColor = "red";
               } 
               // 4. Transferred & Updated -> Gray badge, Black text
-              // 4. Transferred & Updated -> Gray badge, Black text
-              else if (["Transferred", "Updated"].includes(log.report_status)) {
-                  badgeColor = ""; // Clear class to prevent conflicts
-                  // Force the pill shape and colors using inline CSS
+              else if (["Transferred", "Updated", "Added"].includes(log.report_status)) {
+                  badgeColor = ""; 
                   extraStyle = "background-color: #e0e0e0; color: #555555; font-weight: 700; padding: 4px 12px; border-radius: 12px; font-size: 11px; display: inline-block;"; 
               }
 
+              // --- FIX: Removed the rogue .activity-card class to match PC sizes! ---
               const card = document.createElement("div");
-              card.className = "activity-card";
               card.style.padding = "15px 20px";
               card.style.backgroundColor = "#fff";
-              if (index < data.history.length - 1)
-                card.style.borderBottom = "1px solid #f0f0f0";
+              
+              // Matched the exact border color used in PC sets
+              if (index < data.history.length - 1) {
+                card.style.borderBottom = "1px solid #eaeaea";
+              }
 
               card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                     <div style="font-size: 13px; color: #555;">
-                        <strong style="color: #1b4d3e;"><i class="fas fa-user-circle"></i> ${log.report_actor || "System"}</strong> 
-                        <span style="margin-left: 10px; color: #999; font-size: 11px;"><i class="far fa-clock"></i> ${log.formatted_date}</span>
+                        <strong style="color: #1b4d3e; font-size: 14px;"><i class="fas fa-user-circle"></i> ${log.report_actor || "System"}</strong> 
+                        <span style="margin-left: 8px; color: #888;"><i class="far fa-clock"></i> ${log.formatted_date}</span>
                     </div>
                     <span class="badge ${badgeColor}" style="${extraStyle}">${displayStatus}</span>
                 </div>
-                
-                <div style="font-size: 13px; color: #333; margin-bottom: 6px;">
-                    <strong>Affected:</strong> <span style="color: #d32f2f; font-weight: 500;">${log.report_affected || "N/A"}</span>
-                </div>
-
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #4caf50;">
-                    <p style="margin: 0; font-size: 13px; color: #444; line-height: 1.5; font-style: italic;">
-                        "${log.report_remarks || "Resolved without specific remarks."}"
-                    </p>
+                <div style="font-size: 13px; color: #333;">
+                    <div style="margin-bottom: 8px;"><strong>Affected:</strong> <span style="color: #d32f2f; font-weight: 500;">${log.report_affected || "N/A"}</span></div>
+                    <div style="background: #f4f6f8; padding: 10px 12px; border-radius: 6px; color: #555; border-left: 3px solid #ccc;">
+                        <em>"${log.report_remarks || "No remarks provided"}"</em>
+                    </div>
                 </div>
               `;
               historyBody.appendChild(card);
@@ -2710,11 +2777,16 @@ function openResolveModal(type) {
 
         data.components.forEach((comp) => {
           // --- FA SPECIAL CASE ---
-          // If it's a facility asset, the 'name' might just be the asset type (e.g., 'Printer')
-          const componentName = type === "fa" ? ` ${comp.name}` : comp.name;
+          // --- FA SPECIAL CASE ---
+          let componentName = type === "fa" ? ` ${comp.name}` : comp.name;
+
+          // --- NEW: Intercept and clean up the Unspecified label! ---
+          if (componentName.includes("Unspecified")) {
+              componentName = "Others (Unspecified)";
+          }
 
           let workingText = "Working";
-          let brokenText = "Not Working"; // <--- FIX: Changed from For Repair
+          let brokenText = "Not Working"; 
 
           // FIX: Added power_health to this check so it accurately says "Poor"
           if (comp.db_column === "disk_health" || comp.db_column === "power_health") {
@@ -2722,9 +2794,16 @@ function openResolveModal(type) {
             brokenText = "Poor";
           }
 
+          // --- NEW: Handle Mouse and Keyboard in the Resolve Modal! ---
+          let brokenBtnStyle = "flex: 1;"; 
+          if (comp.name === "Mouse" || comp.name === "Keyboard" || comp.db_column === "mouse_status" || comp.db_column === "keyboard_status") {
+             brokenText = "Not Working/Missing";
+             // Add the styling to shrink it and keep it on one line
+             brokenBtnStyle = "flex: 1; white-space: nowrap; font-size: 11.5px; padding-left: 5px; padding-right: 5px;";
+          }
+
           const card = document.createElement("div");
           card.className = "resolve-card";
-          // I suggest moving these styles to assets_management.css instead of inline
           card.style.cssText =
             "background: #fff; border: 1px solid #eaeaea; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
 
@@ -2743,9 +2822,9 @@ function openResolveModal(type) {
                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: start; margin-top: 5px;">
                       <div>
                           <label style="font-size: 12px; color: #666; font-weight: 600; display: block; margin-bottom: 5px;">Set Status:</label>
-                          <div class="status-toggle-group" id="resolve_toggle_${comp.db_column}" data-current-state="repair" style="margin:0; width: 100%;">
-                              <button type="button" class="status-btn" data-type="working" onclick="toggleResolveStatus(this, '${comp.db_column}', 'working')">${workingText}</button>
-                              <button type="button" class="status-btn active" data-type="repair" onclick="toggleResolveStatus(this, '${comp.db_column}', 'repair')">${brokenText}</button>
+                          <div class="status-toggle-group" id="resolve_toggle_${comp.db_column}" data-current-state="repair" style="margin:0; width: 100%; display: flex;">
+                              <button type="button" class="status-btn" data-type="working" onclick="toggleResolveStatus(this, '${comp.db_column}', 'working')" style="flex: 1;">${workingText}</button>
+                              <button type="button" class="status-btn active" data-type="repair" onclick="toggleResolveStatus(this, '${comp.db_column}', 'repair')" style="${brokenBtnStyle}">${brokenText}</button>
                           </div>
                       </div>
                       <div>
@@ -2804,7 +2883,7 @@ function toggleResolveStatus(btn, column, state) {
     remarksInput.style.backgroundColor = "#ffffff";
     remarksInput.style.border = "1px solid #4caf50"; // Green border to signal "Ready to Fix"
     remarksInput.style.cursor = "text";
-    remarksInput.placeholder = "Describe how you fixed this...";
+    remarksInput.placeholder = "Required: Describe how you fixed this...";
 
     // Add a slight "pop" effect so the user knows they can type now
     remarksInput.focus();
@@ -2839,4 +2918,74 @@ function forceCloseEditMode() {
       }
     }
   }
+}
+function openReportModal(type) {
+    document.getElementById("reportModal").setAttribute("data-report-type", type);
+    
+    // Get the name of the currently selected PC/Asset
+    const activeItem = document.querySelector(".asset-item.active .item-name");
+    document.getElementById("reportUnitName").innerText = `[${activeItem ? activeItem.innerText : "Unit"}]`;
+    
+    // Reset the text area
+    const remarksInput = document.getElementById("report_remarks");
+    remarksInput.value = "";
+    remarksInput.style.border = "1px solid #ddd"; 
+    
+    openModal("reportModal");
+}
+
+function submitReportIssue() {
+    const remarksInput = document.getElementById("report_remarks");
+    const remarks = remarksInput.value.trim();
+
+    if (remarks === "") {
+        remarksInput.style.border = "2px solid #f44336";
+        showNotification("Required", "Please describe the problem you encountered.", "error");
+        return;
+    }
+
+    const type = document.getElementById("reportModal").getAttribute("data-report-type");
+    const setId = type === "pc" ? currentEditingSetId : currentSelectedFAId;
+
+    // --- NEW: Grab the lab_id from the URL ---
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentLabId = urlParams.get("lab_id") || 0;
+
+    const btn = document.querySelector("#reportModal .btn-confirm");
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+    const formData = new FormData();
+    formData.append("type", type);
+    formData.append("id", setId);
+    formData.append("remarks", remarks);
+    formData.append("lab_id", currentLabId); // Send lab_id safely to PHP
+
+    fetch("includes/report_unspecified_issue.php", { method: "POST", body: formData })
+        .then(async (res) => {
+            // Check if PHP crashed and output HTML instead of JSON
+            const isJson = res.headers.get("content-type")?.includes("application/json");
+            if (!isJson) {
+                const text = await res.text();
+                console.error("PHP CRASH LOG:", text);
+                throw new Error("PHP crashed. Press F12 to check the console log.");
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                closeModal("reportModal");
+                reloadWithToast("Issue Reported", "Overall status updated to For Repair.", "success");
+            } else {
+                showNotification("Error", data.error, "error");
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }).catch(err => {
+            console.error(err);
+            showNotification("Error", "Server error. Press F12 to check the console.", "error");
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        });
 }

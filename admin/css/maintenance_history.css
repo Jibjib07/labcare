@@ -468,9 +468,9 @@ body {
    EXPORT BUTTON
    ========================================= */
 .btn-export {
-  background-color: #fff;
-  color: #1b4d3e; /* Matching your dark green text */
-  border: 1px solid #1b4d3e;
+  background: #2196f3;
+  color: #ffffff; /* Matching your dark green text */
+  border: 1px solid #2196f3;
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
@@ -480,12 +480,11 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.2);
 }
 
-.btn-export:hover {
-  background-color: #1b4d3e;
-  color: #fff;
-}
+
 
 .btn-export i {
   font-size: 12px;

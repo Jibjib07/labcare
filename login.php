@@ -133,7 +133,6 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_role'])) {
             </div>
         </div>
 
-        <p class="disclaimer"><strong>Disclaimer:</strong> For Computer Laboratory Use Only</p>
     </div>
 
     <script>

@@ -147,9 +147,42 @@ body {
   color: #000;
 }
 
+.btn-green-add {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .header-actions {
   display: flex;
   gap: 10px;
+}
+
+.btn-transfer {
+  background: white;
+  border: 1px solid #ddd;
+  color: #555;
+  padding: 8px 15px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.btn-transfer:hover {
+  background: #f5f5f5;
 }
 
 .search-filter-row {
@@ -245,47 +278,96 @@ body {
   color: #888;
 }
 
-.page-num {
-  padding: 4px 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-num.active {
-  background: #f0f0f0;
-  font-weight: bold;
-  border-color: #ccc;
-  color: #000;
-}
-
-.page-nav {
-  cursor: pointer;
-  padding: 0 5px;
-}
-
 /* =========================================
    4. RIGHT PANEL: DETAILS & TABS
    ========================================= */
 .action-buttons {
-  display: flex;
-  gap: 8px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
 
-.btn-edit {
-  background: #4caf50;
-  color: white;
-  border: none;
+.action-buttons button {
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex; /* Changed to inline-flex for better icon centering */
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
+/* Edit Button (Desktop) */
+.action-buttons .edit-btn {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  color: #333;
+}
+.action-buttons .edit-btn:hover {
+  background-color: #eee;
+}
+
+.action-buttons .action-btn,
+.action-buttons .btn-confirm,
+.action-buttons .btn-resolve,
+.action-buttons .edit-btn,
+.action-buttons .btn-delete {
+  margin: 0 !important;
+}
+
+/* Resolve Button (Desktop - Active) */
+.action-buttons .btn-confirm,
+.action-buttons .btn-resolve:not(.hide-on-mobile) {
+  background-color: #4caf50 !important;
+  color: white !important;
+  border: none !important;
+  cursor: pointer;
+}
+
+/* Condemn Button (Desktop) */
+.action-buttons .btn-delete {
+  background-color: white;
+  border: 1px solid #f44336;
+  color: #f44336;
+}
+
+/* THE FIX: Force hide the cancel button initially */
+#btnCancelEdit {
+  display: none !important;
+}
+/* This allows JS to show it ONLY when needed */
+#btnCancelEdit.show-cancel {
+  display: inline-flex !important;
+}
+
+.action-buttons .btn-cancel {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  color: #666;
+}
+/* Matching the 'Disabled' look from your CU section */
+.btn-resolve {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0; /* This adds that missing border */
+  color: #333; /* Icon/Text color */
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+/* Ensure the resolve button has standard spacing */
+#btnResolveFA {
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
 .specs-tabs {
   display: flex;
   gap: 10px;
@@ -481,7 +563,7 @@ body {
 /* =========================================
    6. MODAL STYLES (UPDATED FOR TABS)
    ========================================= */
-.modal {
+.modal-overlay {
   display: none;
   position: fixed;
   top: 0;
@@ -489,7 +571,7 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
+  z-index: 1000;
   justify-content: center;
   align-items: center;
   animation: fadeIn 0.2s;
@@ -570,6 +652,49 @@ body {
   font-size: 11px;
   color: #666;
   font-weight: 600;
+}
+
+/* Unit Type Toggle */
+.unit-type-toggle {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 25px;
+}
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #555;
+}
+.radio-option.active {
+  color: #333;
+  font-weight: 600;
+}
+.radio-circle {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+}
+.radio-circle.checked {
+  background: #4caf50;
+  border-color: #4caf50;
+}
+.radio-circle.checked::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 /* Modal Form Grid */
@@ -653,7 +778,7 @@ body {
   color: #555;
   flex: 1;
   transition: all 0.2s;
-  min-width: 90px;
+  min-width: 120px;
 }
 
 .status-btn:hover {
@@ -733,6 +858,248 @@ body {
 }
 
 /* =========================================
+   CONDEMN MODAL STYLES
+   ========================================= */
+.condemn-modal {
+  width: 750px; /* Slightly narrower than the add modal */
+}
+
+.condemn-warning {
+  font-size: 13px;
+  color: #555;
+  margin-top: 0;
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+.condemn-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+}
+
+.readonly-input {
+  background-color: #f9f9f9;
+  color: #666;
+  border-color: #eee;
+  cursor: not-allowed;
+}
+
+/* Checkbox Grid Layout */
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.check-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: #555;
+  cursor: pointer;
+}
+
+.check-container input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: #d32f2f;
+}
+
+/* Textarea */
+.modal-textarea {
+  width: 100%;
+  height: 80px;
+  padding: 10px 12px;
+  border: 1px solid #eee;
+  background: #f2f2f2;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.modal-textarea:focus {
+  outline: none;
+  background: #fff;
+  border-color: #d32f2f;
+}
+
+/* Red Confirm Button */
+.btn-confirm-condemn {
+  background: #d32f2f;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-confirm-condemn:hover {
+  background: #b71c1c;
+}
+
+/* =========================================
+   TRANSFER MODAL STYLES
+   ========================================= */
+.transfer-modal {
+  width: 1100px; /* Wide enough for 3 columns */
+  max-width: 95vw;
+}
+
+.transfer-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.1fr 1.3fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* List Cards */
+.transfer-list-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
+}
+
+.transfer-list-card h4 {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #000;
+}
+
+.search-sm {
+  padding: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.select-all-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.select-all-text {
+  color: #4caf50; /* Green text matching image */
+  font-weight: 600;
+}
+
+.select-all-text input[type="checkbox"] {
+  accent-color: #4caf50; /* Green checkbox */
+}
+
+/* Internal Tables */
+.transfer-table-container {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  max-height: 300px; /* Forces scroll if list is long */
+}
+
+.transfer-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.transfer-table th {
+  background-color: #1b4d3e; /* Dark green header */
+  color: white;
+  padding: 10px;
+  font-size: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.transfer-table td {
+  padding: 10px;
+  font-size: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  vertical-align: middle;
+}
+
+.transfer-table .badge {
+  padding: 4px 10px; /* slightly smaller padding for table view */
+}
+
+/* Custom Dropdown in Target Lab */
+.select-wrapper {
+  position: relative;
+}
+
+.custom-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 35px;
+  cursor: pointer;
+}
+
+.select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  pointer-events: none;
+}
+.btn-confirm {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.btn-confirm:hover {
+  background: #43a047;
+}
+/* Confirm Button (Green) */
+.btn-confirm-transfer {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.btn-confirm-transfer:hover {
+  background: #43a047;
+}
+
+/* Checkbox accent defaults (excluding the red condemn ones) */
+.transfer-form-col .check-container input[type="checkbox"] {
+  accent-color: #4caf50;
+}
+
+/* =========================================
    EDIT MODE STYLES
    ========================================= */
 
@@ -805,6 +1172,59 @@ body {
   background: #f5f5f5;
 }
 
+/* --- DEPLOYMENT ASSIGNMENT MODAL --- */
+.assignment-modal {
+  width: 800px;
+}
+.assignment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.assignment-table th {
+  background-color: #1b4d3e;
+  color: white;
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+}
+.assignment-table td {
+  padding: 15px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.serial-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.serial-input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+.badge.pending {
+  background-color: #8b5cf6; /* Match the purple pending badge */
+}
+.btn-finalize {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-finalize:hover {
+  background: #43a047;
+}
+
 /* =========================================
    TOAST NOTIFICATIONS (Upper Right Bubble)
    ========================================= */
@@ -812,50 +1232,50 @@ body {
   position: fixed;
   top: 25px;
   right: 25px;
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
+  pointer-events: none; /* Allows clicking through the container */
 }
 
 .toast {
   background: #fff;
   border: 1px solid #eaeaea;
   border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   padding: 15px 20px;
   display: flex;
   align-items: center;
   gap: 15px;
-  min-width: 300px;
-  animation: slideInRight 0.3s ease-out forwards;
-  opacity: 1;
-  transition: opacity 0.3s ease-out;
+  min-width: 320px;
+  pointer-events: auto;
+  /* Default entry animation */
+  animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
 }
 
 .toast.fade-out {
-  opacity: 0;
+  animation: fadeOut 0.5s ease forwards !important;
 }
 
 .toast-icon {
-  font-size: 26px;
+  font-size: 24px;
+  flex-shrink: 0;
 }
-
-/* Green icon for success, Red for errors */
 .toast-success .toast-icon {
   color: #4caf50;
 }
-.toast-error .toast-icon {
+.toast-error .toast-icon,
+.toast-danger .toast-icon {
   color: #f44336;
 }
 
 .toast-content h4 {
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
   font-size: 14px;
   font-weight: 700;
   color: #000;
 }
-
 .toast-content p {
   margin: 0;
   font-size: 12px;
@@ -870,6 +1290,17 @@ body {
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(40px);
+    opacity: 0;
   }
 }
 
@@ -954,6 +1385,34 @@ body {
   gap: 8px;
 }
 
+.btn-condemn-action {
+  background: white;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#fa-edit-mode .action-buttons {
+  display: flex;
+  flex-direction: row; /* Forces horizontal */
+  gap: 8px;
+}
+
+/* Ensure the Save button in FA mode looks identical to the PC one */
+#fa-edit-mode .save-active-state {
+  background-color: #4caf50 !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
 #fa-edit-mode .modal-input {
   width: 100%;
   padding: 8px 12px;
@@ -975,6 +1434,7 @@ body {
   cursor: pointer;
   border-radius: 4px;
   transition: 0.3s;
+  width: 150px;
 }
 
 /* Green highlight for Working */
@@ -1079,29 +1539,157 @@ body {
   background-color: #fff;
 }
 
-.btn-confirm {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background 0.2s;
+/* Modal 2-Column Grid */
+.log-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
 }
 
-.btn-confirm:hover {
-  background: #43a047;
+.log-status-grid label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #000;
+  display: block;
+  margin-bottom: 8px;
 }
-@media screen and (max-width: 768px) {
-  .log-status-grid {
-    grid-template-columns: 1fr; /* Stack vertically on phones */
+
+/* Left Side: Summary List */
+.change-summary-list {
+  background-color: #f4f4f4;
+  border-radius: 6px;
+  padding: 10px;
+  max-height: 150px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.log-change-item {
+  background-color: #fff;
+  border: 1px solid #eaeaea;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+}
+
+/* Right Side: Textarea */
+.log-col-right textarea {
+  width: 100%;
+  height: 150px;
+  background-color: #f4f4f4;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 13px;
+  color: #333;
+  resize: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.log-col-right textarea:focus {
+  border-color: #4caf50;
+  outline: none;
+  background-color: #fff;
+}
+@media screen and (max-width: 1024px) {
+  .main-content {
+    padding: 70px, 0px, 0px, 0px;
   }
 
+  .split-layout {
+    gap: 15px; /* Reduce gap between left and right panels */
+  }
+
+  .modal-container {
+    width: 85%;
+    max-width: 800px;
+  }
+
+  /* Stack form elements in modals early to prevent squishing */
+  .modal-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media screen and (max-width: 768px) {
+  .action-buttons .btn-text {
+    display: none !important;
+  }
+
+  .btn-transfer .btn-text,
+  .btn-green-add .btn-text {
+    display: none;
+  }
+
+  .btn-transfer,
+  .btn-green-add {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important; /* Strips out the wide desktop padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .btn-transfer i,
+  .btn-green-add i {
+    margin: 0 !important; /* Removes any margin pushing the icon away from the hidden text */
+    font-size: 16px;
+  }
+
+  /* Make the buttons perfectly square */
+  .action-buttons button {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+  }
+
+  .action-buttons .edit-btn {
+    background-color: white !important;
+    border: 1px solid #4caf50 !important;
+    color: #4caf50 !important;
+  }
+
+  .action-buttons .btn-resolve {
+    background-color: #4caf50 !important;
+    border: none !important;
+    color: white !important;
+    cursor: pointer !important; /* Override the not-allowed from desktop if needed */
+    opacity: 1 !important;
+  }
+
+  .action-buttons .btn-delete {
+    background-color: white !important;
+    border: 1px solid #f44336 !important;
+    color: #f44336 !important;
+  }
+
+  .action-buttons .edit-btn[style*="background-color: rgb(76, 175, 80)"],
+  .action-buttons .edit-btn[style*="background-color: #4caf50"] {
+    background-color: #4caf50 !important;
+    color: white !important;
+    border: none !important;
+  }
+
+  .action-buttons .btn-cancel {
+    background-color: white !important;
+    border: 1px solid #ddd !important;
+    color: #666 !important;
+  }
+
+  .action-buttons button i {
+    margin: 0 !important;
+    font-size: 16px !important;
+  }
+  .log-status-grid {
+    grid-template-columns: 1fr;
+  }
   /* --- 1. TWO-SCREEN TRANSITION --- */
   .desktop-tab-text {
     display: none !important;
@@ -1148,6 +1736,14 @@ body {
   #view-computer .split-layout.mobile-show-details .left-panel,
   #view-facility .split-layout.mobile-show-details .left-panel {
     display: none !important;
+  }
+
+  #view_fa_header_title {
+    white-space: nowrap; /* Prevents text from wrapping to a new line */
+    overflow: hidden; /* Hides the text that overflows the container */
+    text-overflow: ellipsis; /* Adds the "..." at the end */
+    max-width: 250px; /* Adjust this number based on your layout */
+    display: block; /* Necessary for truncation to work on some elements */
   }
 
   #view-computer .split-layout.mobile-show-details .right-panel,
@@ -1202,6 +1798,15 @@ body {
   .mockup-btn-edit {
     background-color: #4caf50 !important;
     color: white !important;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 16px;
+  }
+
+  .mockup-btn-delete {
+    background-color: transparent !important;
+    color: #ff5722 !important;
+    border: 1px solid #ff5722 !important;
     border-radius: 8px;
     padding: 10px 14px;
     font-size: 16px;
@@ -1344,6 +1949,7 @@ body {
   .status-pill.orange {
     background-color: #fff4e5 !important;
     color: #ff9800 !important;
+    padding: 8px 16px;
   }
 
   .sub-detail-row {
@@ -1425,6 +2031,131 @@ body {
     align-items: center;
     gap: 8px; /* Adds perfect spacing between the icon and the text */
   }
+  /* =========================================================
+   TRANSFER MODAL FIXES
+   ========================================================= */
+  /* Prevent the modal from stretching off the screen */
+  #transferModal .modal-container {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Keeps the rounded corners clean */
+  }
+
+  /* Allow the lists to scroll internally */
+  #transferModal .modal-body {
+    overflow-y: auto;
+    padding: 15px;
+    flex: 1;
+  }
+
+  /* Force Cancel and Confirm buttons side-by-side */
+  #transferModal .modal-footer {
+    display: flex !important;
+    flex-direction: row !important; /* Stops them from stacking vertically */
+    justify-content: space-between;
+    gap: 10px;
+    padding: 15px;
+    border-top: 1px solid #eaeaea;
+    background: #fff;
+  }
+
+  /* Make both buttons exactly equal size */
+  #transferModal .modal-footer button {
+    flex: 1;
+    margin: 0 !important;
+    padding: 12px 0;
+    font-size: 14px;
+  }
+
+  /* Clean up the box padding around the lists */
+  .transfer-list-box {
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    background: #fff;
+  }
+
+  /* Make sure the Select All checkbox aligns nicely with the search bar */
+  .transfer-list-box .search-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  /* Force the columns/boxes to stack and take exactly 100% width */
+  #transferModal .modal-grid-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Target the individual list boxes (Computer and Facility) */
+  #transferModal .left-col,
+  #transferModal .right-col,
+  #transferModal .transfer-list-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+
+    /* Make them look like clean matching cards */
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    padding: 15px;
+    background: #fff;
+
+    /* If the table inside gets too wide, only the inside scrolls, not the box! */
+    overflow-x: auto;
+  }
+
+  /* Ensure the tables inside take up the full space evenly */
+  #transferModal table {
+    width: 100% !important;
+    table-layout: fixed; /* Forces columns to respect the width */
+  }
+  #missingIdsTable thead {
+    display: none;
+  }
+
+  #missingIdsTable,
+  #missingIdsTableBody {
+    display: block;
+    width: 100%;
+  }
+
+  /* --- FIX: STACKED MOBILE CARDS WITH GRID AREAS & PADDING --- */
+  #missingIdsTableBody tr.responsive-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "tag status" /* Top row: Header and Pill */
+      "sys sys" /* Middle row: System Input full width */
+      "mon mon"; /* Bottom row: Monitor Input full width */
+    gap: 12px;
+    padding: 20px 15px; /* FIX: Added 15px padding to the sides! */
+    border-bottom: 1px solid #eaeaea;
+  }
+
+  #missingIdsTableBody tr.responsive-row:first-child {
+    padding-top: 15px;
+  }
+
+  #missingIdsTableBody tr.responsive-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  #missingIdsTableBody td {
+    display: block;
+    padding: 0 !important;
+    border: none !important;
+  }
 
   /* Snapping items into their assigned Grid Areas */
   .col-tag {
@@ -1450,81 +2181,58 @@ body {
   }
 }
 
-/* =========================================================
-   STAFF REPORT MODE & MODAL STYLES
-   ========================================================= */
-.action-btn.report-btn {
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color 0.2s ease;
-}
+@media screen and (max-width: 480px) {
+  .main-content {
+    padding-top: 60px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 
-.action-btn.report-btn:hover {
-  background-color: #43a047;
-}
+  .breadcrumb .bold-text {
+    font-size: 24px;
+  }
 
-/* Modal 2-Column Grid */
-.log-status-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  align-items: stretch;
-}
+  /* Shrink the Action Buttons slightly to fit all 4 */
+  .action-buttons button {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .action-buttons button i {
+    font-size: 14px !important;
+  }
 
-.log-status-grid label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #000;
-  display: block;
-  margin-bottom: 8px;
-}
+  /* Force strong truncation for long Device Names on tiny screens */
+  #view_fa_header_title {
+    max-width: 180px;
+  }
 
-/* Left Side: Summary List */
-.change-summary-list {
-  background-color: #f4f4f4;
-  border-radius: 6px;
-  padding: 10px;
-  max-height: 150px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  /* Tighten up details boxes to save vertical space */
+  .detail-box,
+  .edit-input,
+  .sub-field .modal-input {
+    padding: 10px 12px;
+  }
+  .status-pill.view-mode {
+    padding: 10px 12px;
+  }
 
-.log-change-item {
-  background-color: #fff;
-  border: 1px solid #eaeaea;
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-}
+  /* Tighten up List Items */
+  .asset-item {
+    padding: 12px;
+  }
+  .asset-item .item-name {
+    font-size: 14px;
+  }
 
-/* Right Side: Textarea */
-.log-col-right textarea {
-  width: 100%;
-  height: 150px;
-  background-color: #f4f4f4;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 12px;
-  font-size: 13px;
-  color: #333;
-  resize: none;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-.log-col-right textarea:focus {
-  border-color: #4caf50;
-  outline: none;
-  background-color: #fff;
+  /* Tightly pack the Modal Footer */
+  .modal-footer,
+  #transferModal .modal-footer {
+    padding: 10px;
+    gap: 8px;
+  }
+  .modal-footer button,
+  #transferModal .modal-footer button {
+    padding: 10px 0;
+    font-size: 13px;
+  }
 }

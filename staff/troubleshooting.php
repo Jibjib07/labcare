@@ -46,8 +46,89 @@ if (isset($_GET['ajax_filter'])) {
     exit;
 }
 
-// REMOVED: Endpoints for Update, Archive, Restore, and Create
+// 3. AJAX Endpoint: Update Existing Guide
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_guide'])) {
+    $id = intval($_POST['guide_id']);
+    $title = mysqli_real_escape_string($conn, $_POST['issue_title']);
+    $category = mysqli_real_escape_string($conn, $_POST['issue_catego']);
+    $summary = mysqli_real_escape_string($conn, $_POST['issue_summary']);
+    $cause = mysqli_real_escape_string($conn, $_POST['issue_cause']);
+    $solution = mysqli_real_escape_string($conn, $_POST['issue_solutio']);
+    $preventive = mysqli_real_escape_string($conn, $_POST['issue_preven']);
 
+    $update_query = "UPDATE troubleshooting SET 
+                    issue_title = '$title', 
+                    issue_catego = '$category', 
+                    issue_summary = '$summary', 
+                    issue_cause = '$cause', 
+                    issue_solutio = '$solution', 
+                    issue_preven = '$preventive' 
+                    WHERE guide_id = $id";
+
+    if (mysqli_query($conn, $update_query)) {
+        echo json_encode(['status' => 'success', 'message' => 'Guide updated successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => mysqli_error($conn)]);
+    }
+    exit;
+}
+
+// 4. AJAX Endpoint: Archive Guide
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_guide'])) {
+    $id = intval($_POST['guide_id']);
+    $archive_query = "UPDATE troubleshooting SET guide_status = 'Archived' WHERE guide_id = $id";
+    if (mysqli_query($conn, $archive_query)) {
+        echo json_encode(['status' => 'success', 'message' => 'Guide archived successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => mysqli_error($conn)]);
+    }
+    exit;
+}
+
+// 5. AJAX Endpoint: Restore Guide
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_guide'])) {
+    $id = intval($_POST['guide_id']);
+    $restore_query = "UPDATE troubleshooting SET guide_status = 'Available' WHERE guide_id = $id";
+    if (mysqli_query($conn, $restore_query)) {
+        echo json_encode(['status' => 'success', 'message' => 'Guide restored successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => mysqli_error($conn)]);
+    }
+    exit;
+}
+
+// 6. CREATE NEW GUIDE: With Validation & Duplicate Check
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_guide'])) {
+    $title = mysqli_real_escape_string($conn, trim($_POST['issue_title']));
+    $category = mysqli_real_escape_string($conn, trim($_POST['issue_catego']));
+    $summary = mysqli_real_escape_string($conn, trim($_POST['issue_summary']));
+    $cause = mysqli_real_escape_string($conn, trim($_POST['issue_cause']));
+    $solution = mysqli_real_escape_string($conn, trim($_POST['issue_solutio']));
+    $preventive = mysqli_real_escape_string($conn, trim($_POST['issue_preven']));
+
+    if (empty($title) || empty($category)) {
+        echo json_encode(['status' => 'error', 'message' => 'Title and Category are required.']);
+        exit;
+    }
+
+    $check_query = "SELECT guide_id FROM troubleshooting WHERE issue_title = '$title'";
+    $check_result = mysqli_query($conn, $check_query);
+
+    if (mysqli_num_rows($check_result) > 0) {
+        echo json_encode(['status' => 'error', 'message' => 'A guide with this exact title already exists.']);
+        exit;
+    }
+
+    $insert_query = "INSERT INTO troubleshooting (issue_title, issue_catego, issue_summary, issue_cause, issue_solutio, issue_preven, guide_status) 
+                     VALUES ('$title', '$category', '$summary', '$cause', '$solution', '$preventive', 'Available')";
+
+    if (mysqli_query($conn, $insert_query)) {
+        echo json_encode(['status' => 'success', 'message' => 'New guide created successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => mysqli_error($conn)]);
+    }
+    exit;
+}
 $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection Errors", "Peripheral Device Issues"];
 ?>
 <!DOCTYPE html>
@@ -110,6 +191,36 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
             .mobile-back-row {
                 display: flex !important;
             }
+
+            .action-buttons button span,
+            .panel-header-row button span {
+                display: none !important;
+            }
+
+            .btn-green-add,
+            .btn-edit,
+            .btn-save,
+            .btn-archive,
+            .btn-restore,
+            .btn-cancel-edit {
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                padding: 0 !important;
+                display: inline-flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
+
+            .btn-green-add i,
+            .btn-edit i,
+            .btn-save i,
+            .btn-archive i,
+            .btn-restore i,
+            .btn-cancel-edit i {
+                margin: 0 !important;
+                font-size: 18px !important;
+            }
         }
     </style>
 </head>
@@ -127,12 +238,11 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
                 <div class="panel-header-row">
                     <h3>Existing Guide List</h3>
                     <input type="hidden" id="categoryList" value='<?php echo json_encode($categories); ?>'>
-                </div>
 
+                </div>
                 <div class="status-toggle-row">
                     <input type="hidden" id="statusValue" value="Available">
                 </div>
-
                 <div class="search-filter-row">
                     <input type="text" id="searchInput" class="search-input" placeholder="Search">
                     <select id="categoryFilter" class="filter-dropdown" style="width: 100%;">
@@ -157,14 +267,71 @@ $categories = ["Hardware Problem", "Software / OS Issues", "Power & Connection E
 
                 <div class="panel-header-row">
                     <h3>Guide Full Details</h3>
+                    <div id="actionButtons" class="action-buttons" style="display:none;">
+                        
+                    </div>
                 </div>
                 <div id="detailView" class="detail-content"></div>
             </div>
         </div>
     </div>
 
+    <div id="addGuideModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content white-panel">
+            <div class="panel-header-row">
+                <h3>Adding New Guide</h3>
+                <div class="action-buttons">
+                    <button type="button" class="btn-cancel" id="closeAddModal">
+                        <i class="fas fa-times"></i> <span>Cancel</span>
+                    </button>
+                    <button type="button" class="btn-green-add" id="submitCreateBtn"><i class="fas fa-plus-circle"></i> <span>Create</span></button>
+                </div>
+            </div>
+            <hr class="modal-divider">
+            <form id="addGuideForm" class="modal-form">
+                <div class="form-group"><label>Issue Title</label><input type="text" name="issue_title" placeholder="Input field" required></div>
+                <div class="form-group"><label>Category</label>
+                    <select name="issue_catego">
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group"><label>Summary Description</label><input type="text" name="issue_summary" placeholder="Input field"></div>
+                <div class="form-group"><label>Possible Causes</label><textarea name="issue_cause" placeholder="Input field" rows="3"></textarea></div>
+                <div class="form-group"><label>Step by Step Solution</label><textarea name="issue_solutio" placeholder="Input field" rows="3"></textarea></div>
+                <div class="form-group"><label>Preventive Measure</label><textarea name="issue_preven" placeholder="Input field" rows="2"></textarea></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="archiveConfirmModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content white-panel modal-confirm">
+            <h3>Archive this Troubleshooting Guide?</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">No longer visible in the active list. Can be restored later.</p>
+            <div class="form-group"><label>Issue Title</label><input type="text" id="archiveIssueTitle" class="detail-input" readonly></div>
+            <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="archiveCategory" class="detail-input" readonly></div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn-cancel" id="closeArchiveModal"><i class="fas fa-times"></i><span>Cancel</span></button>
+                <button type="button" class="btn-archive" id="confirmArchiveBtn"><i class="fas fa-box-archive"></i> <span>Archive</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="restoreConfirmModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content white-panel modal-confirm">
+            <h3>Restore Troubleshooting Guide?</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">This guide will be returned to the active list and visible to all staff.</p>
+            <div class="form-group"><label>Issue Title</label><input type="text" id="restoreIssueTitle" class="detail-input" readonly></div>
+            <div class="form-group" style="margin-bottom: 25px;"><label>Category</label><input type="text" id="restoreCategory" class="detail-input" readonly></div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn-cancel" id="closeRestoreModal"><i class="fas fa-times"></i><span>Cancel</span></button>
+                <button type="button" class="btn-green-add" id="confirmRestoreBtn"><i class="fas fa-check-circle"></i> <span>Confirm</span></button>
+            </div>
+        </div>
+    </div>
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
-    <script src="js/troubleshooting.js"></script>
+    <script src="js/troubleshooting.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>

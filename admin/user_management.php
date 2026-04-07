@@ -1,6 +1,6 @@
 <?php
 include '../includes/db.php';
-require '../includes/admin_auth.php';
+require '../includes/admin_auth.php'; 
 
 // CSRF TOKEN GENERATION
 if (empty($_SESSION['csrf_token'])) {
@@ -25,12 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'] ?? 'unknown';
 
     $_SESSION['rate_limits'] = $_SESSION['rate_limits'] ?? [];
-
-    // Define only critical limits
-    $limits = [
-        'admin_send_reset' => 10,
-        'default' => 0
-    ];
+    $limits = ['default' => 0];
 
     $wait = $limits[$action] ?? $limits['default'];
     $last = $_SESSION['rate_limits'][$action] ?? 0;
@@ -44,14 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
-    // Update timestamp only if limited
     if ($wait > 0) {
         $_SESSION['rate_limits'][$action] = $now;
     }
 
     // 🛡️ CSRF VERIFICATION
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-        $adminId = $_SESSION['user_id'] ?? 0;
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token', 'csrf_token' => $_SESSION['csrf_token']]);
         exit;
@@ -77,7 +70,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if (!$name || !$email || !$password) throw new Exception("Missing required fields");
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new Exception("Invalid email format");
 
-            // 🛡️ PASSWORD COMPLEXITY ENFORCEMENT
             $uppercase = preg_match('@[A-Z]@', $password);
             $lowercase = preg_match('@[a-z]@', $password);
             $number    = preg_match('@[0-9]@', $password);
@@ -86,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if (!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < 8) {
                 throw new Exception("Minimum 8 characters with uppercase, lowercase, number, and special character required.");
             }
-
+            
             $check = $conn->prepare("SELECT user_id FROM users WHERE user_email = ?");
             $check->bind_param("s", $email);
             $check->execute();
@@ -99,8 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             if ($stmt->execute()) {
                 $newUserId = $stmt->insert_id;
-
-                // 🛡️ LOG AUDIT: ADD (Safely wrapped to prevent crashes)
+                
                 try {
                     $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, new_data) VALUES (?, ?, 'Add', ?)");
                     if ($audit) {
@@ -123,32 +114,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $name = trim($_POST['name']);
             $email = trim($_POST['email']);
 
-            // Check target user's current role before allowing edit
-            $checkRole = $conn->prepare("SELECT user_role FROM users WHERE user_id = ?");
-            $checkRole->bind_param("i", $id);
-            $checkRole->execute();
-            $targetUser = $checkRole->get_result()->fetch_assoc();
-
-            if (!$targetUser) throw new Exception("User not found.");
-
-            // RESTRICTION: If target is an Admin and NOT the person logged in, block the edit.
-            if (strtolower($targetUser['user_role']) === 'admin' && $id !== (int)$adminId) {
-                throw new Exception("Security Restriction: Administrators cannot edit details of other Administrators.");
-            }
-
             if (!$name || !$email) throw new Exception("Name and Email are required");
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new Exception("Invalid email format");
 
-            // Perform the update (Removed role from update to prevent role-changing)
+            // Fetch target user data first to check permissions
+            $oldStmt = $conn->prepare("SELECT user_name, user_email, user_role FROM users WHERE user_id=?");
+            $oldStmt->bind_param("i", $id);
+            $oldStmt->execute();
+            $oldData = $oldStmt->get_result()->fetch_assoc();
+
+            if (!$oldData) throw new Exception("User not found.");
+
+            // 🛡️ SECURITY: Admin cannot edit other Admins
+            if (strtolower($oldData['user_role']) === 'admin' && $id !== (int)$adminId) {
+                throw new Exception("Permission Denied: You cannot edit other administrators.");
+            }
+
+            // Perform the update (ONLY name and email)
             $stmt = $conn->prepare("UPDATE users SET user_name=?, user_email=? WHERE user_id=?");
             $stmt->bind_param("ssi", $name, $email, $id);
+
             if ($stmt->execute()) {
-                // 🛡️ LOG AUDIT: UPDATE (Safely wrapped to prevent crashes)
                 try {
                     $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, old_data, new_data) VALUES (?, ?, 'Update', ?, ?)");
                     if ($audit) {
-                        $newData = json_encode(['name' => $name, 'email' => $email, 'role' => $role]);
-                        $oldJson = json_encode($oldData);
+                        $newData = json_encode(['name' => $name, 'email' => $email]);
+                        $oldJson = json_encode(['name' => $oldData['user_name'], 'email' => $oldData['user_email']]);
                         $audit->bind_param("iiss", $adminId, $id, $oldJson, $newData);
                         $audit->execute();
                     }
@@ -166,26 +157,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $id = (int)$_POST['id'];
             $status = $_POST['status'] ?? '';
             $allowedStatus = ['Active', 'Deactivated'];
+            
             if (!in_array($status, $allowedStatus)) {
                 throw new Exception("Invalid status.");
             }
 
             if ($id === (int)$adminId) throw new Exception("You cannot deactivate your own account.");
 
-            $oldStmt = $conn->prepare("SELECT user_status FROM users WHERE user_id=?");
+            $oldStmt = $conn->prepare("SELECT user_role, user_status FROM users WHERE user_id=?");
             $oldStmt->bind_param("i", $id);
             $oldStmt->execute();
             $oldData = $oldStmt->get_result()->fetch_assoc();
+
+            if (!$oldData) throw new Exception("User not found.");
+
+            // 🛡️ SECURITY: Admin cannot deactivate other Admins
+            if (strtolower($oldData['user_role']) === 'admin') {
+                throw new Exception("Permission Denied: You cannot modify the status of other administrators.");
+            }
 
             $stmt = $conn->prepare("UPDATE users SET user_status=? WHERE user_id=?");
             $stmt->bind_param("si", $status, $id);
 
             if ($stmt->execute()) {
-                // 🛡️ LOG AUDIT: STATUS CHANGE (Safely wrapped to prevent crashes)
                 try {
                     $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, old_data, new_data) VALUES (?, ?, 'Status Change', ?, ?)");
                     if ($audit) {
-                        $oldJson = json_encode($oldData);
+                        $oldJson = json_encode(['user_status' => $oldData['user_status']]);
                         $newJson = json_encode(['user_status' => $status]);
                         $audit->bind_param("iiss", $adminId, $id, $oldJson, $newJson);
                         $audit->execute();
@@ -199,90 +197,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // --- 4. ADMIN SEND RESET LINK ---
-        if ($action === 'admin_send_reset') {
-            $id = (int)$_POST['id'];
-
-            $stmt = $conn->prepare("SELECT user_name, user_email FROM users WHERE user_id = ?");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
-            $user = $stmt->get_result()->fetch_assoc();
-
-            if (!$user) throw new Exception("User not found.");
-
-            // Rate Limit
-            $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM password_resets WHERE user_id = ? AND created_at >= (NOW() - INTERVAL 1 HOUR)");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
-            if ($stmt->get_result()->fetch_assoc()['cnt'] >= 3) {
-                throw new Exception("Reset limit reached (3/hr) for this user.");
-            }
-
-            $rawToken = bin2hex(random_bytes(32));
-            $tokenHash = hash('sha256', $rawToken);
-            $expires = date("Y-m-d H:i:s", strtotime("+1 hour"));
-
-            // Clear old tokens
-            $del = $conn->prepare("DELETE FROM password_resets WHERE user_id = ?");
-            $del->bind_param("i", $id);
-            $del->execute();
-
-            $stmt = $conn->prepare("INSERT INTO password_resets (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, NOW())");
-            $stmt->bind_param("iss", $id, $tokenHash, $expires);
-
-            if ($stmt->execute()) {
-                // EXPLICITLY REQUIRE AND LOAD PHPMAILER ONLY HERE
-                require '../vendor/autoload.php';
-                $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-
-                try {
-                    $mail->isSMTP();
-                    $mail->Host = 'smtp.gmail.com';
-                    $mail->SMTPAuth = true;
-                    $mail->Username = 'cvsuccclabcare26@gmail.com';
-                    $mail->Password = 'ftla jdqz yifw jejl';
-                    $mail->SMTPSecure = 'tls';
-                    $mail->Port = 587;
-
-                    $mail->setFrom('cvsuccclabcare26@gmail.com', 'LabCare');
-                    $mail->addAddress($user['user_email'], $user['user_name']);
-                    $mail->Subject = 'LabCare - Password Reset Initiated by Admin';
-
-                    $resetLink = BASE_URL . "password_resets.php?token=" . $rawToken;
-
-                    $mail->Body = "Hello {$user['user_name']},\n\nAn administrator has initiated a password reset for your account. Please click the link below to set a new password:\n\n{$resetLink}\n\nThis link expires in 1 hour.";
-
-                    if ($mail->send()) {
-                        // LOG AUDIT TRAIL
-                        try {
-                            $actionType = 'Send Password Reset Link';
-                            $logData = json_encode([
-                                'message' => "Reset link sent to {$user['user_email']} by admin ID {$adminId}",
-                                'ip' => $_SERVER['REMOTE_ADDR'],
-                                'user_agent' => $_SERVER['HTTP_USER_AGENT']
-                            ]);
-
-                            $audit = $conn->prepare("INSERT INTO user_audit_trail (admin_id, user_id, action_type, new_data) VALUES (?, ?, ?, ?)");
-                            if ($audit) {
-                                $audit->bind_param("iiss", $adminId, $id, $actionType, $logData);
-                                $audit->execute();
-                            }
-                        } catch (Exception $logError) {
-                            error_log("Audit log failed: " . $logError->getMessage());
-                        }
-
-                        echo json_encode(['status' => 'success', 'csrf_token' => $new_csrf]);
-                        exit;
-                    }
-                } catch (\Exception $e) { // Catch any mailer-specific exceptions locally
-                    throw new Exception("Mailer Error: " . $mail->ErrorInfo);
-                }
-            }
-        }
-
         throw new Exception("Invalid action provided.");
+
     } catch (Exception $e) {
-        // Global catch block for all standard PHP exceptions
         echo json_encode(['status' => 'error', 'message' => $e->getMessage(), 'csrf_token' => $new_csrf]);
         exit;
     }
@@ -291,7 +208,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -300,14 +216,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <link rel="stylesheet" href="css/sidebar.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="css/user_management.css?v=<?php echo time(); ?>">
 </head>
-
 <body>
     <?php include 'includes/sidebar.php'; ?>
 
     <div class="main-content">
         <div class="page-header">
             <h1>User Management</h1>
-            <p>Manage system access, update user roles, and control account permissions.</p>
+            <p>Manage system access, update user profiles, and control account permissions.</p>
         </div>
 
         <div class="user-layout">
@@ -344,11 +259,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             $selectedClass = $firstRow ? 'selected' : '';
                     ?>
                             <div class="user-list-item <?php echo $selectedClass; ?>"
-                                data-id="<?php echo $row['user_id']; ?>"
-                                data-name="<?php echo htmlspecialchars($row['user_name']); ?>"
-                                data-role="<?php echo htmlspecialchars($roleText); ?>"
-                                data-email="<?php echo htmlspecialchars($row['user_email']); ?>"
-                                data-status="<?php echo htmlspecialchars($statusText); ?>">
+                                 data-id="<?php echo $row['user_id']; ?>"
+                                 data-name="<?php echo htmlspecialchars($row['user_name']); ?>"
+                                 data-role="<?php echo htmlspecialchars($roleText); ?>"
+                                 data-email="<?php echo htmlspecialchars($row['user_email']); ?>"
+                                 data-status="<?php echo htmlspecialchars($statusText); ?>">
                                 <div class="user-list-info">
                                     <span class="fw-bold"><?php echo htmlspecialchars($row['user_name']); ?></span>
                                     <span class="text-gray">| <?php echo htmlspecialchars($roleText); ?></span>
@@ -368,10 +283,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
 
             <div class="info-column-right">
-
                 <div class="mobile-detail-header" id="mobile-detail-header">
                     <button id="mobile-back-btn" class="mobile-back-btn">
-                        <i class="fas fa-arrow-left"></i>
+                        <i class="fas fa-arrow-left"></i> 
                     </button>
                     <h2 id="mobile-detail-title">User Details</h2>
                 </div>
@@ -409,119 +323,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         </div>
                     </div>
                 </div>
-                <div class="divider"></div>
-
-                <div class="panel white-panel security-panel">
-                    <h3>Account Recovery</h3>
-                    <div class="security-content">
-                        <p class="security-text">
-                            Initiate a secure password reset for this user. A unique recovery link <br> will be sent to their registered email address.
-                        </p>
-                        <button type="button" id="resetBtn" class="btn-purple-reset">
-                            <i class="fas fa-lock"></i> Send Password Reset Link
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
-    </div>
 
-    <div id="add-user-modal" class="modal-overlay">
-        <div class="modal-content modal-large">
-            <h2 style="font-size: 16px; margin-bottom: 20px;">Adding New User</h2>
-            <form class="user-form" id="add-user-form">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                <input type="hidden" id="logged-in-admin-id" value="<?php echo $_SESSION['user_id']; ?>">
+        <div id="add-user-modal" class="modal-overlay">
+            <div class="modal-content modal-large">
+                <h2 style="font-size: 16px; margin-bottom: 20px;">Adding New User</h2>
+                <form class="user-form" id="add-user-form">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <input type="hidden" id="logged-in-admin-id" value="<?php echo $_SESSION['user_id']; ?>">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="add-name" class="form-input" placeholder="Ex. Juan Dela Cruz">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="add-email" class="form-input" placeholder="Ex. JuanDee@gmail.com">
+                    </div>
+                    <div class="form-group inline-role-group">
+                        <label style="margin-right: 15px;">Role:</label>
+                        <div class="role-toggle">
+                            <button type="button" class="role-btn" data-val="Admin">Admin</button>
+                            <button type="button" class="role-btn active" data-val="Staff">Staff</button>
+                            <input type="hidden" id="add-role" value="Staff">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="add-password" class="form-input" placeholder="Enter password">
+                            <i class="fas fa-eye toggle-password" data-target="add-password"></i>
+                        </div>
+                        <div id="password-feedback" class="inline-feedback"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="add-confirm-password" class="form-input" placeholder="Re-enter password">
+                            <i class="fas fa-eye toggle-password" data-target="add-confirm-password"></i>
+                        </div>
+                        <div id="confirm-password-feedback" class="inline-feedback"></div>
+                    </div>
+                    <div class="modal-actions" style="margin-top: 30px;">
+                        <button type="button" id="btn-cancel-add" class="btn-cancel-new">Cancel</button>
+                        <button type="button" id="btn-confirm-add" class="btn-green-add"><i class="fas fa-plus-circle"></i> Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="deactivate-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2>Deactivate this User</h2>
+                <p style="color: #666; font-size: 0.85rem; margin-bottom: 25px; line-height: 1.5;">
+                    This user will no longer be able to log in, but their historical activity will be preserved in the audit logs.
+                </p>
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" id="add-name" class="form-input" placeholder="Ex. Juan Dela Cruz">
+                    <input type="text" id="deact-name" class="form-input readonly-input" readonly>
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" id="add-email" class="form-input" placeholder="Ex. JuanDee@gmail.com">
-                </div>
-                <div class="form-group inline-role-group">
-                    <label style="margin-right: 15px;">Role:</label>
-                    <div class="role-toggle">
-                        <button type="button" class="role-btn" data-val="Admin">Admin</button>
-                        <button type="button" class="role-btn active" data-val="Staff">Staff</button>
-                        <input type="hidden" id="add-role" value="Staff">
-                    </div>
+                    <input type="text" id="deact-email" class="form-input readonly-input" readonly>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="add-password" class="form-input" placeholder="Enter password">
-                        <i class="fas fa-eye toggle-password" data-target="add-password"></i>
-                    </div>
+                    <label>Role</label>
+                    <input type="text" id="deact-role" class="form-input readonly-input" readonly>
                 </div>
-                <div class="form-group">
-                    <label>Confirm Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="add-confirm-password" class="form-input" placeholder="Re-enter password">
-                        <i class="fas fa-eye toggle-password" data-target="add-confirm-password"></i>
-                    </div>
+                <div class="modal-actions" style="margin-top: 25px;">
+                    <button id="btn-cancel-modal" class="btn-cancel-new">Cancel</button>
+                    <button id="btn-confirm-deactivate" class="btn-red">
+                        <i class="fas fa-user-slash"></i> Deactivate
+                    </button>
                 </div>
-                <div class="modal-actions" style="margin-top: 30px;">
-                    <button type="button" id="btn-cancel-add" class="btn-cancel-new">Cancel</button>
-                    <button type="button" id="btn-confirm-add" class="btn-green-add"><i class="fas fa-plus-circle"></i> Create</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="deactivate-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2>Deactivate this User</h2>
-            <p style="color: #666; font-size: 0.85rem; margin-bottom: 25px; line-height: 1.5;">
-                This user will no longer be able to log in, but their historical activity will be preserved in the audit logs.
-            </p>
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="deact-name" class="form-input readonly-input" readonly>
-            </div>
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="text" id="deact-email" class="form-input readonly-input" readonly>
-            </div>
-            <div class="form-group">
-                <label>Role</label>
-                <input type="text" id="deact-role" class="form-input readonly-input" readonly>
-            </div>
-            <div class="modal-actions" style="margin-top: 25px;">
-                <button id="btn-cancel-modal" class="btn-cancel-new">Cancel</button>
-                <button id="btn-confirm-deactivate" class="btn-red">
-                    <i class="fas fa-user-slash"></i> Deactivate
-                </button>
             </div>
         </div>
-    </div>
-
-    <div id="reset-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2>Send Password Reset</h2>
-            <p style="color: #666; font-size: 0.85rem; margin-bottom: 25px; line-height: 1.5;">
-                A secure reset link will be sent to this user's email.
-            </p>
-
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="reset-name" class="form-input readonly-input" readonly>
-            </div>
-
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="text" id="reset-email" class="form-input readonly-input" readonly>
-            </div>
-
-            <div class="modal-actions">
-                <button id="btn-cancel-reset" class="btn-cancel-new">Cancel</button>
-                <button id="btn-confirm-reset" class="btn-purple-reset">
-                    <i class="fas fa-lock"></i> Send Link
-                </button>
-            </div>
-        </div>
-    </div>
     </div>
 
     <div id="authToast" class="toast">
@@ -535,39 +411,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <script src="js/sidebar.js?v=<?php echo time(); ?>"></script>
     <script src="js/user_management.js?v=<?php echo time(); ?>"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const listContainer = document.getElementById("user-list-container");
-            const searchInput = document.getElementById("search-input");
-            const statusFilter = document.getElementById("status-filter");
+    document.addEventListener("DOMContentLoaded", () => {
+        const listContainer = document.getElementById("user-list-container");
+        const searchInput = document.getElementById("search-input");
+        const statusFilter = document.getElementById("status-filter");
 
-            function applyFilters() {
-                const term = searchInput.value.toLowerCase();
-                const status = statusFilter.value;
-                let visibleCount = 0;
+        function applyFilters() {
+            const term = searchInput.value.toLowerCase();
+            const status = statusFilter.value;
+            let visibleCount = 0;
 
-                document.querySelectorAll(".user-list-item").forEach((item) => {
-                    const name = item.dataset.name.toLowerCase();
-                    const itemStatus = item.dataset.status;
-                    const show = name.includes(term) && (status === "All" || itemStatus === status);
-                    item.style.display = show ? "flex" : "none";
-                    if (show) visibleCount++;
-                });
+            document.querySelectorAll(".user-list-item").forEach((item) => {
+                const name = item.dataset.name.toLowerCase();
+                const itemStatus = item.dataset.status;
+                const show = name.includes(term) && (status === "All" || itemStatus === status);
+                item.style.display = show ? "flex" : "none";
+                if (show) visibleCount++;
+            });
 
-                let msg = listContainer.querySelector('.no-users-msg');
-                if (visibleCount === 0) {
-                    if (!msg) {
-                        msg = document.createElement('div');
-                        msg.className = 'no-users-msg';
-                        msg.innerText = 'No users found matching your criteria.';
-                        listContainer.appendChild(msg);
-                    }
-                } else if (msg) msg.remove();
-            }
+            let msg = listContainer.querySelector('.no-users-msg');
+            if (visibleCount === 0) {
+                if (!msg) {
+                    msg = document.createElement('div');
+                    msg.className = 'no-users-msg';
+                    msg.innerText = 'No users found matching your criteria.';
+                    listContainer.appendChild(msg);
+                }
+            } else if (msg) msg.remove();
+        }
 
-            searchInput.addEventListener("input", applyFilters);
-            statusFilter.addEventListener("change", applyFilters);
-        });
+        searchInput.addEventListener("input", applyFilters);
+        statusFilter.addEventListener("change", applyFilters);
+    });
     </script>
 </body>
-
 </html>

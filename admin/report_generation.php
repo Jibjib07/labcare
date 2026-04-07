@@ -210,9 +210,9 @@ if (isset($_POST['action'])) {
                     </div>
 
                     <div class="form-group" id="labRoomGroup">
-                        <label>Select Computer Laboratory Room</label>
+                        <label>Select Room</label>
                         <select class="form-select" id="labRoomSelect">
-                            <option value="all">All Laboratories</option>
+                            <option value="all">All Rooms</option>
                         </select>
                     </div>
                 </form>

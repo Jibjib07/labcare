@@ -49,8 +49,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = "Report";
         $stmt2 = $conn->prepare("INSERT INTO asset_history (asset_id, lab_id, report_date, report_actor, report_affected, report_action, report_remarks, report_status) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?)");
 
+        // --- THE FIX: Intercept broken states to trigger the yellow pill! ---
+        $db_report_status = $report_status;
+        if (in_array($report_status, ['For Repair', 'Poor', 'Not Working', 'Missing Parts', 'Not Working/Missing'])) {
+            $db_report_status = 'Issue Reported';
+        }
+
         // "sisssss" translates to: String, Integer, String, String, String, String, String
-        $stmt2->bind_param("sisssss", $asset_id, $lab_id, $actor, $asset_name, $action, $remarks, $report_status);
+        // Notice we are passing $db_report_status at the very end now instead of $report_status
+        $stmt2->bind_param("sisssss", $asset_id, $lab_id, $actor, $asset_name, $action, $remarks, $db_report_status);
         $stmt2->execute();
         $stmt2->close();
 
@@ -61,3 +68,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['success' => false, 'error' => 'Transaction failed: ' . $e->getMessage()]);
     }
 }
+?>

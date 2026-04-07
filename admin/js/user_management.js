@@ -97,18 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const infoRole = document.getElementById("info-role");
   const infoStatus = document.getElementById("info-status");
 
-  const btnAction1 = document.querySelector(
-    "#info-action-buttons button:nth-child(1)",
-  );
-  const btnAction2 = document.querySelector(
-    "#info-action-buttons button:nth-child(2)",
-  );
-  const resetBtn = document.getElementById("resetBtn"); // Recovery Button
+  const btnAction1 = document.querySelector("#info-action-buttons button:nth-child(1)");
+  const btnAction2 = document.querySelector("#info-action-buttons button:nth-child(2)");
 
   const addModal = document.getElementById("add-user-modal");
   const deactivateModal = document.getElementById("deactivate-modal");
-  const resetModal = document.getElementById("reset-modal");
-  const btnConfirmReset = document.getElementById("btn-confirm-reset");
 
   let currentItem = null;
   let isEditing = false;
@@ -144,62 +137,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function populateInfoPanel(item) {
     const selectedUserId = item.getAttribute("data-id");
+    const targetRole = item.getAttribute("data-role");
     const loggedInId = document.getElementById("logged-in-admin-id").value;
-    const selectedUserRole = item.getAttribute("data-role").toLowerCase();
 
     infoName.innerText = item.getAttribute("data-name");
     infoEmail.innerText = item.getAttribute("data-email");
-    infoRole.innerText = item.getAttribute("data-role");
+    infoRole.innerText = targetRole;
     infoStatus.innerText = item.getAttribute("data-status");
 
-    const isSelf = Number(selectedUserId) === Number(loggedInId);
-    const isTargetAdmin = selectedUserRole === 'admin';
-    const securityPanel = document.querySelector(".security-panel");
-
-    // --- 1. EDIT & DEACTIVATE LOGIC ---
-    if (isTargetAdmin && !isSelf) {
-        // Hide Edit and Deactivate for other Admins
-        btnAction1.style.display = "none"; 
-        btnAction2.style.display = "none"; 
-    } else if (isSelf) {
-        // Hide Deactivate for yourself, but keep Edit visible
-        btnAction1.style.display = "inline-flex";
-        btnAction2.style.display = "none";
-    } else {
-        // Show everything for Staff
-        btnAction1.style.display = "inline-flex";
-        btnAction2.style.display = "inline-block";
-    }
-
-    // --- 2. ACCOUNT RECOVERY LOGIC (REINSTATED) ---
-    if (isSelf) {
-        // You cannot send a reset link to yourself from here (security best practice)
-        securityPanel.style.display = "none";
-    } else {
-        // Visible for both Staff AND other Admins
-        securityPanel.style.display = "block";
-        securityPanel.style.visibility = "visible";
-        securityPanel.style.opacity = "1";
-    }
-
-    // Store data for the edit mode toggle
     infoName.dataset.val = infoName.innerText;
     infoEmail.dataset.val = infoEmail.innerText;
     infoRole.dataset.val = infoRole.innerText;
 
-    updateStatusVisuals();
+    const isSelf = Number(selectedUserId) === Number(loggedInId);
+    const isOtherAdmin = targetRole === 'Admin' && !isSelf;
+
+    // Security Logic: Hide controls based on role constraints
+    if (isOtherAdmin) {
+      btnAction1.style.display = "none"; // Admin cannot edit other admins
+      btnAction2.style.display = "none"; // Admin cannot deactivate other admins
+    } else if (isSelf) {
+      btnAction1.style.display = "inline-block"; // Admin can edit self
+      btnAction2.style.display = "none"; // Admin cannot deactivate self
+    } else {
+      btnAction1.style.display = "inline-block"; // Admin can edit staff
+      btnAction2.style.display = "inline-block"; // Admin can deactivate staff
+      updateStatusVisuals();
+    }
   }
 
   function updateStatusVisuals() {
     const status = infoStatus.innerText.trim();
     if (status === "Active") {
       infoStatus.className = "info-value status-bg";
-      btnAction2.className = "btn-deactivate";
-      btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-user-slash"></i> Deactivate</span><span class="mobile-icon"><i class="fas fa-user-slash"></i></span>`;
+      if (btnAction2) {
+        btnAction2.className = "btn-deactivate";
+        btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-user-slash"></i> Deactivate</span><span class="mobile-icon"><i class="fas fa-user-slash"></i></span>`;
+      }
     } else {
       infoStatus.className = "info-value status-bg deact-bg";
-      btnAction2.className = "btn-green-add";
-      btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-undo"></i> Re-activate</span><span class="mobile-icon"><i class="fas fa-undo"></i></span>`;
+      if (btnAction2) {
+        btnAction2.className = "btn-green-add";
+        btnAction2.innerHTML = `<span class="desktop-text"><i class="fas fa-undo"></i> Re-activate</span><span class="mobile-icon"><i class="fas fa-undo"></i></span>`;
+      }
     }
   }
 
@@ -239,62 +219,32 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-function toggleEditMode() {
+  function toggleEditMode() {
     isEditing = !isEditing;
 
-    // Get the entire row container for the Role
-    const roleRow = infoRole.closest('.info-item');
-
     if (isEditing) {
-        // 1. Admin-to-Admin Security Check
-        const selectedUserRole = currentItem.getAttribute("data-role");
-        const selectedUserId = currentItem.getAttribute("data-id");
-        const loggedInId = document.getElementById("logged-in-admin-id").value;
-        const isSelf = Number(selectedUserId) === Number(loggedInId);
+      // ONLY Name and Email become inputs. Role remains static text.
+      infoName.innerHTML = `<input type="text" id="edit-name" value="${infoName.dataset.val}" class="edit-gray-input">`;
+      infoEmail.innerHTML = `<input type="email" id="edit-email" value="${infoEmail.dataset.val}" class="edit-gray-input">`;
 
-        if (selectedUserRole.toLowerCase() === 'admin' && !isSelf) {
-            isEditing = false;
-            showToast("Access Denied", "You cannot edit another administrator.", "error");
-            return;
-        }
+      btnAction1.className = "btn-green-add";
+      btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-check-circle"></i> Save</span><span class="mobile-icon"><i class="fas fa-save"></i></span>`;
 
-        // 2. Transform Name and Email into inputs
-        infoName.innerHTML = `<input type="text" id="edit-name" value="${infoName.dataset.val}" class="edit-gray-input">`;
-        infoEmail.innerHTML = `<input type="email" id="edit-email" value="${infoEmail.dataset.val}" class="edit-gray-input">`;
-
-        // 3. COMPLETELY HIDE the Role section (Label + Value + Gap)
-        if (roleRow) {
-            roleRow.style.display = 'none';
-        }
-
-        // 4. Update Action Buttons
-        btnAction1.className = "btn-green-add";
-        btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-check-circle"></i> Save</span><span class="mobile-icon"><i class="fas fa-save"></i></span>`;
-
+      if(btnAction2) {
         btnAction2.style.display = "inline-flex";
         btnAction2.className = "btn-cancel-new";
         btnAction2.innerHTML = `<span class="desktop-text">Cancel</span><span class="mobile-icon"><i class="fas fa-times"></i></span>`;
-
+      }
     } else {
-        // 5. RESTORE: Revert all fields
-        infoName.innerText = infoName.dataset.val;
-        infoEmail.innerText = infoEmail.dataset.val;
-        
-        // Unhide the Role section and restore text
-        if (roleRow) {
-            roleRow.style.display = 'block';
-        }
-        infoRole.innerText = infoRole.dataset.val;
-
-        updateStatusVisuals();
-
-        // Restore btnAction1 to EDIT
-        btnAction1.className = "btn-edit";
-        btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-pen"></i> Edit</span><span class="mobile-icon"><i class="fas fa-pen"></i></span>`;
-        
-        populateInfoPanel(currentItem);
+      infoName.innerText = infoName.dataset.val;
+      infoEmail.innerText = infoEmail.dataset.val;
+      
+      btnAction1.className = "btn-edit";
+      btnAction1.innerHTML = `<span class="desktop-text"><i class="fas fa-pen"></i> Edit</span><span class="mobile-icon"><i class="fas fa-pen"></i></span>`;
+      
+      populateInfoPanel(currentItem);
     }
-}
+  }
 
   // Action: Save Edit
   if (btnAction1) {
@@ -304,9 +254,8 @@ function toggleEditMode() {
       if (isEditing) {
         const newName = document.getElementById("edit-name").value.trim();
         const newEmail = document.getElementById("edit-email").value.trim();
-        const newRole = document.getElementById("edit-role-val").value;
 
-        if (!newName || !newEmail || !newRole) {
+        if (!newName || !newEmail) {
           showToast("Missing Fields", "Please fill out all fields.", "error");
           return;
         }
@@ -321,7 +270,7 @@ function toggleEditMode() {
           formData.append("id", currentItem.dataset.id);
           formData.append("name", newName);
           formData.append("email", newEmail);
-          formData.append("role", newRole);
+          // Removed role append - it is no longer submitted during updates
 
           const data = await postData("update_user", formData);
 
@@ -380,89 +329,6 @@ function toggleEditMode() {
     });
   }
 
-  // ACTION: SEND RESET LINK
-  let resetArmed = false;
-  let resetTimeout = null;
-
-  if (btnConfirmReset) {
-    btnConfirmReset.addEventListener("click", async function () {
-      if (!resetArmed) {
-        resetArmed = true;
-
-        this.disabled = true;
-        this.dataset.original = this.innerHTML;
-        this.innerHTML = `<i class="fas fa-hourglass-half"></i> Confirming...`;
-
-        showToast("Confirm Action", "Click again to send reset link.", "error");
-
-        resetTimeout = setTimeout(() => {
-          this.disabled = false;
-          this.innerHTML = `<i class="fas fa-lock"></i> Send Link`;
-        }, 2000);
-
-        return;
-      }
-
-      try {
-        setLoading(this, "Sending Link...");
-
-        const formData = new FormData();
-        formData.append("id", currentItem.dataset.id);
-
-        const result = await postData("admin_send_reset", formData);
-
-        if (result.status === "success") {
-          showToast(
-            "Link Sent",
-            `A secure recovery link has been sent to ${currentItem.dataset.email}.`,
-            "success",
-          );
-          resetModal.style.display = "none";
-        } else {
-          showToast(
-            "Failed",
-            result.message || "Could not send reset link.",
-            "error",
-          );
-        }
-      } catch (err) {
-        showToast(
-          "Request Failed",
-          err.message || "Unexpected error occurred. Please try again.",
-          "error",
-        );
-      } finally {
-        resetButton(this);
-        resetArmed = false;
-        clearTimeout(resetTimeout);
-      }
-    });
-  }
-
-  document.getElementById("btn-cancel-reset").addEventListener("click", () => {
-    resetModal.style.display = "none";
-    resetArmed = false;
-    clearTimeout(resetTimeout);
-    btnConfirmReset.disabled = false;
-    btnConfirmReset.innerHTML = `<i class="fas fa-lock"></i> Send Link`;
-  });
-
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      if (!requireSelection()) return;
-
-      document.getElementById("reset-name").value = currentItem.dataset.name;
-      document.getElementById("reset-email").value = currentItem.dataset.email;
-
-      resetArmed = false;
-      clearTimeout(resetTimeout);
-      btnConfirmReset.disabled = false;
-      btnConfirmReset.innerHTML = `<i class="fas fa-lock"></i> Send Link`;
-
-      resetModal.style.display = "flex";
-    });
-  }
-
   document
     .getElementById("btn-cancel-modal")
     .addEventListener("click", () => (deactivateModal.style.display = "none"));
@@ -498,7 +364,7 @@ function toggleEditMode() {
       }
     });
 
-  // Role Toggle Logic
+  // Role Toggle Logic (For Adding New User ONLY)
   const addRoleBtns = document.querySelectorAll("#add-user-form .role-btn");
   const addRoleInput = document.getElementById("add-role");
 
@@ -597,11 +463,7 @@ function toggleEditMode() {
       const role = document.getElementById("add-role").value;
 
       if (!name || !email || !password) {
-        showToast(
-          "Missing Fields",
-          "Please fill out all required fields.",
-          "error",
-        );
+        showToast("Missing Fields", "Please fill out all required fields.", "error");
         return;
       }
 

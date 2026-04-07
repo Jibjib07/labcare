@@ -7,8 +7,15 @@ $edit_error = '';
 
 // --- ADD NEW LABORATORY LOGIC ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
-    $lab_name = $conn->real_escape_string($_POST['lab_name']);
-    $lab_room = $conn->real_escape_string($_POST['lab_room']);
+    $lab_name = $conn->real_escape_string(trim($_POST['lab_name']));
+    $raw_room = trim($_POST['lab_room']);
+
+    // Check if Not Applicable was checked
+    if (strtoupper($raw_room) === 'N/A') {
+        $lab_room = $lab_name; // As per your previous rule
+    } else {
+        $lab_room = "Room " . $raw_room; // Autogenerate the prefix
+    }
 
     $check_query = "SELECT * FROM laboratories 
                     WHERE (lab_name = '$lab_name' OR lab_room = '$lab_room') 
@@ -36,10 +43,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
 
 // --- EDIT LABORATORY LOGIC ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
-    $lab_id = $conn->real_escape_string($_POST['edit_lab_id']);
-    $original_room = $conn->real_escape_string($_POST['original_room_number']);
-    $new_name = $conn->real_escape_string($_POST['edit_room_name']);
-    $new_room = $conn->real_escape_string($_POST['edit_room_number']);
+    $new_name = $conn->real_escape_string(trim($_POST['edit_room_name']));
+    $raw_new_room = trim($_POST['edit_room_number']);
+
+    if (strtoupper($raw_new_room) === 'N/A') {
+        $new_room = $new_name;
+    } else {
+        $new_room = "Room " . $raw_new_room; // Autogenerate the prefix
+    }
 
     $check_query = "SELECT * FROM laboratories 
                     WHERE (lab_name = '$new_name' OR lab_room = '$new_room') 
@@ -91,8 +102,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
 
     <div class="main-content">
         <div class="page-header">
-            <h1>Computer Laboratory Management</h1>
-            <p>Monitor laboratory deployment, resource counts, and room archival states.</p>
+            <h1>Room Management</h1>
+            <p>Monitor room deployment, resource counts, and asset archival states across the campus.</p>
         </div>
 
         <div class="mobile-lab-layout">
@@ -110,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 <div class="m-stat-card green">
                     <div class="m-card-content">
                         <h2 id="m-val-working">0</h2>
-                        <span>Working Units</span>
+                        <span>Working Sets</span>
                     </div>
                     <div class="m-card-icon"><i class="fas fa-check-circle"></i></div>
                 </div>
@@ -118,7 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 <div class="m-stat-card yellow">
                     <div class="m-card-content">
                         <h2 id="m-val-repair">0</h2>
-                        <span>For Repair Units</span>
+                        <span>For Repair Sets</span>
                     </div>
                     <div class="m-card-icon"><i class="fas fa-wrench"></i></div>
                 </div>
@@ -126,7 +137,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 <div class="m-stat-card red">
                     <div class="m-card-content">
                         <h2 id="m-val-condemned">0</h2>
-                        <span>For Condemn Units</span>
+                        <span>For Condemn Sets</span>
                     </div>
                     <div class="m-card-icon"><i class="fas fa-trash-alt"></i></div>
                 </div>
@@ -134,7 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 <div class="m-stat-card dark">
                     <div class="m-card-content">
                         <h2 id="m-val-total">0</h2>
-                        <span>Total Computer Units</span>
+                        <span>Total Computer Sets</span>
                     </div>
                     <div class="m-card-icon"><i class="fas fa-desktop"></i></div>
                 </div>
@@ -167,7 +178,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
 
                             <div class="m-room-info">
                                 <h4><?= htmlspecialchars($row['lab_name']) ?></h4>
-                                <span class="room-badge">Room <?= htmlspecialchars($row['lab_room']) ?></span>
+                                <?php if (strtolower($row['lab_room']) !== strtolower($row['lab_name'])): ?>
+                                    <span class="room-badge"><?= htmlspecialchars($row['lab_room']) ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <div class="m-room-actions">
@@ -199,7 +212,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 else:
                     ?>
                     <div class="empty-state" style="padding: 20px; text-align: center; color: #666; background: white; border-radius: 8px;">
-                        No active computer laboratories found. Click '+' to create one.
+                        No active rooms found. Click '+' to create one.
                     </div>
                 <?php endif; ?>
             </div>
@@ -210,7 +223,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
 
                 <div class="panel white-panel room-panel">
                     <div class="panel-header">
-                        <h3>Computer Laboratory Room List</h3>
+                        <h3>Campus Room List</h3>
                         <button class="btn-green-add" onclick="openModal('addLabModal')">
                             <i class="fas fa-plus-circle"></i> Add
                         </button>
@@ -220,7 +233,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                         <input type="text"
                             id="labSearchInput"
                             class="search-bar"
-                            placeholder="Search computer lab room..."
+                            placeholder="Search a room..."
                             oninput="searchLaboratories()">
                     </div>
 
@@ -253,7 +266,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
 
                                     <div class="room-info">
                                         <span class="lab-name"><?= htmlspecialchars($row['lab_name']) ?></span>
-                                        <span class="room-badge">Room <?= htmlspecialchars($row['lab_room']) ?></span>
+                                        
+                                        <?php if (strtolower($row['lab_room']) !== strtolower($row['lab_name'])): ?>
+                                            <span class="room-badge"><?= htmlspecialchars($row['lab_room']) ?></span>
+                                        <?php endif; ?>
                                     </div>
 
                                     <div class="room-actions">
@@ -284,7 +300,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                         else:
                             ?>
                             <div class="empty-state" style="padding: 20px; text-align: center; color: #666;">
-                                No computer laboratories found. Click 'Add' to create one.
+                                No room found. Click 'Add' to create one.
                             </div>
                         <?php endif; ?>
                     </div>
@@ -295,26 +311,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                         <div class="stat-card green">
                             <div class="icon-circle"><i class="fas fa-check-circle"></i></div>
                             <h2 id="val-working">0</h2>
-                            <span>Working Units</span>
+                            <span>Working Sets</span>
                         </div>
 
                         <div class="stat-card yellow">
                             <div class="icon-circle"><i class="fas fa-wrench"></i></div>
                             <h2 id="val-repair">0</h2>
-                            <span>For Repair Units</span>
+                            <span>For Repair Sets</span>
                         </div>
 
                         <div class="stat-card red">
                             <div class="icon-circle"><i class="fas fa-trash-alt"></i></div>
                             <h2 id="val-condemned">0</h2>
-                            <span>For Condemn Units</span>
+                            <span>For Condemn Sets</span>
                         </div>
 
                         <div class="stacked-stats-col">
                             <div class="stat-card dark small-card">
                                 <div class="icon-circle small"><i class="fas fa-desktop"></i></div>
                                 <h2 id="val-total">0</h2>
-                                <span>Total Computer Units</span>
+                                <span>Total Computer Sets</span>
                             </div>
                             <div class="stat-card light-gray small-card">
                                 <div class="icon-circle small dark-icon"><i class="fas fa-box"></i></div>
@@ -326,7 +342,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                     <div class="panel white-panel schedule-panel">
                         <div class="panel-header">
                             <h3 id="schedule-title">Select a Room</h3>
-                            <button class="btn-green-solid" onclick="document.getElementById('scheduleInput').click()">Upload</button>
+                            <div class="schedule-actions">
+                                <button id="btnClearSchedule" class="btn-red-outline" onclick="clearSchedule()" style="display: none;">
+                                    <i class=""></i> Clear
+                                </button>
+                                <button class="btn-green-solid" onclick="document.getElementById('scheduleInput').click()">Upload</button>
+                            </div>
                             <input type="file" id="scheduleInput" accept="image/*" style="display: none;">
                         </div>
 
@@ -342,7 +363,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
     <div id="addLabModal" class="modal-overlay" style="display: none;">
         <div class="modal-container">
             <div class="modal-header">
-                <h3>Add New Computer Laboratory</h3>
+                <h3>Add New Room</h3>
             </div>
 
             <div class="modal-body">
@@ -361,8 +382,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                     </div>
 
                     <div class="form-group">
-                        <label>Room Number</label>
-                        <input type="text" name="lab_room" class="modal-input" placeholder="e.g. 104" required>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label>Room Number</label>
+                            <label style="font-size: 12px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="no_room_number" onclick="toggleRoomNumber(this)"> Not Applicable
+                            </label>
+                        </div>
+                        <input type="text" name="lab_room" id="lab_room_input" class="modal-input" placeholder="e.g. 104" required>
                     </div>
 
                 </form>
@@ -378,32 +404,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
         </div>
     </div>
 
-    <!-- <div id="qrModal" class="modal-overlay" style="display: none;">
-        <div class="modal-container" style="text-align: center; max-width: 400px;">
-            <div class="modal-header" style="justify-content: center;">
-                <h3 id="qrModalTitle">Room - QR Code</h3>
-            </div>
-
-            <div class="modal-body" style="padding: 20px;">
-                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                    Export and display this QR code at the laboratory entrance. Staff can scan it to instantly view the full list of computer units assigned to this room.
-                </p>
-                <div id="qrcode-container" style="display: flex; justify-content: center; padding: 10px; background: white; border-radius: 8px;"></div>
-            </div>
-
-            <div class="modal-footer" style="justify-content: center; gap: 10px;">
-                <button type="button" class="btn-cancel" onclick="closeModal('qrModal')">Cancel</button>
-                <button type="button" class="btn-create" onclick="exportQRCode()">
-                    <i class="fas fa-sign-out-alt"></i> Export
-                </button>
-            </div>
-        </div>
-    </div> -->
-
     <div id="editLabModal" class="modal-overlay">
         <div class="modal-container">
             <div class="modal-header header-with-actions">
-                <h3>View Computer Laboratory</h3>
+                <h3>Edit Room Details</h3>
                 <div class="header-actions">
 
                 </div>
@@ -427,12 +431,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                     </div>
 
                     <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <label>Room Number</label>
-                        <input type="text" name="edit_room_number" id="edit_room_number" class="modal-input" required>
+                        <label style="font-size: 12px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="edit_no_room_number" onclick="toggleEditRoomNumber(this)"> Not Applicable
+                        </label>
                     </div>
+                    <input type="text" name="edit_room_number" id="edit_room_number" class="modal-input" required>
+                </div>
 
                     <div class="form-group">
-                        <label>Total Units</label>
+                        <label>Total Sets</label>
                         <input type="number" id="edit_total_units" class="modal-input" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
                     </div>
                 </form>
@@ -450,12 +459,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
     <div id="archiveLabModal" class="modal-overlay" style="display: none;">
         <div class="modal-container archive-modal-width">
             <div class="modal-header">
-                <h3>Archive Computer Laboratory?</h3>
+                <h3>Archive Room?</h3>
             </div>
             <div class="modal-body">
                 <p class="archive-warning-text">
-                    Are you sure you want to archive <strong id="archive_room_name_display">[Room Name]</strong>?
-                    This record cannot be restored. All logs will be saved in History Management for audit purposes. New labs must be created manually if the room number is reused.
+                    Are you sure you want to archive <strong id="archive_room_name_display">[Room Name]</strong>? 
+                    All equipment must be redeployed or retired before a room can be archived.
                 </p>
                 <form id="archiveLabForm">
                     <input type="hidden" id="archive_lab_id">
@@ -471,7 +480,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                                 <input type="text" id="archive_room_number" class="modal-input readonly-input" readonly>
                             </div>
                             <div class="form-group">
-                                <label>Total Units</label>
+                                <label>Total Sets</label>
                                 <input type="text" id="archive_total_units" class="modal-input readonly-input" readonly>
                             </div>
                         </div>
@@ -513,7 +522,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                 </p>
                 <div style="display: flex; justify-content: space-between; background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #eee;">
                     <div><span style="font-size: 12px; color: #888;">Room Number</span><br><strong id="blocked_room_number" style="font-size: 16px; color: #333;">---</strong></div>
-                    <div><span style="font-size: 12px; color: #888;">Total Units</span><br><strong id="blocked_total_units" style="font-size: 16px; color: #333;">0</strong></div>
+                    <div><span style="font-size: 12px; color: #888;">Total Sets</span><br><strong id="blocked_total_units" style="font-size: 16px; color: #333;">0</strong></div>
                     <div><span style="font-size: 12px; color: #888;">Total Assets</span><br><strong id="blocked_total_assets" style="font-size: 16px; color: #333;">0</strong></div>
                 </div>
             </div>

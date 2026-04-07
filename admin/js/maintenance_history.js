@@ -419,7 +419,7 @@ function exportTimeline() {
     // 2. Extract Data from the DOM cards
     const cards = container.querySelectorAll('.timeline-card');
     
-// --- UPDATED TOAST CHECKS ---
+    // --- UPDATED TOAST CHECKS ---
     if (container.innerHTML.includes("Loading history...")) {
         showToast("Export Pending", "Please wait for the data to finish loading.", "warning");
         return;
@@ -473,12 +473,11 @@ function exportTimeline() {
         } else {
             status = rawActionOrStatus; // In Units/Assets, badge is Status
             
-            // 6-Column Layout for Units/Assets
+            // 5-Column Layout for Units/Assets (ACTION COLUMN REMOVED)
             rowsHTML += `
                 <tr>
                     <td>${dateStr}</td>
                     <td>${actor}</td>
-                    <td>${action}</td>
                     <td>${affected}</td>
                     <td>${remarks}</td>
                     <td>${status}</td>
@@ -513,7 +512,7 @@ function exportTimeline() {
                 ${getReportHeaderHTML()}
                 
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 style="font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;">COMPUTER LABORATORY AUDIT TRACKING</h2>
+                    <h2 style="font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;">AUDIT TRACKING</h2>
                     <h3 style="font-size: 16px; font-weight: 800; text-transform: uppercase; margin-top: 0;">INVENTORY LOG</h3>
                     <p style="margin: 15px 0 0 0; font-weight: bold; font-size: 15px;">${currentSelectedName}</p>
                     <p style="margin: 2px 0 0 0; font-size: 14px; font-weight: bold;">Current Status: <span style="font-weight: normal;">${currentStatusDisplay}</span></p>
@@ -558,7 +557,7 @@ function exportTimeline() {
                 ${getReportHeaderHTML()}
                 
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 style="font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;">COMPUTER LABORATORY AUDIT TRACKING</h2>
+                    <h2 style="font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;">AUDIT TRACKING</h2>
                     <h3 style="font-size: 16px; font-weight: 800; text-transform: uppercase; margin-top: 0;">ACTIVITY LOG</h3>
                     <p style="margin: 5px 0; font-weight: bold; font-size: 15px;">${currentSelectedName}</p>
                     ${roomDisplay}
@@ -567,11 +566,10 @@ function exportTimeline() {
                 <table>
                     <thead>
                         <tr>
-                            <th width="12%">Date</th>
+                            <th width="15%">Date</th>
                             <th width="15%">Actor</th>
-                            <th width="18%">Action</th>
-                            <th width="15%">Affected</th>
-                            <th width="25%">Remarks</th>
+                            <th width="20%">Affected</th>
+                            <th width="35%">Remarks</th>
                             <th width="15%">Status</th>
                         </tr>
                     </thead>

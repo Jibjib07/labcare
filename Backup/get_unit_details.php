@@ -46,14 +46,6 @@ try {
             }
         }
 
-        if (isset($row['power_health'])) {
-            if ($row['power_health'] === 'Working') {
-                $row['power_health'] = 'Healthy';
-            } else if ($row['power_health'] === 'For Repair') {
-                $row['power_health'] = 'Poor';
-            }
-        }
-
         // =========================================================
         // FETCH RECENT ACTIVITY LOGS (LIMIT 5)
         // =========================================================
@@ -64,12 +56,9 @@ try {
         $hist_res = $hist_stmt->get_result();
 
         while ($h_row = $hist_res->fetch_assoc()) {
-            // Format the date to include the time (e.g., "Apr 06, 2026 08:30 AM")
+            // --- THE FIX: Added 'h:i A' for exact time with AM/PM ---
             $date = new DateTime($h_row['report_date']);
-            
-            // --- NEW: Added 'h:i A' for 12-hour time with AM/PM! ---
             $h_row['formatted_date'] = $date->format('M d, Y h:i A');
-            
             $history_data[] = $h_row;
         }
         $hist_stmt->close();

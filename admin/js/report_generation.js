@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((r) => r.json())
       .then((res) => {
         labRoomSelect.innerHTML =
-          '<option value="all">All Laboratories</option>';
+          '<option value="all">All Rooms</option>';
         if (res.success && res.data.length > 0) {
           res.data.forEach((room) => {
             const opt = document.createElement("option");
@@ -276,9 +276,9 @@ document.addEventListener("DOMContentLoaded", function () {
     html += getReportHeaderHTML();
     html += `
             <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">COMPUTER LABORATORY REPORT</h2>
-                <h3 style="font-size: 16px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">UNITS AND ASSETS STATUS</h3>
-                <p style="font-size: 16px; margin: 5px 0;">Room: ${labName}</p>
+                <h2 style="font-size: 18px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">SYSTEM REPORT</h2>
+                <h3 style="font-size: 16px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">COMPUTER SETS AND ASSETS STATUS</h3>
+                <p style="font-size: 16px; margin: 5px 0;">${labName}</p>
                 <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
             </div>
             
@@ -292,7 +292,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Computer Units</td>
+                        <td>Computer Sets</td>
                         <td align="center">${u.working}</td>
                         <td align="center">${u.repair}</td>
                     </tr>
@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </tbody>
             </table>
             
-            <h4 class="table-label">Computer Units List</h4>
+            <h4 class="table-label">Computer Sets List</h4>
             <table class="doc-table" style="margin-bottom: 20px;">
                 <thead><tr><th style="width: 50%; text-align: center;">Tag</th><th style="text-align: center;">Status</th></tr></thead>
                 <tbody>${renderListRows(data.units)}</tbody>
@@ -339,9 +339,9 @@ document.addEventListener("DOMContentLoaded", function () {
     html += getReportHeaderHTML();
     html += `
             <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">COMPUTER LABORATORY REPORT</h2>
+                <h2 style="font-size: 18px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">SYSTEM REPORT</h2>
                 <h3 style="font-size: 16px; margin: 0; font-weight: 800; font-family: 'Times New Roman', Times, serif;">CONDEMNED STATUS (DETAILED)</h3>
-                <p style="font-size: 16px; margin: 5px 0;">Room: ${labName}</p>
+                <p style="font-size: 16px; margin: 5px 0;">${labName}</p>
                 <p style="font-size: 15px; margin: 10px 0;">Period: ${fDate} to ${tDate}</p>
             </div>
             
@@ -354,7 +354,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Computer Units</td>
+                        <td>Computer Sets</td>
                         <td align="center">${data.units.length}</td>
                     </tr>
                     <tr>
@@ -364,7 +364,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </tbody>
             </table>
 
-            <h4 class="table-label">Computer Units List</h4>
+            <h4 class="table-label">Computer Sets List</h4>
             <table class="doc-table" style="margin-bottom: 20px;">
                 <thead><tr><th style="width: 50%; text-align: center;">Tag</th><th style="text-align: center;">Date Condemned</th></tr></thead>
                 <tbody>${data.units.map((i) => `<tr><td>${i.set_tag}</td><td align="center">${i.log_date}</td></tr>`).join("") || '<tr><td colspan="2" align="center">No records</td></tr>'}</tbody>
@@ -398,9 +398,9 @@ document.addEventListener("DOMContentLoaded", function () {
       getReportHeaderHTML() +
       `
             <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', serif;">COMPUTER LABORATORY REPORT</h2>
+                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', serif;">SYSTEM REPORT</h2>
                 <h3 style="font-size: 16px; font-weight: 800; font-family: 'Times New Roman', serif;">CONSOLIDATED SUMMARY</h3>
-                <p>All Laboratories | As of ${formattedDate}</p>
+                <p>All Rooms | As of ${formattedDate}</p>
             </div>
             
             <table class="doc-table" style="margin-bottom: 30px;">
@@ -408,15 +408,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     <tr><th style="text-align: center;">Category</th><th align="center">Working</th><th align="center">For Repair</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Computer Units</td><td align="center">${u.working}</td><td align="center">${u.repair}</td></tr>
+                    <tr><td>Computer Sets</td><td align="center">${u.working}</td><td align="center">${u.repair}</td></tr>
                     <tr><td>Facility Assets</td><td align="center">${a.working}</td><td align="center">${a.repair}</td></tr>
                 </tbody>
             </table>
 
-            <h4 class="table-label">Computer Labs Summary Breakdown</h4>
+            <h4 class="table-label">Summary Breakdown</h4>
             <table class="doc-table">
                 <thead>
-                    <tr><th rowspan="2" style="text-align: center;">Lab Rooms</th><th colspan="2" align="center">Computer Units</th><th colspan="2" align="center">Facility Assets</th></tr>
+                    <tr><th rowspan="2" style="text-align: center;">Rooms</th><th colspan="2" align="center">Computer Sets</th><th colspan="2" align="center">Facility Assets</th></tr>
                     <tr><th align="center">Working</th><th align="center">For Repair</th><th align="center">Working</th><th align="center">For Repair</th></tr>
                 </thead>
                 <tbody>
@@ -449,24 +449,24 @@ document.addEventListener("DOMContentLoaded", function () {
       getReportHeaderHTML() +
       `
             <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', serif;">COMPUTER LABORATORY REPORT</h2>
+                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', serif;">SYSTEM REPORT</h2>
                 <h3 style="font-size: 16px; font-weight: 800; font-family: 'Times New Roman', serif;">CONDEMNED STATUS SUMMARY</h3>
-                <p>All Laboratories | Period: ${fDate} to ${tDate}</p>
+                <p>All Rooms | Period: ${fDate} to ${tDate}</p>
             </div>
 
             <table class="doc-table" style="margin-bottom: 30px;">
                 <thead><tr><th style="text-align: center;">Category</th><th align="center">Total Condemned</th></tr></thead>
                 <tbody>
-                    <tr><td>Computer Units</td><td align="center">${data.units.length}</td></tr>
+                    <tr><td>Computer Sets</td><td align="center">${data.units.length}</td></tr>
                     <tr><td>Facility Assets</td><td align="center">${data.assets.length}</td></tr>
                 </tbody>
             </table>
 
-            <h4 class="table-label">Computer Labs Summary</h4>
+            <h4 class="table-label">Rooms Summary</h4>
             <table class="doc-table">
                 <thead>
-                    <tr><th rowspan="2" style="text-align: center;">Lab Rooms</th><th colspan="2" align="center">Number of Condemned</th></tr>
-                    <tr><th align="center">Computer Units</th><th align="center">Facility Assets</th></tr>
+                    <tr><th rowspan="2" style="text-align: center;">Rooms</th><th colspan="2" align="center">Number of Condemned</th></tr>
+                    <tr><th align="center">Computer Sets</th><th align="center">Facility Assets</th></tr>
                 </thead>
                 <tbody>
                     ${breakdown.map((r) => `<tr><td>${r.name}</td><td align="center">${r.uc}</td><td align="center">${r.ac}</td></tr>`).join("")}
@@ -507,7 +507,7 @@ document.addEventListener("DOMContentLoaded", function () {
       getReportHeaderHTML() +
       `
             <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', Times, serif;">COMPUTER LABORATORY REPORT</h2>
+                <h2 style="font-size: 18px; font-weight: 800; font-family: 'Times New Roman', Times, serif;">SYSTEM REPORT</h2>
                 <h3 style="font-size: 16px; font-weight: 800; font-family: 'Times New Roman', Times, serif;">SUPPLY INVENTORY SUMMARY</h3>
                 <p style="font-size: 15px; margin: 10px 0;">As of ${formattedDate}</p>
             </div>

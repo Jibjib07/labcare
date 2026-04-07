@@ -52,13 +52,13 @@ $shareUrl = $protocol . "://" . $host . "/labcare/landing.php";
         <div class="container hero-layout">
             <div class="hero-content">
                 <h1>
-                    Command Center for Computer<br>
-                    Laboratory Assets
+                    Computer Sets and<br>
+                    Facility Assets
                 </h1>
 
                 <p>
-                    Streamline inventory tracking, unified maintenance reporting,
-                    and real-time analytics for CvSU-CCC.
+                    Streamline status tracking, unified maintenance reporting,
+                    and report generation for CvSU-CCC.
                 </p>
 
                 <div class="btn-row">
@@ -116,7 +116,7 @@ $shareUrl = $protocol . "://" . $host . "/labcare/landing.php";
             <h2>Meet the Minds Behind LabCare</h2>
 
             <div class="about-image-wrapper">
-                <img src="assets/about.png" alt="LabCare Team">
+                <img src="assets/sixsix.png" alt="LabCare Team">
             </div>
 
             <div class="about-content">
@@ -129,15 +129,15 @@ $shareUrl = $protocol . "://" . $host . "/labcare/landing.php";
 
                 <h3>Our Mission</h3>
                 <p>
-                    To elevate laboratory management into a seamless, data-driven experience.
-                    We aim to modernize campus operations, ensuring that technology serves as a reliable bridge to quality education.
+                    To transform campus resource management into a seamless, data-driven experience. 
+                    We aim to modernize institutional operations, ensuring that every physical asset serves as a reliable bridge to quality education.
                 </p>
 
                 <h3>Why We Built This</h3>
                 <p>
-                    We created this system to give back to the campus that shaped us.
-                    By optimizing asset tracking and maintenance, our goal is to support our Instructors and IT Staff
-                    in providing a world-class learning environment for the next generation of students.
+                    We developed this system as a tribute to the campus that shaped us, specifically designed to empower our Computer Laboratory Custodian and Technician. 
+                    By streamlining resource management, automated reporting, and monitoring, we aim to simplify their institutional tasks and ensure a world-class learning 
+                    environment for the next generation of students.
                 </p>
 
             </div>

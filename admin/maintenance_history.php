@@ -9,13 +9,13 @@ if (!function_exists('getBadgeColor')) {
     {
         $t = strtolower(trim($text));
 
-        // Green badges (Matches if the word is anywhere in the string)
+        // Green badges
         if (strpos($t, 'resolved') !== false || strpos($t, 'replenished') !== false || strpos($t, 'working') !== false || strpos($t, 'in stock') !== false) {
             return 'green';
         }
 
-        // Orange badges
-        if (strpos($t, 'for repair') !== false) {
+        // Orange badges (UPDATED: Added Issue Reported)
+        if (strpos($t, 'for repair') !== false || strpos($t, 'issue reported') !== false) {
             return 'orange';
         }
 
@@ -24,7 +24,7 @@ if (!function_exists('getBadgeColor')) {
             return 'red';
         }
 
-        // Default gray for Update, Added, Restored, etc.
+        // Default gray
         return 'gray';
     }
 }
@@ -36,8 +36,6 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
 
     if ($type === 'archive') {
         header('Content-Type: application/json');
-        
-        // FIX: Using lab_id to fetch specific archive details based on table schema
         $stmt = $conn->prepare("SELECT lab_name, lab_room, reason, archived_by, archived_date FROM lab_history WHERE lab_id = ? ORDER BY archived_date DESC LIMIT 1");
         $stmt->bind_param("s", $id);
         $stmt->execute();
@@ -50,7 +48,8 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
                 "admin" => $row['archived_by'],
                 "lab_name" => $row['lab_name'],
                 "lab_room" => $row['lab_room'],
-                "date" => date('M d, Y', strtotime($row['archived_date']))
+                // UPDATED: Date Time Format
+                "date" => date('M d, Y h:i A', strtotime($row['archived_date']))
             ]);
         } else {
             echo json_encode(["status" => "error", "reason" => "No archive history found.", "admin" => "-"]);
@@ -70,10 +69,9 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
             while ($row = $res_supply->fetch_assoc()) {
                 $action = htmlspecialchars($row['suphisto_act']);
                 $status = htmlspecialchars($row['suphisto_stat'] ?? '-');
-
                 $badgeClass = getBadgeColor($action);
-
-                $date = htmlspecialchars(date('M d, Y', strtotime($row['suphisto_date'])));
+                // UPDATED: Date Time Format
+                $date = htmlspecialchars(date('M d, Y h:i A', strtotime($row['suphisto_date'])));
                 $actor = htmlspecialchars($row['suphisto_actor']);
                 $remarks = htmlspecialchars($row['suphisto_remarks']);
 
@@ -102,10 +100,10 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
             while ($row = $res_unit->fetch_assoc()) {
                 $status = htmlspecialchars($row['report_status']);
                 $badgeClass = getBadgeColor($status);
-                $date = htmlspecialchars(date('M d, Y', strtotime($row['report_date'])));
+                // UPDATED: Date Time Format
+                $date = htmlspecialchars(date('M d, Y h:i A', strtotime($row['report_date'])));
                 $actor = htmlspecialchars($row['report_actor']);
                 $affected = htmlspecialchars($row['report_affected'] ?? '-');
-                $action = htmlspecialchars($row['report_action'] ?? '-');
                 $remarks = htmlspecialchars($row['report_remarks']);
 
                 echo "<div class='timeline-card'>";
@@ -114,7 +112,7 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
                 echo "      <span class='status-pill badge {$badgeClass}'>{$status}</span>";
                 echo "  </div>";
                 echo "  <div class='timeline-card-subheader'>";
-                echo "      <span class='info-item'><strong>Action:</strong> {$action}</span>";
+                // UPDATED: Action Section Removed
                 echo "      <span class='info-item'><strong>Affected:</strong> {$affected}</span>";
                 echo "  </div>";
                 echo "  <div class='timeline-card-body'>";
@@ -133,10 +131,10 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
                 while ($row = $res_asset->fetch_assoc()) {
                     $status = htmlspecialchars($row['report_status']);
                     $badgeClass = getBadgeColor($status);
-                    $date = htmlspecialchars(date('M d, Y', strtotime($row['report_date'])));
+                    // UPDATED: Date Time Format
+                    $date = htmlspecialchars(date('M d, Y h:i A', strtotime($row['report_date'])));
                     $actor = htmlspecialchars($row['report_actor']);
                     $affected = htmlspecialchars($row['report_affected'] ?? '-');
-                    $action = htmlspecialchars($row['report_action'] ?? '-');
                     $remarks = htmlspecialchars($row['report_remarks']);
 
                     echo "<div class='timeline-card'>";
@@ -145,7 +143,7 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
                     echo "      <span class='status-pill badge {$badgeClass}'>{$status}</span>";
                     echo "  </div>";
                     echo "  <div class='timeline-card-subheader'>";
-                    echo "      <span class='info-item'><strong>Action:</strong> {$action}</span>";
+                    // UPDATED: Action Section Removed
                     echo "      <span class='info-item'><strong>Affected:</strong> {$affected}</span>";
                     echo "  </div>";
                     echo "  <div class='timeline-card-body'>";
@@ -156,18 +154,6 @@ if (isset($_GET['id']) && isset($_GET['type'])) {
             }
         }
     }
-
-    if (!$foundData) {
-        echo "<div style='text-align: center; padding: 40px; color: #757575;'>No activity history found for this item.</div>";
-    }
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
-    header('Content-Type: application/json');
-    $update = $conn->prepare("UPDATE laboratories SET lab_status = 'Available' WHERE lab_room = ?");
-    $update->bind_param("s", $_POST['restore_room_id']);
-    echo json_encode(["success" => $update->execute()]);
     exit;
 }
 ?>
@@ -212,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                         <div id="retirement-nav-container" class="pill-container" style="display: none;">
                             <button class="main-nav-btn" onclick="switchHistoryTab('retired-units', this)">Units</button>
                             <button class="main-nav-btn" onclick="switchHistoryTab('retired-assets', this)">Assets</button>
-                            <button class="main-nav-btn" onclick="switchHistoryTab('archives', this)">Lab</button>
+                            <button class="main-nav-btn" onclick="switchHistoryTab('archives', this)">Rooms</button>
                         </div>
                     </div>
 
@@ -254,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                             $statusClass = getBadgeColor($row['set_status']);
                                             $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
                                             echo "<tr class='selectable-row' data-type='unit' data-id='{$row['set_id']}' data-tag='PC-{$row['set_tag']}'>";
-                                            echo "<td><div class='tag-info'><strong>PC-{$row['set_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
+                                            echo "<td><div class='tag-info'><strong>PC-{$row['set_tag']}</strong><span class='separator'> | </span><span class='room-text'>{$row['lab_room']}</span></div></td>";
                                             echo "<td><div class='activity-info'><strong>Latest Activity <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                             echo "<td class='text-right'><span class='status-pill badge {$statusClass}'>{$row['set_status']}</span></td>";
                                             echo "</tr>";
@@ -279,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                             $statusClass = getBadgeColor($row['asset_status']);
                                             $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
                                             echo "<tr class='selectable-row' data-type='asset' data-id='{$row['asset_id']}' data-tag='FA-{$row['asset_tag']}'>";
-                                            echo "<td><div class='tag-info'><strong>FA-{$row['asset_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
+                                            echo "<td><div class='tag-info'><strong>FA-{$row['asset_tag']}</strong><span class='separator'> | </span><span class='room-text'>{$row['lab_room']}</span></div></td>";
                                             echo "<td><div class='activity-info'><strong>Latest Activity <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                             echo "<td class='text-right'><span class='status-pill badge {$statusClass}'>{$row['asset_status']}</span></td>";
                                             echo "</tr>";
@@ -328,7 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                         while ($row = $res->fetch_assoc()) {
                                             $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
                                             echo "<tr class='selectable-row' data-type='retired' data-id='{$row['set_id']}' data-tag='PC-{$row['set_tag']}'>";
-                                            echo "<td><div class='tag-info'><strong>PC-{$row['set_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
+                                            echo "<td><div class='tag-info'><strong>PC-{$row['set_tag']}</strong><span class='separator'> | </span><span class='room-text'>{$row['lab_room']}</span></div></td>";
                                             echo "<td><div class='activity-info'><strong>Condemned On <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                             echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
                                             echo "</tr>";
@@ -352,7 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                         while ($row = $res->fetch_assoc()) {
                                             $formattedDate = date('m/d/Y', strtotime($row['latest_activity']));
                                             echo "<tr class='selectable-row' data-type='retired' data-id='{$row['asset_id']}' data-tag='FA-{$row['asset_tag']}'>";
-                                            echo "<td><div class='tag-info'><strong>FA-{$row['asset_tag']}</strong><span class='separator'> | </span><span class='room-text'>Room {$row['lab_room']}</span></div></td>";
+                                            echo "<td><div class='tag-info'><strong>FA-{$row['asset_tag']}</strong><span class='separator'> | </span><span class='room-text'>{$row['lab_room']}</span></div></td>";
                                             echo "<td><div class='activity-info'><strong>Condemned On <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                             echo "<td class='text-right'><span class='status-pill badge red'>Condemned</span></td>";
                                             echo "</tr>";
@@ -381,8 +367,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_room_id'])) {
                                         while ($row = $res->fetch_assoc()) {
                                             $formattedDate = date('m/d/Y', strtotime($row['archived_date']));
                                             // Pass lab_id dynamically instead of lab_room
-                                            echo "<tr class='selectable-row' data-type='archive' data-id='{$row['lab_id']}' data-tag='Room {$row['lab_room']}'>";
-                                            echo "<td><div class='tag-info'><strong>Room {$row['lab_room']}</strong><span class='separator'> | </span><span class='room-text'>({$row['lab_name']})</span></div></td>";
+                                            echo "<tr class='selectable-row' data-type='archive' data-id='{$row['lab_id']}' data-tag='{$row['lab_room']}'>";
+                                            echo "<td><div class='tag-info'><strong>{$row['lab_room']}</strong><span class='separator'> | </span><span class='room-text'>({$row['lab_name']})</span></div></td>";
                                             echo "<td><div class='activity-info'><strong>Archived On <span class='separator'>|</span> </strong><span class='date-text'>{$formattedDate}</span></div></td>";
                                             echo "<td class='text-right'><span class='status-pill badge-archived'>Archived</span></td>";
                                             echo "</tr>";

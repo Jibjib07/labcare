@@ -39,7 +39,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </li>
             <li>
                 <a href="laboratory_management.php" class="<?= ($current_page == 'laboratory_management.php' || $current_page == 'assets_management.php') ? 'active' : '' ?>">
-                    <i class="fas fa-desktop"></i> <span>Laboratory Management</span>
+                    <i class="fas fa-desktop"></i> <span>Room Management</span>
                 </a>
             </li>
             <li>

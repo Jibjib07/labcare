@@ -111,7 +111,7 @@
 
             <div class="page-header">
                 <div class="breadcrumb">
-                    <span class="gray-link">Computer Laboratory Management</span>
+                    <span class="gray-link">Room Management</span>
                     <span class="gray-text"> > </span>
                     <span class="bold-text">Assets Management</span>
                 </div>
@@ -132,7 +132,7 @@
                         </div>
 
                         <div class="section-header-row">
-                            <h3>Room <?php echo $current_room; ?> - <strong>Computer Sets</strong></h3>
+                            <h3><?php echo $current_room; ?> - <strong>Computer Sets</strong></h3>
 
                             <div class="header-actions">
                                 <button class="btn-transfer" onclick="openModal('transferModal', <?= $current_lab_id ?>)">
@@ -202,7 +202,12 @@
                                     }
                             ?>
                                     <div class="<?= $row_class ?>" data-set-id="<?= htmlspecialchars($unit['set_id']) ?>" data-db-status="<?= htmlspecialchars($db_status) ?>" data-is-condemn="<?= $is_for_condemn ? 'true' : 'false' ?>">
-                                        <span class="item-name"><?= $display_name ?></span>
+                                        <span class="item-name" style="width: 60px;"><?= $display_name ?></span>
+                                        
+                                        <span style="flex-grow: 1; text-align: center; font-weight: normal; color: #888; font-size: 13px; padding: 0 10px;">
+                                            <?= htmlspecialchars($unit['set_id']) ?>
+                                        </span>
+                                        
                                         <?= $badge_html ?>
                                     </div>
                                 <?php
@@ -210,7 +215,7 @@
                             else:
                                 ?>
                                 <div style="padding: 20px; color: #666; text-align: center;">
-                                    No units found in Room <?= htmlspecialchars($current_room) ?>.
+                                    No sets found in <?= htmlspecialchars($current_room) ?>.
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -454,7 +459,7 @@
                                                 <div id="pill_mouse_status" class="status-pill green view-mode"></div>
                                                 <div id="toggle_mouse_status" class="status-toggle-group edit-mode" style="display:none;">
                                                     <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Not Working</button>
+                                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)" style="flex: 1; white-space: nowrap; font-size: 11.5px;">Not Working/Missing</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -462,25 +467,6 @@
                                 </div>
 
                                 <div class="detail-grid-row">
-                                    <div class="detail-group">
-                                        <label>Keyboard</label>
-                                        <div class="peripheral-info">
-                                            <div class="p-row">
-                                                <span>Brand:</span>
-                                                <span id="view_keyboard_brand" class="view-mode"></span>
-                                                <input type="text" id="edit_keyboard_brand" class="edit-mode edit-input" style="display:none;">
-                                            </div>
-                                            <div class="status-row">
-                                                <span>Status:</span>
-                                                <div id="pill_keyboard_status" class="status-pill green view-mode"></div>
-                                                <div id="toggle_keyboard_status" class="status-toggle-group edit-mode" style="display:none;">
-                                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Not Working</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <div class="detail-group">
                                         <label>Power (PSU/AVR)</label>
                                         <div class="peripheral-info">
@@ -495,6 +481,25 @@
                                                 <div id="toggle_avr_status" class="status-toggle-group edit-mode" style="display:none;">
                                                     <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
                                                     <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Not Working</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="detail-group">
+                                        <label>Keyboard</label>
+                                        <div class="peripheral-info">
+                                            <div class="p-row">
+                                                <span>Brand:</span>
+                                                <span id="view_keyboard_brand" class="view-mode"></span>
+                                                <input type="text" id="edit_keyboard_brand" class="edit-mode edit-input" style="display:none;">
+                                            </div>
+                                            <div class="status-row">
+                                                <span>Status:</span>
+                                                <div id="pill_keyboard_status" class="status-pill green view-mode"></div>
+                                                <div id="toggle_keyboard_status" class="status-toggle-group edit-mode" style="display:none;">
+                                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)" style="flex: 1; white-space: nowrap; font-size: 11.5px;">Not Working/Missing</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -518,7 +523,7 @@
                         </div>
 
                         <div class="section-header-row">
-                            <h3>Room <?php echo $current_room; ?> - <strong>Facility Assets</strong></h3>
+                            <h3><?php echo $current_room; ?> - <strong>Facility Assets</strong></h3>
 
                             <div class="header-actions">
                                 <button class="btn-transfer" onclick="openModal('transferModal', <?= $current_lab_id ?>)">
@@ -567,12 +572,13 @@
 
                                     echo "
                                     <div class='asset-item' data-asset-id='$id'>
-                                        <div class='asset-info'>
-                                            <div class='item-name'>FA-$tag</div>
-                                        </div>
-                                        <div class='asset-status'>
-                                            <span class='badge $badgeClass'>$status</span>
-                                        </div>
+                                        <span class='item-name' style='width: 60px;'>FA-$tag</span>
+                                        
+                                        <span style='flex-grow: 1; text-align: center; font-weight: normal; color: #888; font-size: 13px; padding: 0 10px;'>
+                                            " . htmlspecialchars($id) . "
+                                        </span>
+                                        
+                                        <span class='badge $badgeClass'>$status</span>
                                     </div>";
                                 }
                             } else {
@@ -837,19 +843,7 @@
                                 </div>
                                 <div class="status-toggle-group" id="mouse_toggle">
                                     <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Not Working</button>
-                                </div>
-                            </div>
-
-                            <div class="form-group peripheral-group">
-                                <label class="group-title">Keyboard</label>
-                                <div class="sub-field">
-                                    <label>Brand:</label>
-                                    <input type="text" id="keyboard_brand_input" class="modal-input" placeholder="Acer">
-                                </div>
-                                <div class="status-toggle-group" id="keyboard_toggle">
-                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
-                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Not Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Not Working/Missing</button>
                                 </div>
                             </div>
 
@@ -862,6 +856,18 @@
                                 <div class="status-toggle-group" id="avr_toggle">
                                     <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
                                     <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Not Working</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group peripheral-group">
+                                <label class="group-title">Keyboard</label>
+                                <div class="sub-field">
+                                    <label>Brand:</label>
+                                    <input type="text" id="keyboard_brand_input" class="modal-input" placeholder="Acer">
+                                </div>
+                                <div class="status-toggle-group" id="keyboard_toggle">
+                                    <button type="button" class="status-btn active" data-type="working" onclick="toggleStatus(this)">Working</button>
+                                    <button type="button" class="status-btn" data-type="repair" onclick="toggleStatus(this)">Not Working/Missing</button>
                                 </div>
                             </div>
 
@@ -986,10 +992,10 @@
                                 <input type="text" id="transfer_source_room" class="modal-input readonly-input" readonly>
                             </div>
                             <div class="form-group">
-                                <label>Target Lab:</label>
+                                <label>Target Room:</label>
                                 <div class="select-wrapper">
                                     <select id="transfer_target_lab" class="modal-input custom-select">
-                                        <option value="">Select Lab Room</option>
+                                        <option value="">Room</option>
                                     </select>
                                 </div>
                             </div>
@@ -1093,6 +1099,47 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeModal('resolveModal')">Cancel</button>
                     <button type="button" class="btn-confirm" onclick="submitResolve()">
+                        <i class="fas fa-check-circle"></i> Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="reportModal" class="modal-overlay" style="display: none;">
+            <div class="modal-container" style="max-width: 650px;">
+                <div class="modal-header">
+                    <h2 id="reportModalTitle"><i class="fas fa-flag"></i> Report Unspecified Issue</h2>
+                </div>
+                <div class="modal-body" style="padding: 20px; background: #fdfdfd;">
+                    <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
+                        You are reporting a general issue for <strong id="reportUnitName">[PC-00]</strong>. This will update the overall status of the unit to "For Repair".
+                    </p>
+
+                    <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                            <h4 style="margin: 0; font-size: 14px; color: #f57f17;">
+                                <i class="fas fa-exclamation-circle"></i> Status Update
+                            </h4>
+                            <span style="background-color: #fff3e0; color: #e65100; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;">
+                                For Repair
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 20px;">
+                            <div style="flex: 1; font-size: 13px; color: #555; background: #f4f4f4; padding: 10px; border-radius: 6px;">
+                                <strong>Affected:</strong><br>
+                                <span style="display: inline-block; margin-top: 5px;">Others (Unspecified)</span>
+                            </div>
+                            <div style="flex: 2; display: flex; flex-direction: column; gap: 5px;">
+                                <label style="font-size: 13px; font-weight: 600; color: #333;">Remarks:</label>
+                                <textarea id="report_remarks" placeholder="Required: What problem did you encounter?..." style="width: 100%; height: 60px; padding: 10px; border-radius: 6px; border: 1px solid #ddd; resize: none; font-size: 13px; box-sizing: border-box;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; background: #f9f9f9; border-top: 1px solid #eee;">
+                    <button type="button" class="btn-cancel" onclick="closeModal('reportModal')">Cancel</button>
+                    <button type="button" class="btn-confirm" onclick="submitReportIssue()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;">
                         <i class="fas fa-check-circle"></i> Submit
                     </button>
                 </div>
