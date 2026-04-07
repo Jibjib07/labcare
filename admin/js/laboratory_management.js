@@ -139,7 +139,7 @@ function selectRoom(element, roomNumber) {
         if (roomNumber.toLowerCase() === roomName.toLowerCase()) {
             st.textContent = roomName + ' Schedule';
         } else {
-            st.textContent = 'Room ' + roomNumber + ' Schedule';
+            st.textContent = roomNumber + ' Schedule';
         }
     }
 

@@ -22,7 +22,6 @@ if ($unitsResult && $unitsResult->num_rows > 0) {
         $status = strtolower(trim($row['set_status']));
         $purchase_date = $row['specs_purchase']; 
 
-        // Global Condemn Calculation (5 Year Rule)
         if (!empty($purchase_date)) {
             $purchase_time = new DateTime($purchase_date);
             $age = $today->diff($purchase_time)->y;
@@ -63,7 +62,6 @@ if ($issuesResult) {
 
 // ---------------------------------------------------------
 // ANALYTICS 2: Room Priority (Attention Needed)
-// Logic: Rooms with high for repairs (Both Sets and Assets)
 // ---------------------------------------------------------
 $roomAttentionQuery = "
     SELECT l.lab_room, 
@@ -85,17 +83,40 @@ if ($roomAttentionResult) {
 }
 
 // ---------------------------------------------------------
-// ANALYTICS 3: Segmented Maintenance Trends (Units vs Assets)
+// ANALYTICS 3: Segmented Maintenance Trends (REPAIR INCIDENTS)
+// Logic: Count the total number of 'For Repair' log records
 // ---------------------------------------------------------
 $monthsList = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 $unitTrendData = array_fill(0, 12, 0);
 $assetTrendData = array_fill(0, 12, 0);
 
-$resU = $conn->query("SELECT MONTH(report_date) as m, COUNT(*) as c FROM unit_history WHERE YEAR(report_date) = YEAR(CURDATE()) GROUP BY m");
-while($row = $resU->fetch_assoc()) { $unitTrendData[$row['m']-1] = (int)$row['c']; }
+// Count every log record where a unit was marked 'For Repair'
+$resU = $conn->query("
+    SELECT MONTH(log_date) as m, COUNT(*) as c 
+    FROM units_log 
+    WHERE YEAR(log_date) = YEAR(CURDATE()) 
+    AND set_status = 'For Repair'
+    GROUP BY m
+");
+if($resU) {
+    while($row = $resU->fetch_assoc()) { 
+        $unitTrendData[$row['m']-1] = (int)$row['c']; 
+    }
+}
 
-$resA = $conn->query("SELECT MONTH(report_date) as m, COUNT(*) as c FROM asset_history WHERE YEAR(report_date) = YEAR(CURDATE()) GROUP BY m");
-while($row = $resA->fetch_assoc()) { $assetTrendData[$row['m']-1] = (int)$row['c']; }
+// Count every log record where an asset was marked 'For Repair'
+$resA = $conn->query("
+    SELECT MONTH(log_date) as m, COUNT(*) as c 
+    FROM assets_log 
+    WHERE YEAR(log_date) = YEAR(CURDATE()) 
+    AND asset_status = 'For Repair'
+    GROUP BY m
+");
+if($resA) {
+    while($row = $resA->fetch_assoc()) { 
+        $assetTrendData[$row['m']-1] = (int)$row['c']; 
+    }
+}
 
 $currentMonthIndex = (int)date('n'); 
 $displayMonths = array_slice($monthsList, 0, $currentMonthIndex);
@@ -104,7 +125,6 @@ $displayAssetData = array_slice($assetTrendData, 0, $currentMonthIndex);
 
 // ---------------------------------------------------------
 // ANALYTICS 4: Aging Forecast (Stacked Bar)
-// Logic: Uses specs_purchase to become basis of age
 // ---------------------------------------------------------
 $ageForecastQuery = "
     SELECT l.lab_room,
@@ -140,7 +160,6 @@ $usersQuery = "SELECT COUNT(*) as total FROM users WHERE user_status = 'Active'"
 $usersResult = $conn->query($usersQuery);
 $totalUsers = ($usersResult) ? $usersResult->fetch_assoc()['total'] : 0;
 
-// Formatting
 $totalLabsFormatted = str_pad($totalLabs, 2, '0', STR_PAD_LEFT);
 $totalAssetsFormatted = str_pad($totalAssets, 2, '0', STR_PAD_LEFT);
 $totalUsersFormatted = str_pad($totalUsers, 2, '0', STR_PAD_LEFT);
@@ -357,7 +376,7 @@ if ($roomsResult) {
 
                 <div class="panel white-panel">
                     <h3 class="section-title">Maintenance Trends (<?php echo date('Y'); ?>)</h3>
-                    <p style="font-size: 12px; color: #888; margin-top: -15px; margin-bottom: 10px;">Comparing Computer Sets vs. Facility Assets</p>
+                    <p style="font-size: 12px; color: #888; margin-top: -15px; margin-bottom: 10px;">Monthly repair incidence from logs</p>
                     <div class="chart-container" style="height: 250px; position: relative;">
                         <canvas id="trendLineChart"></canvas>
                     </div>
@@ -365,7 +384,7 @@ if ($roomsResult) {
 
                 <div class="panel white-panel">
                     <h3 class="section-title">Equipment Aging Forecast</h3>
-                    <p style="font-size: 12px; color: #888; margin-top: -15px; margin-bottom: 10px;">Computer unit age based on acquisation date</p>
+                    <p style="font-size: 12px; color: #888; margin-top: -15px; margin-bottom: 10px;">Computer unit age based on acquisition date</p>
                     <div class="chart-container" style="height: 250px; position: relative;">
                         <canvas id="agingForecastChart"></canvas>
                     </div>
@@ -392,7 +411,6 @@ if ($roomsResult) {
                 document.getElementById('dashLegendRepair').innerText = data.repair;
                 document.getElementById('dashLegendCondemn').innerText = data.condemn;
                 
-                // Pass only working and repair to the visualizer, condemn is handled as text
                 updateDonutChartVisual(data.working, data.repair);
             } catch (error) { console.error('Error:', error); }
         }
@@ -402,8 +420,6 @@ if ($roomsResult) {
             if (!chart) return;
             const w = parseInt(working) || 0;
             const r = parseInt(repair) || 0;
-            
-            // Total pie only consists of working and repair
             const total = w + r;
             
             if (total === 0) { 
@@ -415,14 +431,14 @@ if ($roomsResult) {
             chart.style.background = `conic-gradient(#4caf50 0% ${workPct}%, #ffc107 ${workPct}% 100%)`;
         }
 
-        // --- 2. CHART.JS GLOBAL DEFAULTS & INITIALIZATIONS ---
+        // --- 2. CHART.JS INITIALIZATIONS ---
         document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('dashboardRoomSelect')) updateDashboardLabStats();
 
             Chart.defaults.font.family = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
             Chart.defaults.color = '#666';
 
-            // 1. Most Common Issues (Enhanced Vertical Bar)
+            // 1. Most Common Issues
             new Chart(document.getElementById('issuesBarChart').getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -447,7 +463,7 @@ if ($roomsResult) {
                 }
             });
 
-            // 2. Room Priority (Enhanced Horizontal Bar)
+            // 2. Room Priority
             new Chart(document.getElementById('priorityChart').getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -469,7 +485,7 @@ if ($roomsResult) {
                 }
             });
 
-            // 3. Maintenance Trends (Enhanced Line with smooth tension)
+            // 3. Maintenance Trends
             new Chart(document.getElementById('trendLineChart').getContext('2d'), {
                 type: 'line',
                 data: {
@@ -503,7 +519,7 @@ if ($roomsResult) {
                 }
             });
 
-            // 4. Aging Forecast (Enhanced Stacked Bar)
+            // 4. Aging Forecast
             new Chart(document.getElementById('agingForecastChart').getContext('2d'), {
                 type: 'bar',
                 data: {
