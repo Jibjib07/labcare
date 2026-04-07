@@ -43,13 +43,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_lab'])) {
 
 // --- EDIT LABORATORY LOGIC ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
+    // 1. ADD THIS LINE to capture the ID from the hidden input
+    $lab_id = $conn->real_escape_string($_POST['edit_lab_id']);
+
     $new_name = $conn->real_escape_string(trim($_POST['edit_room_name']));
     $raw_new_room = trim($_POST['edit_room_number']);
+
+    // 2. ADD THIS LINE to capture the original room for the unit/asset updates
+    $original_room = $conn->real_escape_string($_POST['original_room_number']);
 
     if (strtoupper($raw_new_room) === 'N/A') {
         $new_room = $new_name;
     } else {
-        $new_room = "Room " . $raw_new_room; // Autogenerate the prefix
+        $new_room = "Room " . $raw_new_room;
     }
 
     $check_query = "SELECT * FROM laboratories 
@@ -266,7 +272,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
 
                                     <div class="room-info">
                                         <span class="lab-name"><?= htmlspecialchars($row['lab_name']) ?></span>
-                                        
+
                                         <?php if (strtolower($row['lab_room']) !== strtolower($row['lab_name'])): ?>
                                             <span class="room-badge"><?= htmlspecialchars($row['lab_room']) ?></span>
                                         <?php endif; ?>
@@ -431,14 +437,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
                     </div>
 
                     <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <label>Room Number</label>
-                        <label style="font-size: 12px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" id="edit_no_room_number" onclick="toggleEditRoomNumber(this)"> Not Applicable
-                        </label>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label>Room Number</label>
+                            <label style="font-size: 12px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="edit_no_room_number" onclick="toggleEditRoomNumber(this)"> Not Applicable
+                            </label>
+                        </div>
+                        <input type="text" name="edit_room_number" id="edit_room_number" class="modal-input" required>
                     </div>
-                    <input type="text" name="edit_room_number" id="edit_room_number" class="modal-input" required>
-                </div>
 
                     <div class="form-group">
                         <label>Total Sets</label>
@@ -463,7 +469,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_lab'])) {
             </div>
             <div class="modal-body">
                 <p class="archive-warning-text">
-                    Are you sure you want to archive <strong id="archive_room_name_display">[Room Name]</strong>? 
+                    Are you sure you want to archive <strong id="archive_room_name_display">[Room Name]</strong>?
                     All equipment must be redeployed or retired before a room can be archived.
                 </p>
                 <form id="archiveLabForm">
